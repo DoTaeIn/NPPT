@@ -222,6 +222,7 @@ html[data-theme='cau-navy'] {
   --divider-pad-x: 160px;
   --divider-gap: 64px;
   --divider-main-w: 1250px;
+  --divider-art-inset: 6% 40px 14% auto; /* .slide.hero.has-q .hero-art: top 46%, 80% high */
   --divider-no-size: 190px;
   --divider-title-size: 64px;
   --divider-title-weight: var(--fw-bold);

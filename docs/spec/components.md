@@ -45,20 +45,27 @@ All three "title" slide types share these fields (all optional, additive to the 
 
 | Field | Meaning | Rendered as |
 |---|---|---|
-| `kicker` | small line above the title; cover default `${course} · ${week}주차` | `.cover-kicker` / `.hero-kicker` / `.divider-no` (divider uses `no`) |
+| `kicker` | small line above the title; cover default `${course} · ${week}주차` (applied at render; `normalizeLecture(x, { coverDefaults: true })` writes it into the IR) | `.cover-kicker` / `.hero-kicker` / `.cover-kicker` after `.divider-no` (the big number itself is `no`) |
 | `title` | the visible headline (may be a sentence, e.g. "문을 여는 기술, 권한을 다루는 설계.") | `h1.cover-title` / `h1.hero-title` / `h2.divider-title` |
 | `tagline` | small-caps secondary line, e.g. "PHYSICAL ACCESS × IDENTITY" | `.cover-tagline` |
 | `subtitle` | lead sentence | `.cover-sub` / `.s-sub` / `.divider-lead` |
 | `question` | guiding question strip | `.s-q` |
-| `meta` | list of short lines, e.g. `[2026학년도 2학기 · 5주차, 중앙대학교 산업보안학과]`; cover default `[date, presenter]` | `.cover-meta > span` (one per line) |
+| `meta` | list of short lines, e.g. `[2026학년도 2학기 · 5주차, 중앙대학교 산업보안학과]`; cover default `[date, presenter]` (as for `kicker`; an explicit `kicker: ""` or `meta: []` turns the default off) | `.cover-meta > span` (one per line) |
 | `art` | asset id shown as artwork on the right half | `figure.cover-art > img` |
 | `toc` | TOC / search label when it differs from the visible title (any slide type) | `data-title` attribute (`toc ?? title`) |
-| body blocks | allowed; rendered under the meta line (typically `pills`, `paragraph`, `tiles`) | `.s-body` inside `.cover-main` |
+| body blocks | allowed (typically `pills`, `paragraph`, `tiles`); cover/divider: between the question and the meta line, omitted when empty; hero: after the head as on content slides | `.s-body` inside `.cover-main` |
+| `dark` | header flag `# slide cover dark` (also hero, divider) | class `dark` on the `<section>` |
+| `alert` | header flag, hero and divider | class `alert` on the `<section>` (red-toned) |
 
 Layout: `.slide-wrapper` contains `.cover-main` (text column) and, when `art` is set, `figure.cover-art`
 (right column, ~46% width, image `object-fit: contain`, bottom-aligned). Without `art` the text column
 spans the full width. Both themes use a **light** background for cover/hero/divider (the reference
 decks are light); a dark variant is opt-in via `# slide cover dark`.
+Order inside a cover's `.cover-main`: kicker, title, tagline, sub, `.s-q`, `.s-body`, meta. With `art`
+the wrapper has no padding (the art bleeds to the slide edges) and `.cover-main` carries it. The art box
+and fit are theme tokens (`--cover-art-w`, `--cover-art-inset`, `--cover-art-fit`, `--cover-art-pos`,
+`--cover-art-fade`): v20-violet lets the picture bleed over the right 58% with `object-fit: cover` and a
+left fade (V20 `.v-cover-art`); cau-navy keeps `contain`, right-centred at 46% (v9.7 `.hero-art`).
 
 ```html
 <section class="slide cover" id="s-01" data-type="cover" data-title="물리보안 · 출입통제 IAM" data-group="표지 · 도입">
@@ -78,10 +85,11 @@ decks are light); a dark variant is opt-in via `# slide cover dark`.
 ```
 ### divider
 ```html
-<section class="slide divider" id data-type="divider" data-title>
-  <div class="slide-wrapper">
+<section class="slide divider [alert] [dark]" id data-type="divider" data-title>
+  <div class="slide-wrapper [has-art]">
     <div class="cover-main">
       <div class="divider-no">01</div>
+      <div class="cover-kicker">보안시스템 운영 및 활용 · 3주차</div>   <!-- optional kicker (V20 .div-eyebrow) -->
       <h2 class="divider-title">인증과 하드웨어</h2>
       <p class="divider-lead">문 앞과 문 뒤를 함께 본다.</p>
       <div class="s-body">…optional blocks…</div>
@@ -90,6 +98,10 @@ decks are light); a dark variant is opt-in via `# slide cover dark`.
   </div>
 </section>
 ```
+`.cover-main` is a two-column grid: `.divider-no` spans the left column, everything else stacks on the
+right (tagline, `.s-q` and meta follow the lead as on the cover). `no` defaults to the divider's
+position (`01`, `02`, …); `no: "!"` with `alert` gives the v9.7 red case-study opener. A footer is
+emitted only when the divider has `refs`.
 ### quote
 ```html
 <section class="slide quote-slide" …>
@@ -100,9 +112,25 @@ decks are light); a dark variant is opt-in via `# slide cover dark`.
 </section>
 ```
 ### hero  (v9.7 opening/section slides; `alert` variant is red-toned)
-Same as content but `class="slide hero [alert]"`, `<h1 class="hero-title">` instead of `h2`,
+Same as content but `class="slide hero [alert] [dark]"`, `<h1 class="hero-title">` instead of `h2`,
 the `.s-q` strip is expected, and the cover fields above (`kicker`, `tagline`, `meta`, `art`)
 are honoured: with `art`, the wrapper gets `has-art` and the text sits in `.cover-main`.
+Head order: `.hero-kicker` (plain letter-spaced line, v9.7 `.div-eyebrow`), `.eyebrow` from `tag`
+(rendered as a rounded pill with an icon slot, v9.7 `.cover-badge`), title, `.cover-tagline`, `.s-sub`,
+`.cover-meta`, `.s-q`. A hero with `meta` is an opening slide and sets its title at display size.
+```html
+<section class="slide hero" id="s-01" data-type="hero" data-title="방화벽 운영 및 실무" data-tag="WEEK 05">
+  <div class="slide-wrapper has-art">
+    <div class="cover-main">
+      <header class="s-head"><div class="eyebrow">WEEK 05</div><h1 class="hero-title">방화벽 운영 및 실무</h1>
+        <p class="s-sub">…</p><div class="cover-meta"><span>…</span><span>…</span></div><div class="s-q">…</div></header>
+      <div class="s-body">…</div>
+    </div>
+    <figure class="cover-art" data-asset="hero-01"><img src="…" alt="…"></figure>
+  </div>
+  <footer class="slide-tag-bottom">…</footer>
+</section>
+```
 
 ### references
 ```html

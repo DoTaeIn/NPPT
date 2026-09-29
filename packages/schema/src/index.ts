@@ -10,7 +10,8 @@ export {
   DEFAULT_META,
   DEFAULT_REFERENCES_TITLE,
 } from './normalize.js';
-export type { LectureInput, SlideInput, SlideNoteInput } from './normalize.js';
+export type { LectureInput, SlideInput, SlideNoteInput, NormalizeOptions } from './normalize.js';
+export { coverKicker, coverMeta } from './normalize.js';
 export type { SerializeNoteOptions } from './notes.js';
 export {
   parseNote,
@@ -26,5 +27,11 @@ export {
   CUE_KINDS,
   TIME_MARKER,
 } from './notes.js';
-export { lintLecture, LINT_CODES, estimateBlockHeight, stackHeight, availableBodyHeight } from './lint.js';
+export {
+  lintLecture,
+  LINT_CODES,
+  estimateBlockHeight,
+  stackHeight,
+  availableBodyHeight,
+} from './lint.js';
 export { charCount, visibleText } from './text.js';
