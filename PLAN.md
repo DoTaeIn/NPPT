@@ -3,6 +3,7 @@
 **Project:** NPPT / MARCO Engine — an engine for building AI-assisted university lecture decks
 **Status:** Draft v0.1 · 2026-09-29
 **License:** MARCO Engine License, Version 1.0 (Apache 2.0 + Visible Attribution; see §15)
+**Relation to MARCO:** shares the name and licence with [DoTaeIn/Marco](https://github.com/DoTaeIn/Marco); does not use its reasoning engine
 
 ---
 
@@ -315,6 +316,7 @@ Mechanics that make this hold:
 ```
 NPPT/
   PLAN.md                  this document
+  README.md                overview and licence summary
   LICENSE                  MARCO Engine License 1.0: Apache 2.0 + Visible Attribution, from DoTaeIn/Marco (§15)
   NOTICE                   third-party licences (Lucide, Pretendard, SpoqaHanSans, Inter, markdown-it, …)
   package.json / pnpm-workspace.yaml / tsconfig.base.json
@@ -410,18 +412,18 @@ The engine ships under the **MARCO Engine License, Version 1.0**, the licence al
 | Personal use, research, development, testing, plain redistribution of source or builds | No Attribution requirement (§3); Apache §4(d) NOTICE rules apply to redistribution. |
 | Someone wants no attribution | White-label licence from the copyright holder (§5). |
 
-**Two adaptations the copyright holder has to decide, because the Marco text cannot be copied verbatim**
+**Adaptations made to the Marco text (decided 2026-09-29)**
 
-1. **Definition of "Engine" (Additional Condition §1).** Marco defines it as "the MARCO reasoning, dialogue, language, learning, storage and benchmarking code". That does not cover a deck engine. Proposed wording for this repository: *"Engine" means this software: the MARCO deck runtime, design system, compiler, importer, authoring pipeline and studio code, and builds made from it, whether or not modified.*
-2. **Attribution text (Additional Condition §1).** Marco's line is `Powered by MARCO — Created by DoTaeIn, Original project: https://github.com/DoTaeIn/Marco`. Decide whether NPPT decks show that line unchanged, or one that points at this repository (for example `Powered by MARCO Engine — Created by DoTaeIn, Original project: https://github.com/DoTaeIn/NPPT`). The plan assumes a line that keeps the three parts the licence requires: the name MARCO, the name DoTaeIn and a project URL.
+1. **Definition of "Engine" (Additional Condition §1).** Marco's definition names its reasoning, dialogue, language, learning, storage and benchmarking code, which does not cover a deck engine. `LICENSE` in this repository defines it as: *"Engine" means this software: the MARCO deck runtime, design system, compiler, importer, authoring pipeline and studio code, and builds made from it, whether or not modified.*
+2. **Attribution text (Additional Condition §1).** Kept exactly as Marco's: `Powered by MARCO — Created by DoTaeIn, Original project: https://github.com/DoTaeIn/Marco`. NPPT shares MARCO's name and licence only; it does not include MARCO's reasoning engine or knowledge graphs. The two repository-specific paragraphs in Marco's preamble (copies received under Apache alone before 2026-09-24; the separate knowledge-graph licence) are omitted because they do not apply here.
 
-Everything else is copied unchanged: Additional Condition §2–6, the sentence that the licence must not be described as the Apache License alone, and the full Apache 2.0 text. Whether to publish this as "Version 1.0, as applied to NPPT" or to bump the shared licence to 1.1 with a generalised Engine definition is your call as the holder of both copyrights. Marco's own notes say licence-text changes warrant legal review; the same applies here.
+Everything else is copied unchanged: Additional Condition §2–6, the sentence that the licence must not be described as the Apache License alone, and the full Apache 2.0 text. Marco's own notes say licence-text changes warrant legal review; the Engine definition above is the one changed clause.
 
 **Files and mechanics**
 
-- `LICENSE`: the adapted text. `NOTICE`: modelled on Marco's (product name, copyright, the Attribution, pointer to `LICENSE`) plus third-party notices: Lucide (ISC), Pretendard (SIL OFL 1.1), Spoqa Han Sans (SIL OFL 1.1), Inter (SIL OFL 1.1), markdown-it (MIT), Ajv (MIT), sharp (Apache 2.0), and others as added, generated from `package.json` at release.
+- `LICENSE` and `NOTICE` are in the repository; `NOTICE` follows Marco's shape (product name, copyright, the Attribution, pointer to `LICENSE`). Third-party notices are appended as components are added: Lucide (ISC), Pretendard (SIL OFL 1.1), Spoqa Han Sans (SIL OFL 1.1), Inter (SIL OFL 1.1), markdown-it (MIT), Ajv (MIT), sharp (Apache 2.0), generated from `package.json` at release.
 - The runtime's help overlay shows the Attribution and the compiler has no flag to remove it, so every built deck is compliant by construction. Each built HTML also starts with a NOTICE comment naming the engine version and repeating the Attribution.
-- `README.md` gets a `## License` section in the same shape as Marco's.
+- `README.md` has a `## License` section in the same shape as Marco's.
 - The project is under this licence from its first release; there is no earlier Apache-only period to grandfather.
 
 ---
@@ -437,7 +439,6 @@ Defaults are chosen so work can start; change any of them and the plan adjusts.
 | Are narration player and avatar (v9.7 features) required in v1? | Phase 3 plugins; core deck ships in Phase 1 without them |
 | Must legacy decks be imported? | Yes, in Phase 2; it is also how we validate parity |
 | Local files only, or a small server? | Local files only; Studio runs on localhost |
-| Attribution line and "Engine" definition for the licence (§15) | Line names MARCO, DoTaeIn and the NPPT repository; the Engine definition covers the deck engine |
 
 ---
 
@@ -452,4 +453,4 @@ Defaults are chosen so work can start; change any of them and the plan adjusts.
 7. Hand-write the first five slides of `examples/week03-iam/lecture.marco.md` and get pixel parity with the original.
 8. Importer spike: parse all 40 Week 3 sections into MARCO source automatically; list unmapped markup.
 9. Prompt kit v0.1: system prompt, component cheat-sheet, `outline` and `slides` tool definitions; run one outline → slides trial and record token usage.
-10. Add `LICENSE` (MARCO Engine License 1.0 with the two adaptations in §15) and `NOTICE`; put the Attribution in the runtime help overlay.
+10. Done: `LICENSE`, `NOTICE` and the README licence section (§15). Remaining: put the Attribution in the runtime help overlay once the runtime exists.
