@@ -1,0 +1,17 @@
+{
+  "name": "marco-engine",
+  "version": "0.1.0",
+  "description": "MARCO Engine for lecture decks: compile compact AI-written lecture sources into single-file 1920x1080 HTML decks. CLI, runtime, design system, importer, prompt kit and MCP server in one installable package.",
+  "license": "SEE LICENSE IN LICENSE",
+  "type": "module",
+  "bin": { "marco": "./bin/marco.js", "marco-mcp": "./bin/marco-mcp.js" },
+  "files": ["bin", "assets", "LICENSE", "NOTICE", "README.md"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf bin assets dist"
+  },
+  "repository": { "type": "git", "url": "https://github.com/DoTaeIn/NPPT" },
+  "keywords": ["marco", "lecture", "slides", "presentation", "ai", "mcp"]
+}
