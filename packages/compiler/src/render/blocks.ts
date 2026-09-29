@@ -93,7 +93,10 @@ export function renderBlock(block: Block, id: string, opts: RenderOptions = {}):
         const a = block.align?.[n];
         return a === 'c' || a === 'r' ? ` class="${a}"` : '';
       };
-      const head = block.head.map((h, n) => `<th${cls(n)}>${t(h)}</th>`).join('');
+      // A header whose cells are all empty (label/trend rows) renders without <thead>.
+      const head = block.head.some((h) => h.trim() !== '')
+        ? block.head.map((h, n) => `<th${cls(n)}>${t(h)}</th>`).join('')
+        : '';
       const rows = block.rows
         .map(
           (r, n) => `<tr${item(n)}>${r.map((c, k) => `<td${cls(k)}>${t(c)}</td>`).join('')}</tr>`,

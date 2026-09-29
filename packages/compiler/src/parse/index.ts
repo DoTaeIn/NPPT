@@ -48,7 +48,7 @@ const FIELDS: Record<string, readonly SlideType[] | undefined> = {
   meta: TITLE_SLIDE_TYPES,
   art: TITLE_SLIDE_TYPES,
   toc: undefined,
-  tag: ['content', 'hero', 'quote', 'references', 'raw'],
+  tag: undefined,
   group: undefined,
   question: undefined,
   refs: undefined,

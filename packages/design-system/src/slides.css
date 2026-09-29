@@ -538,7 +538,7 @@
   box-shadow: none;
 }
 
-* ============ Quote slide ============ */
+/* ============ Quote slide ============ */
 /* V20 final `.v20-slide.quote-slide` (light, left-aligned) with the big quote block. */
 .slide.quote-slide {
   background: var(--quote-slide-bg);
