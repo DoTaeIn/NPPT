@@ -10,7 +10,9 @@ const one = (issues: LintIssue[], code: string): LintIssue => {
   return found[0] as LintIssue;
 };
 
-/** A lecture in which every non-budget lint code fires exactly once. */
+const NOT_HERE: ReadonlySet<string> = new Set(['columns.count', 'icon.unknown']);
+
+/** A lecture in which every non-budget lint code (and the density check) fires exactly once. */
 function everyCode(): Lecture {
   const cues: Cue[] = Array.from({ length: 31 }, (_, i) => ({ k: 'SAY', t: `큐 ${i}` }));
   cues[0] = { k: 'MEMO', t: '알 수 없는 표시', marker: '설명' };
@@ -40,6 +42,10 @@ function everyCode(): Lecture {
             cols: 2,
             columns: [[{ type: 'columns', cols: 2, columns: [[], []] }], []],
           },
+          { type: 'table', head: ['항목', '값'], rows: [['한 칸뿐']] },
+          { type: 'paragraph', text: 'TODO: 출처 필요 — 사례 발생일' },
+          { type: 'code', code: Array.from({ length: 12 }, () => 'x').join('\n') },
+          { type: 'widget', name: 'abac' },
         ],
       },
       {
@@ -103,8 +109,9 @@ describe('lintLecture', () => {
 
   it('fires every non-budget code exactly once in the targeted fixture', () => {
     const issues = lintLecture(everyCode());
+    // columns.count has its own test; icon.unknown is reported by the compiler only.
     const expected = Object.keys(LINT_CODES).filter(
-      (c) => c !== 'budget.*' && c !== 'columns.count',
+      (c) => (!c.startsWith('budget.') || c === 'budget.slide.dense') && !NOT_HERE.has(c),
     );
     expect([...codes(issues)].sort()).toEqual([...expected].sort());
     for (const code of expected) {
@@ -215,7 +222,7 @@ describe('lintLecture', () => {
           {
             type: 'table',
             head: ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
-            rows: Array.from({ length: 9 }, () => ['x']),
+            rows: Array.from({ length: 9 }, () => Array.from({ length: 7 }, () => 'x')),
           },
           {
             type: 'code',
@@ -231,6 +238,7 @@ describe('lintLecture', () => {
       'code.lines: 13줄 (허용 12줄)',
       'code.lines[4]: 81자 (허용 80자)',
       'tiles.items(cols=2): 3개 (허용 2개)',
+      'slide.dense: 본문 높이 추정 1340px (허용 760px, 76% 초과 · 가장 큰 블록 #1 table 596px)',
     ]);
   });
 

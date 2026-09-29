@@ -283,7 +283,11 @@ export async function runRevise(
   const parts = splitDeck(req.deck);
   const slide = findSlide(parts, req.slide);
   if (!slide) throw new Error(`slide ${String(req.slide)} not found`);
-  const lint = Array.isArray(req.lint) ? issuesForSlide(req.lint, slide) : req.lint;
+  // `info` issues (e.g. a leftover `TODO:`, content.todo) are for the author, never the model
+  // (docs/spec/ir.md §6): a model asked to "fix" a TODO would invent the missing fact.
+  const lint = Array.isArray(req.lint)
+    ? issuesForSlide(req.lint, slide).filter((issue) => issue.level !== 'info')
+    : req.lint;
   const label = `revise-${slide.id}`;
   const reply = await call(
     provider,

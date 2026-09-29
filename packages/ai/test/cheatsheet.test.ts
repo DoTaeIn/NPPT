@@ -3,7 +3,16 @@ import { fileURLToPath } from 'node:url';
 import * as schema from '@marco/schema';
 import { BUDGETS, type BlockType } from '@marco/schema';
 import { describe, expect, it } from 'vitest';
-import { CHEATSHEET_BLOCKS, renderBudget, renderCheatsheet } from '../src/cheatsheet.js';
+import { DENSITY as SCHEMA_DENSITY } from '../../schema/dist/budgets.js';
+import {
+  budgetLabel,
+  CHEATSHEET_BLOCKS,
+  DENSITY,
+  DENSITY_MIRROR,
+  densityDoc,
+  renderBudget,
+  renderCheatsheet,
+} from '../src/cheatsheet.js';
 import { defaultPromptDir, PROMPT_FILES } from '../src/prompts.js';
 
 // Compile-time: the cheat-sheet documents every block type of the IR (`pnpm typecheck` fails otherwise).
@@ -52,7 +61,7 @@ describe('renderCheatsheet', () => {
       const text = section(key);
       expect(text, `section for ${key}`).not.toBe('');
       for (const field of Object.keys(spec)) {
-        const label = /^max|^cue/.test(field) ? '' : field;
+        const label = /^max|^cue/.test(field) ? '' : budgetLabel(key, field);
         if (label) expect(text, `${key}.${field}`).toContain(label);
       }
       for (const n of leaves(spec))
@@ -65,6 +74,45 @@ describe('renderCheatsheet', () => {
       '항목 ≤4/6/8 (cols=2/3/4) · kicker ≤16 · title ≤24 · body ≤90/60/40 (cols=2/3/4)',
     );
     expect(renderBudget(BUDGETS.chain, 'chain')).toBe('항목 ≤6 · label ≤10 · sub ≤22');
+    // The scalar `cell` is the one-column fallback of `cellByCols` and is not shown twice.
+    expect(renderBudget(BUDGETS.table, 'table')).toBe(
+      '열 ≤6 · 행 ≤8 · cell ≤40/30/20/16/12 (cols=2/3/4/5/6)',
+    );
+  });
+
+  it('teaches the slide-density table the linter uses', () => {
+    // The mirror must equal @marco/schema's DENSITY until the package index exports it.
+    const shared = Object.fromEntries(
+      Object.entries(SCHEMA_DENSITY).filter(([key]) => key !== 'slideTypes'),
+    );
+    expect(DENSITY_MIRROR).toEqual(JSON.parse(JSON.stringify(shared)));
+    expect(DENSITY).toEqual(DENSITY_MIRROR);
+    const text = densityDoc();
+    expect(sheet).toContain(text);
+    expect(text).toContain('제목 아래 760');
+    expect(text).toContain('둘 다면 629');
+    expect(text).toContain('cards 한 줄 200(cols=2)/180(cols=3·4)');
+    expect(text).toContain('table 56+행×60');
+    expect(text).toContain('블록 사이 28');
+    expect(text).toContain('110%');
+  });
+
+  it('teaches the pipe-row forms, bracketed image paths, ### headings and cover fields', () => {
+    expect(section('cards')).toContain('`kicker | title | body`');
+    expect(section('cards')).toContain('인증 | 누구인가 | 카드·PIN·생체로 자격을 확인한다');
+    expect(section('tiles')).toContain('`icon | label | value | tone`');
+    expect(section('tiles')).toContain('id-card | 인증 | 누구인가');
+    expect(section('image')).toContain('`![alt](<assets/출입 통제.png> "caption")`');
+    expect(sheet).toContain('`###`만 쓴다');
+    for (const field of [
+      'kicker',
+      'tagline',
+      '`meta: [',
+      '`art: ',
+      '`toc: ',
+      '`# slide cover dark`',
+    ])
+      expect(sheet, field).toContain(field);
   });
 
   it('follows BUDGETS when a budget changes', () => {

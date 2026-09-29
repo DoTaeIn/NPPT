@@ -164,6 +164,21 @@ describe('prompt kit', () => {
     }
   });
 
+  it('ships examples of compare, verdict, pills, timeline and a cover with its fields', () => {
+    const all = kit.examples.map((ex) => ex.source).join('\n');
+    for (const block of [':::compare ', ':::verdict ', ':::pills', ':::timeline'])
+      expect(all, block).toContain(block);
+    const cover = kit.examples
+      .flatMap((ex) => splitDeck(ex.source).slides)
+      .find((s) => s.type === 'cover');
+    expect(cover).toBeDefined();
+    for (const field of ['kicker', 'title', 'tagline', 'subtitle', 'meta', 'toc'])
+      expect(cover!.text, field).toMatch(new RegExp(`^${field}: .+$`, 'm'));
+    const system = systemPrompt(kit);
+    for (const block of [':::compare ', ':::verdict ', ':::timeline', 'tagline: '])
+      expect(system, block).toContain(block);
+  });
+
   it('ships examples that fit the budgets and a note that parses', () => {
     const len = (s: string) => charCount(visibleText(s));
     for (const ex of kit.examples) {
@@ -179,19 +194,53 @@ describe('prompt kit', () => {
           expect(len(m[1]!)).toBeLessThanOrEqual(BUDGETS.chain.label);
           expect(len(m[2]!)).toBeLessThanOrEqual(BUDGETS.chain.sub);
         }
-        for (const m of s.text.matchAll(/^ {0,2}-? ?(kicker|title|body): (.+)$/gm)) {
-          const limit = {
-            kicker: BUDGETS.cards.kicker,
-            title: BUDGETS.cards.title,
-            body: BUDGETS.cards.body[2],
-          }[m[1] as 'kicker' | 'title' | 'body'];
-          if (m[0].startsWith('title:')) continue; // slide title, checked above
-          expect(len(m[2]!), `${ex.file} ${m[1]}`).toBeLessThanOrEqual(limit);
+        for (const [, cols, items] of s.text.matchAll(/^:::cards cols=(\d)\n([\s\S]*?)^:::$/gm)) {
+          const body = BUDGETS.cards.body[Number(cols) as 2 | 3 | 4];
+          for (const m of items!.matchAll(/^ {0,2}-? ?(kicker|title|body): (.+)$/gm)) {
+            const limit = { kicker: BUDGETS.cards.kicker, title: BUDGETS.cards.title, body }[
+              m[1] as 'kicker' | 'title' | 'body'
+            ];
+            expect(len(m[2]!), `${ex.file} ${m[1]}`).toBeLessThanOrEqual(limit);
+          }
         }
-        for (const row of s.text.matchAll(/^\|(.+)\|$/gm)) {
-          for (const cell of row[1]!.split('|'))
-            expect(len(cell.trim())).toBeLessThanOrEqual(BUDGETS.table.cell);
+        const tableRows = [...s.text.matchAll(/^\|(.+)\|$/gm)].map((row) =>
+          row[1]!.split('|').map((cell) => cell.trim()),
+        );
+        const cols = tableRows[0]?.length ?? 0;
+        const cellBudget =
+          (BUDGETS.table.cellByCols as Record<number, number>)[cols] ?? BUDGETS.table.cell;
+        for (const cells of tableRows) {
+          expect(cells, `${ex.file} table.ragged`).toHaveLength(cols);
+          for (const cell of cells) expect(len(cell)).toBeLessThanOrEqual(cellBudget);
         }
+        const rows = (name: string): string[][] => {
+          const block = new RegExp(`^:::${name}[^\\n]*\\n([\\s\\S]*?)^:::$`, 'm').exec(s.text);
+          return (block?.[1] ?? '')
+            .split('\n')
+            .filter((l) => l.includes(' | '))
+            .map((l) => l.split(' | '));
+        };
+        for (const [label, left, right] of rows('compare')) {
+          expect(len(label!)).toBeLessThanOrEqual(BUDGETS.compare.label);
+          expect(len(left!)).toBeLessThanOrEqual(BUDGETS.compare.cell);
+          expect(len(right!)).toBeLessThanOrEqual(BUDGETS.compare.cell);
+        }
+        for (const [at, title, body] of rows('timeline')) {
+          expect(len(at!)).toBeLessThanOrEqual(BUDGETS.timeline.at);
+          expect(len(title!)).toBeLessThanOrEqual(BUDGETS.timeline.title);
+          expect(len(body ?? '')).toBeLessThanOrEqual(BUDGETS.timeline.body);
+        }
+        for (const [, label, text] of s.text.matchAll(/^:::verdict \w+ ?(.*)\n(.+)$/gm)) {
+          expect(len(label!)).toBeLessThanOrEqual(BUDGETS.verdict.label);
+          expect(len(text!)).toBeLessThanOrEqual(BUDGETS.verdict.text);
+        }
+        const pills = /^:::pills\n([\s\S]*?)^:::$/m.exec(s.text)?.[1] ?? '';
+        const pillItems = pills.split('\n').filter((l) => l.startsWith('- '));
+        expect(pillItems.length).toBeLessThanOrEqual(BUDGETS.pills.maxItems);
+        for (const item of pillItems)
+          expect(
+            len(item.replace(/^- (?:(?:ok|warn|danger|info|primary|neutral): )?/, '')),
+          ).toBeLessThanOrEqual(BUDGETS.pills.text);
         const takeaway = /^:::takeaway (.+)\n(.+)$/m.exec(s.text);
         if (takeaway) {
           expect(len(takeaway[1]!)).toBeLessThanOrEqual(BUDGETS.takeaway.label);

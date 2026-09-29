@@ -10,7 +10,7 @@ prompts that teach the format and the TypeScript pipeline that runs them.
 ```
 prompts/                     Korean prompt kit, pasted into a chat window as-is
   00-규칙.md                 system rules (MARCO source only, one fence, budgets, no invented URLs, TODO:)
-  01-컴포넌트-치트시트.md     GENERATED from BUDGETS + docs/spec/components.md (do not edit)
+  01-컴포넌트-치트시트.md     GENERATED from BUDGETS, DENSITY + docs/spec/components.md (do not edit)
   02-해설-문법.md             `## note` marker grammar (docs/spec/notes.md)
   03-문체-가이드.md           style rules from the week-3/week-5 decks, 10 before/after pairs
   10-개요.md                 task: outline (30–45 lines `번호 | 태그 | 제목 | 한 줄 의도 | 분`)
@@ -18,7 +18,8 @@ prompts/                     Korean prompt kit, pasted into a chat window as-is
   30-해설.md                 task: lecture script (`## note`) for one to four slides
   40-수정.md                 task: revise one slide, given a request and lint lines
   50-검토.md                 self-check mapped to lint codes (also pasteable after a reply)
-  examples/*.marco.md        few-shot slides transcribed from the V20 deck + one full note
+  examples/*.marco.md        few-shot slides from the V20 and v9.7 decks (chain+cards, table+callout,
+                             cover+divider, compare+verdict, timeline+pills) + one full note
 scripts/build-kit.ts         run by `build` after tsc
 src/                         pipeline (see API)
 test/                        Vitest, no network (FakeProvider)
@@ -38,9 +39,18 @@ slots are left alone, empty ones become `없음`).
 3. copies every prompt and example into `dist/kit/`,
 4. prints sizes and a token estimate.
 
-Current size: about 11,000 characters in total, about 8,200 without the examples (budget
+Current size: about 13,900 characters in total, about 10,000 without the examples (budget
 ~12,000). Token estimates use **characters / 2.5** for Korean-heavy text: a planning heuristic,
 not a tokenizer count; real counts vary by model and are often higher for Hangul.
+
+The cheat-sheet teaches, besides every block and budget: both item forms (`- key: value` lists
+and positional pipe rows, including the cards `kicker | title | body` and tiles
+`icon | label | value | tone` rows), `<path with spaces>` image paths, `###` as the only body
+heading, the cover/hero/divider fields (`kicker`, `tagline`, `meta`, `art`, `toc`, `dark`) and
+the slide-density estimate behind lint `budget.slide.dense`. That table is `DENSITY` in
+`@marco/schema` (`src/budgets.ts`); until the package index exports it, `cheatsheet.ts` keeps
+`DENSITY_MIRROR` and a test holds the two equal. Table cells show the per-column budget
+(`cell ≤40/30/20/16/12 (cols=2/3/4/5/6)`, from `BUDGETS.table.cellByCols`).
 
 The kit contains no task templates: the professor pastes it once per chat, then pastes a task
 prompt (10/20/30/40) per request. The same text is the API system prompt, so chat and API runs
@@ -131,9 +141,11 @@ for `--provider api`. `refs` for `runSlides` can be the front matter `refs:` blo
 
 `pnpm --filter @marco/ai test`: builders include every block and budget; the system message is
 identical across calls; the checked-in cheat-sheet equals `renderCheatsheet(BUDGETS)` and covers
-every BUDGETS key, every IR block type and every block of components.md; note markers in the
+every BUDGETS key, every IR block type and every block of components.md, the pipe-row forms, the
+cover fields and the density table (equal to the schema's `DENSITY`); note markers in the
 kit are known to `@marco/schema`; the self-check names every relevant `LINT_CODES` entry; the
-examples respect the budgets and their note parses with `parseNote`; extraction edge cases;
+examples respect the budgets (per-column table cells, compare, verdict, timeline, pills), include a
+cover with its fields, and their note parses with `parseNote`; extraction edge cases;
 batching (40 slides → 7 calls) with a `FakeProvider`; `buildKit` output.
 
 ## Notes

@@ -1,11 +1,12 @@
 /**
- * Lecture linter: budgets (docs/spec/components.md), references, ids, notes and time.
+ * Lecture linter: budgets (docs/spec/components.md), slide density, references, ids, notes,
+ * leftover `TODO:` markers and time.
  *
  * Runs on a normalized, validated lecture but tolerates missing arrays. Issues are ordered
  * by slide position (deck-level issues last); messages are Korean for the professor and
  * the AI repair loop, codes are stable identifiers (docs/spec/ir.md).
  */
-import { BUDGETS } from './budgets.js';
+import { BUDGETS, DENSITY, tableCellBudget } from './budgets.js';
 import { CUE_LABELS, TIME_MARKER, isKnownMarker } from './notes.js';
 import { slideIdFor } from './normalize.js';
 import { charCount, pointer, visibleText } from './text.js';
@@ -13,9 +14,15 @@ import type { Block, Lecture, LintIssue, Slide } from './types.js';
 
 type Level = LintIssue['level'];
 
-/** Lint codes and their levels. Budget codes are `budget.<block>.<field>` (all `warn`). */
+/**
+ * Lint codes and their levels. Budget codes are `budget.<block>.<field>` (all `warn`);
+ * `budget.slide.dense` is listed on its own because it is a height estimate, not a character
+ * count. `icon.unknown` is reported by the compiler, which knows the icon set; `lintLecture`
+ * never emits it, but tools share this table.
+ */
 export const LINT_CODES = Object.freeze({
   'budget.*': 'warn',
+  'budget.slide.dense': 'warn',
   'ref.missing': 'error',
   'ref.unused': 'info',
   'asset.missing': 'error',
@@ -24,6 +31,8 @@ export const LINT_CODES = Object.freeze({
   'slide.title.missing': 'error',
   'columns.nested': 'error',
   'columns.count': 'warn',
+  'table.ragged': 'warn',
+  'icon.unknown': 'warn',
   'quiz.ans.range': 'error',
   'note.marker.unknown': 'warn',
   'note.time.invalid': 'warn',
@@ -31,6 +40,7 @@ export const LINT_CODES = Object.freeze({
   'note.cue.long': 'warn',
   'note.cue.id.duplicate': 'warn',
   'term.unused': 'info',
+  'content.todo': 'info',
   'time.total': 'info',
 } as const satisfies Record<string, Level>);
 
@@ -150,16 +160,37 @@ function lintBlock(
         );
       }
       budget.count(rows, b.maxRows, 'budget.table.rows', 'table.rows', at('rows'), '행');
-      head.forEach((cell, c) =>
-        budget.text(cell, b.cell, 'budget.table.cell', `table.head[${c}]`, at('head', c)),
+      // One issue per table: the first ragged row, and how many more there are.
+      const ragged = rows.flatMap((row, r) =>
+        head.length && itemsOf(row).length !== head.length ? [r] : [],
+      );
+      const first = ragged[0];
+      if (first !== undefined) {
+        const more = ragged.length > 1 ? ` 외 ${ragged.length - 1}행` : '';
+        emit(
+          'warn',
+          'table.ragged',
+          at('rows', first),
+          `table.rows[${first}]: 칸 ${itemsOf(rows[first]).length}개 (머리글 ${head.length}개)${more}`,
+        );
+      }
+      const cell = tableCellBudget(widest);
+      head.forEach((text, c) =>
+        budget.text(
+          text,
+          cell,
+          'budget.table.cell',
+          `table.head[${c}](cols=${widest})`,
+          at('head', c),
+        ),
       );
       rows.forEach((row, r) =>
-        itemsOf(row).forEach((cell, c) =>
+        itemsOf(row).forEach((text, c) =>
           budget.text(
+            text,
             cell,
-            b.cell,
             'budget.table.cell',
-            `table.rows[${r}][${c}]`,
+            `table.rows[${r}][${c}](cols=${widest})`,
             at('rows', r, c),
           ),
         ),
@@ -433,6 +464,8 @@ const NON_TEXT_KEYS: ReadonlySet<string> = new Set([
   'raw',
   'wait',
   'verdict',
+  'art',
+  'dark',
 ]);
 
 function collectText(value: unknown, out: string[], key?: string): void {
@@ -445,6 +478,153 @@ function collectText(value: unknown, out: string[], key?: string): void {
 }
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// ---------------------------------------------------------------------------
+// Slide density (budget.slide.dense)
+// ---------------------------------------------------------------------------
+
+/**
+ * Estimated rendered height of one block in canvas px, from `DENSITY.block`
+ * (docs/spec/ir.md §5.1). A planning heuristic, not a layout engine.
+ */
+export function estimateBlockHeight(block: Block): number {
+  const d = DENSITY.block;
+  const count = (list: unknown): number => (Array.isArray(list) ? list.length : 0);
+  switch (block.type) {
+    case 'chain':
+      return d.chain;
+    case 'cards': {
+      const cols = typeof block.cols === 'number' && block.cols > 0 ? block.cols : 2;
+      const row = byCols(d.cardsRow, cols) ?? d.cardsRow[2];
+      return Math.ceil(count(block.items) / cols) * row;
+    }
+    case 'takeaway':
+      return d.takeaway;
+    case 'table':
+      return d.tableHead + count(block.rows) * d.tableRow;
+    case 'compare':
+      return d.compareHead + count(block.rows) * d.compareRow;
+    case 'callout':
+      return d.callout;
+    case 'steps':
+      return count(block.items) * d.stepsItem;
+    case 'bullets':
+      return count(block.items) * d.bulletsItem;
+    case 'paragraph': {
+      const chars = typeof block.text === 'string' ? charCount(visibleText(block.text)) : 0;
+      return Math.max(1, Math.ceil(chars / d.paragraphChars)) * d.paragraphLine;
+    }
+    case 'image':
+      return typeof block.height === 'number' && block.height > 0 ? block.height : d.image;
+    case 'video':
+      return d.video;
+    case 'quote':
+      return d.quote;
+    case 'code': {
+      const lines =
+        typeof block.code === 'string' ? block.code.replace(/\n+$/, '').split('\n') : [];
+      return lines.length * d.codeLine + d.code;
+    }
+    case 'pills':
+      return d.pills;
+    case 'verdict':
+      return d.verdict;
+    case 'timeline':
+      return count(block.items) * d.timelineItem;
+    case 'tiles':
+      return d.tiles;
+    case 'terms':
+      return Math.ceil(count(block.items) / d.termsPerRow) * d.termsRow;
+    case 'columns':
+      return Math.max(0, ...itemsOf(block.columns).map((column) => stackHeight(itemsOf(column))));
+    case 'widget':
+      return d.widget;
+    case 'html':
+      return d.html;
+    default:
+      return 0;
+  }
+}
+
+/** Estimated height of blocks stacked in a column: their heights plus `DENSITY.gap` between. */
+export function stackHeight(blocks: readonly Block[]): number {
+  if (!blocks.length) return 0;
+  const sum = blocks.reduce((total, block) => total + estimateBlockHeight(block), 0);
+  return sum + DENSITY.gap * (blocks.length - 1);
+}
+
+const hasText = (value: unknown): boolean => typeof value === 'string' && value.trim() !== '';
+
+/** Body height available on a slide: `DENSITY.body` minus the subtitle and question strip. */
+export function availableBodyHeight(slide: Pick<Slide, 'subtitle' | 'question'>): number {
+  return (
+    DENSITY.body -
+    (hasText(slide.subtitle) ? DENSITY.subtitle : 0) -
+    (hasText(slide.question) ? DENSITY.question : 0)
+  );
+}
+
+function lintDensity(slide: Slide, base: string, emit: Emit): void {
+  if (!(DENSITY.slideTypes as readonly string[]).includes(slide.type)) return;
+  const blocks = itemsOf(slide.blocks);
+  const estimate = stackHeight(blocks);
+  const available = availableBodyHeight(slide);
+  if (estimate <= available * (1 + DENSITY.tolerance)) return;
+  let largest = 0;
+  blocks.forEach((block, i) => {
+    if (estimateBlockHeight(block) > estimateBlockHeight(blocks[largest] ?? block)) largest = i;
+  });
+  const top = blocks[largest];
+  const over = Math.round((estimate / available - 1) * 100);
+  const hint = top
+    ? ` · 가장 큰 블록 #${largest + 1} ${top.type} ${estimateBlockHeight(top)}px`
+    : '';
+  emit(
+    'warn',
+    'budget.slide.dense',
+    `${base}/blocks`,
+    `slide.dense: 본문 높이 추정 ${estimate}px (허용 ${available}px, ${over}% 초과${hint})`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Leftover TODO markers (content.todo)
+// ---------------------------------------------------------------------------
+
+const TODO_MARKER = /(?<![A-Za-z0-9_])TODO[ \t]*[:：]/;
+
+interface TodoHit {
+  path: string;
+  text: string;
+}
+
+/** Collect text fields (NON_TEXT_KEYS skipped, so `note.raw` is not counted twice) with TODO. */
+function findTodos(value: unknown, path: string, out: TodoHit[], key?: string): void {
+  if (key !== undefined && NON_TEXT_KEYS.has(key)) return;
+  if (typeof value === 'string') {
+    if (TODO_MARKER.test(value)) out.push({ path, text: value });
+  } else if (Array.isArray(value)) {
+    value.forEach((item, i) => findTodos(item, path + pointer(i), out, key));
+  } else if (typeof value === 'object' && value !== null) {
+    for (const [k, v] of Object.entries(value)) findTodos(v, path + pointer(k), out, k);
+  }
+}
+
+function todoMessage(text: string): string {
+  const matches = [...text.matchAll(new RegExp(TODO_MARKER.source, 'g'))];
+  const start = matches[0]?.index ?? 0;
+  const line = text.slice(start).split('\n')[0]?.trim() ?? '';
+  const chars = Array.from(line);
+  const snippet = chars.length > 60 ? `${chars.slice(0, 60).join('')}…` : line;
+  const more = matches.length > 1 ? ` 외 ${matches.length - 1}개` : '';
+  return `확인할 TODO가 남아 있습니다: "${snippet}"${more}`;
+}
+
+function lintTodos(value: unknown, path: string, emit: Emit): void {
+  const hits: TodoHit[] = [];
+  findTodos(value, path, hits);
+  for (const hit of hits) emit('info', 'content.todo', hit.path, todoMessage(hit.text));
+}
 
 const round = (value: number): number => Math.round(value * 100) / 100;
 
@@ -524,9 +704,17 @@ export function lintLecture(lecture: Lecture): LintIssue[] {
         emit('error', 'ref.missing', `${base}/only/${i}`, `refs에 없는 참고 출처: ${id}`);
     });
 
+    // cover / hero / divider artwork is an asset id, like an image block's `asset`.
+    const art: unknown = (slide as { art?: unknown }).art;
+    if (typeof art === 'string' && !Object.hasOwn(ctx.assets, art)) {
+      emit('error', 'asset.missing', `${base}/art`, `assets에 없는 이미지: ${art} (art)`);
+    }
+
     itemsOf(slide.blocks).forEach((block, i) =>
       lintBlock(block, `${base}/blocks/${i}`, emit, budget, ctx, false),
     );
+    lintDensity(slide, base, emit);
+    lintTodos(slide, base, emit);
 
     const note = slide.note;
     if (!note) return;
@@ -631,6 +819,10 @@ export function lintLecture(lecture: Lecture): LintIssue[] {
       if (!used)
         deck('info', 'term.unused', pointer('terms', term), `본문에 쓰이지 않은 용어: ${term}`);
     }
+  }
+
+  for (const key of ['meta', 'refs', 'videos', 'assets', 'terms', 'quiz'] as const) {
+    lintTodos(lecture[key], pointer(key), deck);
   }
 
   const duration = lecture.meta?.duration;

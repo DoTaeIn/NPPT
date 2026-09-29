@@ -118,7 +118,7 @@ function exampleCaption(file: string): string {
 
 /** The examples section of the kit. */
 export function renderExamples(kit: PromptKit): string {
-  const parts = ['# 예시 (3주차 V20 덱에서 옮긴 슬라이드와 5주차식 해설)'];
+  const parts = ['# 예시 (3주차 V20·5주차 v9.7 덱에서 옮긴 슬라이드와 5주차식 해설)'];
   kit.examples.forEach((ex, i) => {
     parts.push(
       `예시 ${i + 1} · ${exampleCaption(ex.file)}\n\n\`\`\`\`marco\n${renderExample(ex)}\n\`\`\`\``,

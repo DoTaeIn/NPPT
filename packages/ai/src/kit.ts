@@ -3,7 +3,7 @@
  * professor pastes once per chat) plus copies of every prompt file, and keeps the generated
  * cheat-sheet in `prompts/` in sync with BUDGETS.
  */
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { BUDGETS } from '@marco/schema';
 import { renderCheatsheet } from './cheatsheet.js';
@@ -67,6 +67,8 @@ export async function buildKit(options: BuildKitOptions = {}): Promise<KitReport
     options.syncCheatsheet === false ? false : await syncCheatsheetFile(promptDir);
   const kit = loadPromptKit(promptDir, true);
 
+  // Start the examples folder empty so a renamed or removed example does not linger.
+  await rm(path.join(outDir, 'examples'), { recursive: true, force: true });
   await mkdir(path.join(outDir, 'examples'), { recursive: true });
   const files: KitFileReport[] = [];
   for (const [name, file] of Object.entries(PROMPT_FILES) as [PromptName, string][]) {

@@ -27,8 +27,10 @@ source ─parse─▶ partial IR ─normalizeLecture─▶ IR ─validateLecture
 
 A `Slide` has `id`, `type` (`cover`\|`divider`\|`quote`\|`hero`\|`content`\|`references`\|`raw`),
 `title` and `blocks` (required), plus `tag`, `group`, `subtitle`, `question`, `alert`, `refs`,
-`layout`, `note`, and the type-specific `html` (raw), `no` (divider), `cite` (quote) and
-`only` (references). The 21 block types and their fields are in `components.md`; `BLOCK_TYPES`
+`layout`, `note`, `toc` (TOC/search label when it differs from `title`), the cover/hero/divider
+fields `kicker`, `tagline`, `meta` (list of short lines), `art` (asset id, checked like an image
+`asset`) and `dark` (components.md §1), and the type-specific `html` (raw), `no` (divider),
+`cite` (quote) and `only` (references). The 21 block types and their fields are in `components.md`; `BLOCK_TYPES`
 lists them in catalog order.
 
 A `SlideNote` is `{time?, cues, raw?}`. `time` is `{minutes, from?, to?, remark?}`. A `Cue`
@@ -51,7 +53,8 @@ it is an alias (`검증 보충`, `학생 질문`, `강사 답변`, `홉`) or unk
 
 Fields added to the v0.1 contract by the schema package (all optional): `meta.duration`,
 `Cue.marker`, `NoteTime.remark`, `Slide.no`, `Slide.cite`, `Slide.only`, and the budgets
-`image.caption`, `video.label`/`caption`, `code.maxLines`/`maxCols`.
+`image.caption`, `video.label`/`caption`, `code.maxLines`/`maxCols`, `table.cellByCols`
+(per-cell budget by column count; `table.cell` stays a number, the one-column fallback).
 
 ## 2. JSON Schema
 
@@ -128,21 +131,29 @@ Issues are ordered by slide position; deck-level issues (no `slide`) come last. 
 Korean. Characters are counted as `Array.from(text).length` on the visible text (inline
 Markdown markers and simple inline tags removed), so a Korean syllable is 1.
 
+`LINT_CODES` also lists `icon.unknown`, which **the compiler** reports (it owns the Lucide icon
+set; `lintLecture` has no icon list and never emits it). Tools that merge compiler warnings
+with lint issues use the same table for levels.
+
 | Code                                          | Level       | Fires when                                                                                                                      |
 | --------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `budget.<block>.<field>`                      | warn        | text longer than `BUDGETS[block][field]`; message `cards[1].body: 104자 (허용 90자)`                                            |
 | `budget.<block>.items`                        | warn        | too many items (chain, cards, steps, bullets, pills, timeline, tiles, terms, compare rows); cards/tiles limits depend on `cols` |
 | `budget.table.rows` / `budget.table.cols`     | warn        | more than 8 rows / 6 columns                                                                                                    |
+| `budget.table.cell`                           | warn        | a cell over `tableCellBudget(cols)`: `cellByCols` 2→40, 3→30, 4→20, 5→16, 6→12 (1 column → `cell` 40; over 6 → 12); cols = widest row or header; message `table.rows[0][1](cols=3): 35자 (허용 30자)` |
+| `budget.slide.dense`                          | warn        | estimated body height over the available height by more than 10% (§5.1); path `/slides/N/blocks`; content and hero slides only  |
 | `budget.code.lines` / `budget.code.cols`      | warn        | more than 12 lines / a line over 80 characters                                                                                  |
 | `budget.slide.title\|subtitle\|tag\|question` | warn        | slide field over budget (a quote slide's title uses the quote budget)                                                           |
 | `ref.missing`                                 | error       | `slide.refs`, `slide.only` or `quiz[].refs` names an id not in `refs`                                                           |
 | `ref.unused`                                  | info        | a ref no slide or quiz item cites                                                                                               |
-| `asset.missing`                               | error       | image block's `asset` not in `assets`                                                                                           |
+| `asset.missing`                               | error       | image block's `asset`, or a cover/hero/divider `art`, not in `assets`                                                           |
 | `video.missing`                               | error       | video block's `video` not in `videos`                                                                                           |
 | `slide.id.duplicate`                          | error       | a slide id repeats (reported on the later slide)                                                                                |
 | `slide.title.missing`                         | error       | empty or blank title                                                                                                            |
 | `columns.nested`                              | error       | a `columns` block inside a `columns` block                                                                                      |
 | `columns.count`                               | warn        | `cols` differs from the number of columns                                                                                       |
+| `table.ragged`                                | warn        | a body row has a different cell count than the header; one issue per table at the first such row (`… 외 2행`)                  |
+| `icon.unknown`                                | warn        | **compiler only**: a cards/tiles `icon` is not a known Lucide name; rendered without the icon                                   |
 | `quiz.ans.range`                              | error       | `ans` is not a valid index into `opts`                                                                                          |
 | `note.marker.unknown`                         | warn        | a cue kept an unknown marker (`[설명]` → MEMO)                                                                                  |
 | `note.time.invalid`                           | warn        | `[시간]` text could not be read, or a second `[시간]`                                                                           |
@@ -150,20 +161,73 @@ Markdown markers and simple inline tags removed), so a Korean syllable is 1.
 | `note.cue.long`                               | warn        | a cue over 600 characters                                                                                                       |
 | `note.cue.id.duplicate`                       | warn        | a cue id repeats anywhere in the deck                                                                                           |
 | `term.unused`                                 | info        | a `terms` key never appears in slide, note or quiz text                                                                         |
+| `content.todo`                                | info        | a `TODO:` marker (also `TODO :`, full-width `TODO：`; case-sensitive, not inside a word) in any visible text field or note cue, one issue per field; deck-level for `meta`, `refs`, `videos`, `assets`, `terms`, `quiz` |
 | `time.total`                                  | info / warn | sum of `[시간]` minutes; **warn** when it exceeds `meta.duration`                                                               |
 
 `LINT_CODES` exports this table (level per code) for tools.
+
+### 5.1 Slide density heuristic (`budget.slide.dense`)
+
+A planning estimate of how tall a slide's body renders, so an overfull slide is caught before
+anyone opens the deck. It is not a layout engine: the numbers are the design system's
+measurements of the content scaffold at 1920×1080, and live in `DENSITY` in
+`packages/schema/src/budgets.ts` (the design system tunes them there; this table must follow).
+
+Available body height (content and hero slides; cover, divider, quote, references and raw
+slides have their own layouts and are skipped):
+
+| Slide head | Available |
+| --- | --- |
+| eyebrow + title | 760px (`DENSITY.body`) |
+| + `subtitle` | − 60px (700) |
+| + `question` strip | − 71px (689) |
+| + both | 629px |
+
+Estimated block heights (px):
+
+| Block | Height |
+| --- | --- |
+| `chain` | 200 |
+| `cards` | rows × 200 for `cols=2`, rows × 180 for `cols=3/4` (rows = ⌈items / cols⌉) |
+| `takeaway` | 90 |
+| `table` | 56 (header) + rows × 60 |
+| `compare` | 60 (head) + rows × 64 |
+| `callout` | 120 |
+| `steps` | items × 64 |
+| `bullets` | items × 44 |
+| `paragraph` | 44 per started 90 visible characters (at least 44; lead paragraphs alike) |
+| `image` | its `height`, else 420 |
+| `video` | 96 |
+| `quote` | 140 |
+| `code` | lines × 36 + 60 |
+| `pills` | 56 |
+| `verdict` | 72 |
+| `timeline` | items × 72 |
+| `tiles` | 160 (one row) |
+| `terms` | 90 per row of three terms (⌈items / 3⌉ × 90) |
+| `columns` | the tallest column (its blocks plus gaps) |
+| `widget` | 400 |
+| `html` | 200 |
+
+Blocks stack with a 28px gap (`--gap`), so the estimate is the sum of block heights plus
+28 × (blocks − 1). The linter warns when `estimate > available × 1.10`, with the message
+`slide.dense: 본문 높이 추정 1036px (허용 760px, 36% 초과 · 가장 큰 블록 #2 table 296px)` (block
+numbers are 1-based, as in `-b<n>` element ids). `estimateBlockHeight`, `stackHeight` and
+`availableBodyHeight` in `src/lint.ts` implement the table.
 
 ## 6. How tools consume the results
 
 - **Compiler / CLI.** Normalize, then validate. Validation errors stop the build; print them
   as `path: message`, mapped back to `file:line` where the parser kept positions. Then lint:
   lint `error`s should fail `marco lint` (and `marco build --strict`), `warn`s print, `info`s
-  print only with `--verbose` (`time.total` is worth always showing). Group output by `slide`.
+  print only with `--verbose` (`time.total` and `content.todo` are worth always showing: a
+  leftover `TODO:` is the AI kit's "please check this"). Group output by `slide`. Report the
+  compiler's `icon.unknown` with the lint `warn`s, at the level `LINT_CODES` gives it.
 - **AI repair loop.** Send the model only the slides that have issues: for each `slide` id,
   that slide's source plus its `error` and `warn` issues as `code · path · message` lines
-  (budget overflows are warnings but are always worth repairing; `info` is never sent). Deck
-  level issues (`ref.unused`, `term.unused`, `time.total`) go to the author, not the model.
+  (budget overflows, `budget.slide.dense` and `table.ragged` are warnings but are always worth
+  repairing; `info` is never sent, so `content.todo` stays with the author, who has the facts).
+  Deck level issues (`ref.unused`, `term.unused`, `time.total`) go to the author, not the model.
   Re-run normalize → validate → lint on the patched slide and stop when no errors or budget
   warnings remain, or after a fixed number of rounds.
 - **Prompt kit.** Ship `lecture.schema.json` verbatim for JSON output; for MARCO source,

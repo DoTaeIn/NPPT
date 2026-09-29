@@ -1,5 +1,5 @@
 export * from './types.js';
-export { BUDGETS } from './budgets.js';
+export { BUDGETS, DENSITY, tableCellBudget } from './budgets.js';
 export { lectureSchema, LECTURE_SCHEMA_ID, BLOCK_TYPES, blockDefName } from './schema.js';
 export type { JsonSchema } from './schema.js';
 export { validateLecture, formatValidationErrors } from './validate.js';
@@ -26,5 +26,5 @@ export {
   CUE_KINDS,
   TIME_MARKER,
 } from './notes.js';
-export { lintLecture, LINT_CODES } from './lint.js';
+export { lintLecture, LINT_CODES, estimateBlockHeight, stackHeight, availableBodyHeight } from './lint.js';
 export { charCount, visibleText } from './text.js';

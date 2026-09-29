@@ -186,6 +186,13 @@ describe('runRevise and runRepair', () => {
       message: 'title: 40자 (허용 34자)',
     },
     { level: 'info', code: 'time.total', path: '/slides', message: '노트 [시간] 합계 7.5분' },
+    {
+      level: 'info',
+      code: 'content.todo',
+      path: '/slides/1/blocks/0/text',
+      message: '확인할 TODO가 남아 있습니다: "TODO: 출처 필요"',
+      slide: 'detect',
+    },
   ];
 
   it('revises one slide and leaves the rest of the deck untouched', async () => {
@@ -206,6 +213,7 @@ describe('runRevise and runRepair', () => {
     const user = userText(fake.calls[0]!.messages);
     expect(user).toContain('budget.takeaway.text');
     expect(user).not.toContain('budget.slide.title'); // issues of other slides are filtered out
+    expect(user).not.toContain('content.todo'); // info stays with the author
   });
 
   it('refuses a reply without a slide', async () => {

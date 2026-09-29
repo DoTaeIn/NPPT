@@ -4,10 +4,90 @@
  * and the design system cannot drift apart; the syntax examples below mirror components.md §2
  * and use sentences from the week-3 V20 deck so the model also sees the professor's voice.
  */
+import * as schema from '@marco/schema';
 import { BUDGETS } from '@marco/schema';
 import type { BlockType } from '@marco/schema';
 
 export type Budgets = typeof BUDGETS;
+
+/** The part of `DENSITY` (@marco/schema src/budgets.ts) the cheat-sheet teaches. */
+export interface Density {
+  body: number;
+  subtitle: number;
+  question: number;
+  gap: number;
+  tolerance: number;
+  block: {
+    chain: number;
+    cardsRow: Readonly<Record<number, number>>;
+    takeaway: number;
+    tableHead: number;
+    tableRow: number;
+    compareHead: number;
+    compareRow: number;
+    callout: number;
+    stepsItem: number;
+    bulletsItem: number;
+    paragraphLine: number;
+    paragraphChars: number;
+    image: number;
+    video: number;
+    quote: number;
+    codeLine: number;
+    code: number;
+    pills: number;
+    verdict: number;
+    timelineItem: number;
+    tiles: number;
+    termsRow: number;
+    termsPerRow: number;
+    widget: number;
+    html: number;
+  };
+}
+
+/**
+ * Mirror of `DENSITY` in @marco/schema for as long as the package index does not export it
+ * (a test keeps the two equal). When `@marco/schema` exports `DENSITY`, that table wins.
+ */
+export const DENSITY_MIRROR: Density = {
+  body: 760,
+  subtitle: 60,
+  question: 71,
+  gap: 28,
+  tolerance: 0.1,
+  block: {
+    chain: 200,
+    cardsRow: { 2: 200, 3: 180, 4: 180 },
+    takeaway: 90,
+    tableHead: 56,
+    tableRow: 60,
+    compareHead: 60,
+    compareRow: 64,
+    callout: 120,
+    stepsItem: 64,
+    bulletsItem: 44,
+    paragraphLine: 44,
+    paragraphChars: 90,
+    image: 420,
+    video: 96,
+    quote: 140,
+    codeLine: 36,
+    code: 60,
+    pills: 56,
+    verdict: 72,
+    timelineItem: 72,
+    tiles: 160,
+    termsRow: 90,
+    termsPerRow: 3,
+    widget: 400,
+    html: 200,
+  },
+};
+
+/** The slide-density table the linter uses (`budget.slide.dense`). */
+export const DENSITY: Density =
+  ((schema as Record<string, unknown>)['DENSITY'] as Density | undefined) ?? DENSITY_MIRROR;
 
 /**
  * Limits documented in components.md §2 that BUDGETS does not carry. Keys that BUDGETS has
@@ -75,9 +155,15 @@ const BLOCK_DOCS: BlockDoc[] = [
       '  icon: door-open',
       '  tone: warn',
       ':::',
+      '',
+      ':::cards cols=3',
+      '인증 | 누구인가 | 카드·PIN·생체로 자격을 확인한다',
+      '인가 | 들어가도 되는가 | 구역·시간·역할 조건을 본다',
+      '기록 | 무엇이 남는가 | 허용과 거부를 모두 남긴다',
+      ':::',
     ],
     notes:
-      'kicker·body·icon·tone은 생략 가능. tone: neutral·primary·ok·warn·danger·info. icon은 Lucide 이름(shield, lock, key-round, door-open, id-card, fingerprint, server, network, users, clock).',
+      '줄 형식 `kicker | title | body`, `title | body`, `title`. icon·tone은 `- key: value` 형식에서만 쓴다. kicker·body·icon·tone은 생략 가능. tone: neutral·primary·ok·warn·danger·info. icon은 Lucide 이름(shield, lock, key-round, door-open, id-card, fingerprint, server, network, users, clock).',
   },
   {
     key: 'takeaway',
@@ -93,7 +179,8 @@ const BLOCK_DOCS: BlockDoc[] = [
       '|---|---|---|',
       '| 1층 로비 | 직원·방문자 | 정상 인증과 동반 통과를 구분한다. |',
     ],
-    notes: '캡션은 `:::table caption="…"`로 감싼다. 가운데 정렬은 `|:-:|`.',
+    notes:
+      '칸 예산은 열 수로 정한다. 모든 행의 칸 수를 머리글과 같게 쓴다. 캡션은 `:::table caption="…"`로 감싼다. 가운데 정렬은 `|:-:|`.',
   },
   {
     key: 'compare',
@@ -136,7 +223,7 @@ const BLOCK_DOCS: BlockDoc[] = [
     title: '이미지',
     syntax: ['![외곽·로비·핵심구역 개념도](assets/campus.png "외곽·로비·핵심구역 개념도")'],
     notes:
-      '또는 `:::image asset=campus caption="…" zoom` + `:::`. front matter assets에 있는 것만 쓴다. 없으면 `TODO: 이미지 — 무엇`.',
+      '경로에 공백이 있으면 `<…>`로 감싼다: `![alt](<assets/출입 통제.png> "caption")`. 또는 `:::image asset=campus caption="…" zoom height=420` + `:::`. front matter assets에 있는 것만 쓴다. 없으면 `TODO: 이미지 — 무엇`.',
   },
   {
     key: 'video',
@@ -176,8 +263,15 @@ const BLOCK_DOCS: BlockDoc[] = [
   {
     key: 'tiles',
     title: '타일',
-    syntax: [':::tiles cols=3', '- icon: id-card', '  label: 인증', '  value: 누구인가', ':::'],
-    notes: '항목 수 = cols.',
+    syntax: [
+      ':::tiles cols=3',
+      'id-card | 인증 | 누구인가',
+      'key-round | 인가 | 무엇을 허용',
+      'scroll-text | 기록 | 남기고 검토',
+      ':::',
+    ],
+    notes:
+      '줄 형식 `icon | label | value | tone`, `icon | label | value`, `label | value`, `label`. `- icon: …` `label: …` 형식도 된다. 항목 수 = cols.',
   },
   {
     key: 'terms',
@@ -193,7 +287,7 @@ const BLOCK_DOCS: BlockDoc[] = [
       '',
       '일반 문단은 그냥 쓴다. **굵게**, *기울임*, `코드`를 쓸 수 있다.',
     ],
-    notes: '`###` 한 줄은 리드 문장(lead).',
+    notes: '`###` 한 줄은 리드 문장(lead). 본문에 `#`·`##` 제목은 쓰지 않는다.',
   },
   {
     key: 'widget',
@@ -220,12 +314,22 @@ const COUNT_LABELS: Record<string, string> = {
   cueText: '큐 하나',
 };
 
-/** "label ≤10 · sub ≤22"; per-column maps render as "body ≤90/60/40 (cols=2/3/4)". */
+/** Display label of a budget field: count labels, and `cellByCols` → `cell`. */
+export function budgetLabel(key: string, field: string): string {
+  return COUNT_LABELS[`${key}.${field}`] ?? COUNT_LABELS[field] ?? field.replace(/ByCols$/, '');
+}
+
+/**
+ * "label ≤10 · sub ≤22"; per-column maps render as "body ≤90/60/40 (cols=2/3/4)". A scalar
+ * field that also has a `<field>ByCols` map (table `cell`) is its fallback and is not shown.
+ */
 export function renderBudget(spec: unknown, key = ''): string {
   if (!spec || typeof spec !== 'object') return '';
+  const fields = spec as Record<string, unknown>;
   const parts: string[] = [];
-  for (const [field, value] of Object.entries(spec as Record<string, unknown>)) {
-    const label = COUNT_LABELS[`${key}.${field}`] ?? COUNT_LABELS[field] ?? field;
+  for (const [field, value] of Object.entries(fields)) {
+    if (typeof value === 'number' && `${field}ByCols` in fields) continue;
+    const label = budgetLabel(key, field);
     if (typeof value === 'number') parts.push(`${label} ≤${value}`);
     else if (typeof value === 'string') parts.push(`${label} ${value}`);
     else if (value && typeof value === 'object') {
@@ -253,13 +357,27 @@ function slideTypesDoc(b: Record<string, unknown>): string[] {
   const quote = (b['quote'] ?? {}) as { text?: number; cite?: number };
   return [
     '- `# slide id=영문-id` 본문(기본): tag, title, question, refs, time, `layout: wide`',
-    '- `# slide cover` 표지: title, subtitle (과목·주차는 front matter에서 온다)',
+    '- `# slide cover` 표지: title(보이는 제목, 문장도 된다), kicker(위 작은 줄, 생략하면 `과목 · N주차`), tagline(영문 대문자 한 줄), subtitle, `meta: [소속, 학기]`(아래 작은 줄들, 생략하면 날짜·발표자). 본문에는 `:::pills` 하나 정도',
+    '- `# slide hero` 질문을 앞세운 도입: tag, title, question, 필요하면 kicker·tagline·meta. `# slide hero alert`는 경고형',
     '- `# slide divider` 부 구분: `no: 01`, title(부 이름), subtitle(한 줄 소개)',
-    '- `# slide hero` 질문을 앞세운 도입: tag, title, question. `# slide hero alert`는 경고형',
+    '- cover·hero·divider: `art: 에셋id`(오른쪽 그림, front matter assets에 있는 id만), 머리 줄 끝 `dark`(어두운 변형: `# slide cover dark`)',
     `- \`# slide quote\` 마무리 인용: title(인용문 ≤${quote.text ?? '?'}), cite(≤${quote.cite ?? '?'})`,
     '- `# slide references` 참고 자료: title, `only: [S1, S2]`(생략하면 전부)',
-    '- 모든 유형: `group: 표지 · 도입`(목차 묶음)',
+    '- 모든 유형: `group: 표지 · 도입`(목차 묶음), `toc: 짧은 이름`(제목이 문장이라 목차에는 다른 이름을 쓸 때)',
   ];
+}
+
+/** One paragraph teaching the slide-density estimate (lint `budget.slide.dense`). */
+export function densityDoc(d: Density = DENSITY): string {
+  const k = d.block;
+  const both = d.body - d.subtitle - d.question;
+  const pct = Math.round((1 + d.tolerance) * 100);
+  const cards = `${k.cardsRow[2] ?? '?'}(cols=2)/${k.cardsRow[3] ?? '?'}(cols=3·4)`;
+  return [
+    `본문 높이(px): 제목 아래 ${d.body}, subtitle이 있으면 −${d.subtitle}, question이 있으면 −${d.question}(둘 다면 ${both}).`,
+    `블록 어림: chain ${k.chain} · cards 한 줄 ${cards} · takeaway ${k.takeaway} · table ${k.tableHead}+행×${k.tableRow} · compare ${k.compareHead}+행×${k.compareRow} · callout ${k.callout} · steps 항목×${k.stepsItem} · bullets 항목×${k.bulletsItem} · 문단 ${k.paragraphChars}자마다 ${k.paragraphLine} · image ${k.image}(또는 height) · video ${k.video} · quote ${k.quote} · code 줄×${k.codeLine}+${k.code} · pills ${k.pills} · verdict ${k.verdict} · timeline 항목×${k.timelineItem} · tiles ${k.tiles} · terms ${k.termsPerRow}개마다 ${k.termsRow} · columns 가장 높은 단 · widget ${k.widget} · 블록 사이 ${d.gap}.`,
+    `합이 본문 높이의 ${pct}%를 넘으면 블록을 빼거나 슬라이드를 나눈다.`,
+  ].join(' ');
 }
 
 /** Render the component cheat-sheet (Korean Markdown) for the given budgets. */
@@ -290,11 +408,15 @@ export function renderCheatsheet(budgets: Budgets = BUDGETS): string {
     '',
     `예산: ${renderBudget(b['slide'], 'slide')}`,
     '',
-    '필드는 머리 바로 아래 빈 줄 전까지 쓰고, 빈 줄 하나 뒤에 본문 블록을 쌓는다. 블록은 위에서 아래로 놓인다.',
+    '필드는 머리 바로 아래 빈 줄 전까지 쓰고, 빈 줄 하나 뒤에 본문 블록을 쌓는다. 블록은 위에서 아래로 놓인다. 본문 안의 소제목은 `###`만 쓴다(`#`·`##`는 `# slide`·`## note` 전용).',
     '',
     ...slideTypesDoc(b),
     '',
+    densityDoc(),
+    '',
     '## 블록',
+    '',
+    '`:::` 블록의 항목은 `- key: value` 목록이나, 한 줄에 한 항목인 `a | b | c` 줄로 쓴다(칸 순서는 블록마다 아래와 같다). 칸 안의 `|`는 `\\|`로 쓴다.',
   ];
   const documented = new Set<string>();
   for (const doc of BLOCK_DOCS) {
