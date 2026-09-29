@@ -269,8 +269,9 @@ describe.skipIf(!online)('npm package (pack → install → run)', () => {
 
   /**
    * Start an installed bin as an MCP server over stdio with the MCP SDK's client (the SDK comes
-   * from packages/mcp's dependencies), list its tools and read every resource: the spec, schema
-   * and prompt kit must come from the packaged assets. Returns the tool names.
+   * from packages/mcp's dependencies), list its tools, read every resource (the spec, schema and
+   * prompt kit must come from the packaged assets) and lint the week06 deck through marco_lint.
+   * Returns the tool names.
    */
   async function mcpSession(bin: string, args: string[]): Promise<string[]> {
     const { Client } =
@@ -300,6 +301,13 @@ describe.skipIf(!online)('npm package (pack → install → run)', () => {
             uri,
           ).toBe(true);
         }
+      }
+      if (tools.some((t) => t.name === 'marco_lint')) {
+        const lint = await client.callTool({
+          name: 'marco_lint',
+          arguments: { source_path: 'week06/lecture.marco.md' },
+        });
+        expect(lint.isError, JSON.stringify(lint.content)).toBeFalsy();
       }
       return tools.map((t) => t.name);
     } finally {

@@ -1,6 +1,6 @@
 {
   "name": "marco-engine",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "description": "MARCO Engine for lecture decks: compile compact AI-written lecture sources into single-file 1920x1080 HTML decks. CLI, runtime, design system, importer, prompt kit and MCP server in one installable package.",
   "license": "SEE LICENSE IN ../../LICENSE",
