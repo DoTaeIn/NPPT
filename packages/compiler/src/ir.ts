@@ -1,4 +1,6 @@
 /** Lecture IR types and enumerations used by the compiler (re-exported from `@marco/schema`). */
+import type { Slide } from '@marco/schema';
+
 export type {
   Asset,
   Block,
@@ -40,6 +42,12 @@ export type {
   VideoBlock,
   WidgetBlock,
 } from '@marco/schema';
+
+/** The cover / hero / divider fields of format.md §4 and components.md §1 (plus `toc`). */
+export type SlideTitleFields = Pick<Slide, 'kicker' | 'tagline' | 'meta' | 'art' | 'toc' | 'dark'>;
+
+/** Slide types that take the title-slide fields (`kicker`, `tagline`, `meta`, `art`, `dark`). */
+export const TITLE_SLIDE_TYPES = ['cover', 'hero', 'divider'] as const;
 
 export const TONES = ['neutral', 'primary', 'ok', 'warn', 'danger', 'info'] as const;
 export const THEMES = ['v20-violet', 'cau-navy'] as const;

@@ -7,6 +7,7 @@
  */
 import { serializeNote } from '@marco/schema';
 import type { Block, Lecture, Slide } from '@marco/schema';
+import type { ImportedSlide } from './types.js';
 import { toYaml, toYamlList, yamlFlowList, yamlString, type YamlValue } from './yaml.js';
 
 export interface SerializeOptions {
@@ -268,13 +269,20 @@ export function serializeSlide(
   index: number,
   lecture: Pick<Lecture, 'assets'>,
 ): string {
+  const x = slide as ImportedSlide;
   const head = ['# slide'];
   if (slide.type !== 'content') head.push(slide.type);
   if (slide.alert) head.push('alert');
+  if (x.dark) head.push('dark');
   if (slide.id !== defaultId(index)) head.push(`id=${slide.id}`);
 
   const fields: string[] = [`title: ${yamlString(slide.title)}`];
+  if (x.toc) fields.push(`toc: ${yamlString(x.toc)}`);
   if (slide.subtitle) fields.push(`subtitle: ${yamlString(slide.subtitle)}`);
+  if (x.kicker) fields.push(`kicker: ${yamlString(x.kicker)}`);
+  if (x.tagline) fields.push(`tagline: ${yamlString(x.tagline)}`);
+  if (x.meta) fields.push(`meta: ${yamlFlowList(x.meta)}`);
+  if (x.art) fields.push(`art: ${yamlString(x.art)}`);
   if (slide.tag) fields.push(`tag: ${yamlString(slide.tag)}`);
   if (slide.group) fields.push(`group: ${yamlString(slide.group)}`);
   if (slide.question) fields.push(`question: ${yamlString(slide.question)}`);

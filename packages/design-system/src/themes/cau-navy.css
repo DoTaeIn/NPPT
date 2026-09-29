@@ -173,7 +173,66 @@ html[data-theme='cau-navy'] {
   --chip-line: var(--u-line-01);
   --video-bg: linear-gradient(135deg, var(--u-navy) 0%, var(--u-blue-12) 100%);
 
-  /* ---- Slides (v9.7 .slide.dark cover/divider, .hero) ---- */
+  /* ---- Title slides (cover, hero, divider), light: v9.7 `.slide.hero` ---- */
+  --title-bg: linear-gradient(115deg, #fff 0%, #fff 38%, var(--u-bg-03) 62%, var(--u-bg-04) 100%);
+  --title-glow: none;
+  --title-dots: rgba(98, 140, 245, 0.22);
+  --title-bar: linear-gradient(180deg, var(--u-primary), var(--u-brand-text));
+  --title-bar-w: 14px;
+  --title-ink: var(--u-text);
+  --title-text: var(--u-text-2);
+  --title-muted: var(--u-text-3);
+  --title-accent: var(--u-brand-text); /* .div-eyebrow */
+  --title-em: var(--u-brand-text);
+  --title-strong: var(--u-brand-text); /* .div-desc b */
+  --title-rule: var(--u-line-02);
+  --title-tagline: var(--u-text-3);
+  --title-no-fill: none; /* .slide.hero .div-num: outlined */
+  --title-no-stroke: 5px var(--u-primary);
+  --title-pill-bg: var(--u-bg-04); /* .slide.hero .cover-badge */
+  --title-pill-line: var(--u-blue-03);
+  --title-pill-text: var(--u-brand-text);
+  --title-underline: block; /* .slide.hero .cover-title::after */
+  --kicker-tracking: 2px;
+  /* Icon slots: Lucide shield-check (badge), calendar and building-2 (meta), ISC licence. */
+  --kicker-icon-display: inline-block;
+  --kicker-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z'/%3E%3Cpath d='m9 12 2 2 4-4'/%3E%3C/svg%3E");
+  --meta-icon-display: inline-block;
+  --meta-icon-1: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v3'/%3E%3Cpath d='M16 2v3'/%3E%3Crect x='3' y='3' width='18' height='18' rx='2'/%3E%3Cpath d='M3 9h18'/%3E%3C/svg%3E");
+  --meta-icon-2: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 12h4'/%3E%3Cpath d='M10 8h4'/%3E%3Cpath d='M14 21v-3a2 2 0 0 0-4 0v3'/%3E%3Cpath d='M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2'/%3E%3Cpath d='M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16'/%3E%3C/svg%3E");
+  /* Layout: .cover-wrap (left 128px, max 1000px), .div-wrap (left 160px, max 1180px),
+     .hero-art (right 40px, 88% high, max 46% wide, contain). */
+  --cover-pad-x: 128px;
+  --cover-main-w: 1128px;
+  --cover-title-size: 88px; /* --t-display */
+  --cover-title-weight: var(--fw-bold);
+  --cover-title-lh: 1.12;
+  --cover-title-tracking: -2.5px;
+  --cover-sub-w: 1000px;
+  --cover-sub-size: 28px; /* --t-lead */
+  --cover-sub-lh: 1.5;
+  --cover-meta-justify: flex-start;
+  --cover-meta-w: none;
+  --cover-meta-size: var(--fs-body);
+  --cover-art-w: 46%;
+  --cover-art-inset: 6% 40px 6% auto;
+  --cover-art-fit: contain;
+  --cover-art-pos: right center;
+  --cover-art-fade: none;
+  --divider-pad-x: 160px;
+  --divider-gap: 64px;
+  --divider-main-w: 1250px;
+  --divider-no-size: 190px;
+  --divider-title-size: 64px;
+  --divider-title-weight: var(--fw-bold);
+  --divider-lead-size: 28px;
+  --divider-lead-lh: 1.55;
+  --divider-lead-w: 900px; /* .slide.hero .div-desc */
+  --dark-pill-bg: rgba(98, 140, 245, 0.16); /* .cover-badge on navy */
+  --dark-pill-line: var(--u-primary);
+  --dark-pill-text: var(--u-sec-01);
+
+  /* ---- Title slides, dark (`# slide cover dark`): v9.7 .slide.dark ---- */
   --cover-bg: var(--u-navy);
   --cover-glow: none;
   --cover-dots: rgba(147, 176, 248, 0.16);
@@ -194,7 +253,7 @@ html[data-theme='cau-navy'] {
   /* ---- Logo hooks (v9.7 --logo-navy/--logo-white and --logo-cau/--logo-cau-white) ----
      The design system ships no logos. A deck sets e.g.
        html { --logo-left: url(data:…); --logo-left-w: 86px; --logo-right: url(data:…); --logo-right-w: 86px; }
-     and optionally white variants for the dark cover/divider. Widths default to 0 so
+     and optionally white variants for the dark (`.dark`) slides. Widths default to 0 so
      nothing is reserved when a deck has no logos. */
   --logo-left: none;
   --logo-right: none;
@@ -206,19 +265,59 @@ html[data-theme='cau-navy'] {
   --cover-logo-scale: 2.6; /* v9.7: 86×22 in the footer, 236×60 on the cover */
 }
 
-/* v9.7 .cover-badge: the cover kicker is a pill instead of a ruled line. */
-html[data-theme='cau-navy'] .cover-kicker {
+/* v9.7 .cover-badge: the cover kicker is a pill with an icon slot instead of a ruled line
+   (a divider kicker stays a plain line, v9.7 .div-eyebrow). */
+html[data-theme='cau-navy'] .cover .cover-kicker {
   align-self: flex-start;
+  gap: 12px;
+  margin-bottom: 32px;
   padding: 10px 22px;
-  border: 1px solid var(--u-primary);
+  border: 1px solid var(--t-pill-line);
   border-radius: var(--radius-pill);
-  background: rgba(98, 140, 245, 0.16);
+  background: var(--t-pill-bg);
+  color: var(--t-pill-text);
   font-size: var(--fs-caption);
   letter-spacing: 0.5px;
 }
 
-html[data-theme='cau-navy'] .cover-kicker::before {
+html[data-theme='cau-navy'] .cover .cover-kicker::before {
+  display: var(--kicker-icon-display);
+  width: 24px;
+  height: 24px;
+  border-radius: 0;
+  background: currentColor;
+  -webkit-mask: var(--kicker-icon) center / contain no-repeat;
+  mask: var(--kicker-icon) center / contain no-repeat;
+}
+
+html[data-theme='cau-navy'] .divider .cover-kicker {
+  font-size: var(--fs-caption);
+}
+
+html[data-theme='cau-navy'] .divider .cover-kicker::before {
   display: none;
+}
+
+/* v9.7 .cover-title / .div-title margins; the question strip is white on the light slides. */
+html[data-theme='cau-navy'] .cover-title {
+  margin-bottom: 2px;
+}
+
+html[data-theme='cau-navy'] .cover-sub {
+  margin-top: 28px;
+}
+
+html[data-theme='cau-navy'] .cover-meta {
+  margin-top: 64px;
+  padding-top: 32px;
+}
+
+html[data-theme='cau-navy'] .slide:not(.dark):is(.cover, .divider) .cover-main > .s-q {
+  padding: 16px 22px;
+  border-color: var(--u-line-02);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--u-sh-03);
 }
 
 /* v9.7 .s-foot .brand: course logo before the footer text, university logo after it
@@ -245,12 +344,12 @@ html[data-theme='cau-navy'] .slide-tag-bottom::after {
   background-image: var(--logo-right);
 }
 
-html[data-theme='cau-navy'] :is(.cover, .divider) .slide-tag-bottom::before {
+html[data-theme='cau-navy'] .slide.dark .slide-tag-bottom::before {
   background-image: var(--logo-left-inverse);
   opacity: 0.6;
 }
 
-html[data-theme='cau-navy'] :is(.cover, .divider) .slide-tag-bottom::after {
+html[data-theme='cau-navy'] .slide.dark .slide-tag-bottom::after {
   background-image: var(--logo-right-inverse);
   opacity: 0.6;
 }
@@ -266,10 +365,18 @@ html[data-theme='cau-navy'] .cover-brand::after {
 
 html[data-theme='cau-navy'] .cover-brand::before {
   width: calc(var(--logo-left-w) * var(--cover-logo-scale));
-  background-image: var(--logo-left-inverse);
+  background-image: var(--logo-left);
 }
 
 html[data-theme='cau-navy'] .cover-brand::after {
   width: calc(var(--logo-right-w) * var(--cover-logo-scale));
+  background-image: var(--logo-right);
+}
+
+html[data-theme='cau-navy'] .cover.dark .cover-brand::before {
+  background-image: var(--logo-left-inverse);
+}
+
+html[data-theme='cau-navy'] .cover.dark .cover-brand::after {
   background-image: var(--logo-right-inverse);
 }

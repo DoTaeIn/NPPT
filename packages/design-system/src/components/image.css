@@ -12,9 +12,21 @@
   min-height: 0;
 }
 
-/* Without --h the image keeps its aspect ratio and may shrink to the space left. */
+/* Without --h the image keeps its aspect ratio and may shrink to the space left, but never
+   below --figure-min-h, so a crowded slide overflows (and lint reports it) instead of
+   collapsing the figure to a sliver. */
 :is(.s-body, .col) > .figure {
   flex: 0 1 auto;
+  min-height: min(var(--figure-min-h, 240px), 100%);
+}
+
+/* With --h (the compiler writes style="--h:520px") the figure keeps that height. */
+:is(.s-body, .col) > .figure[style*='--h'] {
+  flex-shrink: 0;
+}
+
+.figure[style*='--h'] > img {
+  flex-shrink: 0;
 }
 
 .figure > img {

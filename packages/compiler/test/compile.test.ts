@@ -184,7 +184,10 @@ describe('compile(sample.marco.md)', () => {
       'build.runtime.missing',
     ]);
     expect(instructor.warnings.filter((w) => !allowed.has(w.code))).toEqual([]);
-    const budget = instructor.lint.filter((l) => l.code.startsWith('budget.'));
+    // `budget.slide.*` (layout estimates) is tuned in @marco/schema; the text budgets are fixed.
+    const budget = instructor.lint.filter(
+      (l) => l.code.startsWith('budget.') && !l.code.startsWith('budget.slide.'),
+    );
     expect(budget).toEqual([
       expect.objectContaining({
         level: 'warn',

@@ -21,6 +21,7 @@ import type {
   Video,
 } from '@marco/schema';
 import type { AssetRegistry } from './assets.js';
+import type { CssIndex } from './css.js';
 import {
   childElements,
   classes,
@@ -31,9 +32,19 @@ import {
   tagName,
   textOf,
 } from './dom.js';
-import { bump, inlineOf, type FormattingStats } from './inline.js';
+import { bump, escapeInline, inlineOf, plainText, type FormattingStats } from './inline.js';
 import { stripTokens } from './payloads.js';
 import type { ReportBuilder } from './report.js';
+import {
+  equipmentGridRule,
+  flowCardsRule,
+  generationTableRule,
+  labelRowsRule,
+  productGridRule,
+  referenceFooterRule,
+  stripRule,
+  videoCardsRule,
+} from './layouts.js';
 import type { LegacyFamily } from './types.js';
 
 export interface MapContext {
@@ -49,19 +60,32 @@ export interface MapContext {
   addRef: (url: string, title: string) => string;
   slideRefs: string[];
   inColumn: boolean;
+  /** The deck's own stylesheet, for grid column counts and thumbnail heights. */
+  css?: CssIndex;
 }
 
-const fmt = (ctx: MapContext): FormattingStats => ctx.report.formatting;
-const inline = (ctx: MapContext, nodes: Node | Node[], skip?: (el: Element) => boolean): string =>
+/**
+ * Visible text of the legacy element a block was made from (V20 notes are that text run
+ * together, so the note splitter matches it; blocks without an entry use their IR text).
+ */
+export const sourceText = new WeakMap<Block, string>();
+
+export const fmt = (ctx: MapContext): FormattingStats => ctx.report.formatting;
+export const bumpFmt = (ctx: MapContext, key: string, by = 1): void => bump(fmt(ctx), key, by);
+export const inline = (
+  ctx: MapContext,
+  nodes: Node | Node[],
+  skip?: (el: Element) => boolean,
+): string =>
   inlineOf(nodes, skip ? { stats: fmt(ctx), skip } : { stats: fmt(ctx) });
 
-type Rule = (el: Element, ctx: MapContext) => Block[] | null;
+export type Rule = (el: Element, ctx: MapContext) => Block[] | null;
 
 // ---------------------------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------------------------
 
-const INLINE_TAGS = new Set([
+export const INLINE_TAGS = new Set([
   'a',
   'abbr',
   'b',
@@ -86,25 +110,27 @@ const INLINE_TAGS = new Set([
   'dfn',
 ]);
 
-function isInlineOnly(el: Element): boolean {
+export function isInlineOnly(el: Element): boolean {
   for (const c of childElements(el)) {
     if (!INLINE_TAGS.has(tagName(c)) || !isInlineOnly(c)) return false;
   }
   return true;
 }
 
-function isIconOnly(el: Element): boolean {
+export function isIconOnly(el: Element): boolean {
   if (el.hasAttribute('data-lucide')) return true;
   if (textOf(el)) return false;
   const kids = childElements(el);
   return kids.length > 0 && kids.every(isIconOnly);
 }
 
-function hasMedia(el: Element): boolean {
-  return !!el.querySelector('img, svg, video, iframe, canvas, input, select, textarea, output');
+const MEDIA = 'img, svg, video, iframe, canvas, input, select, textarea, output';
+
+export function hasMedia(el: Element): boolean {
+  return el.matches(MEDIA) || !!el.querySelector(MEDIA);
 }
 
-function isEmpty(el: Element): boolean {
+export function isEmpty(el: Element): boolean {
   return !textOf(el) && !hasMedia(el);
 }
 
@@ -117,7 +143,7 @@ const TONE_BY_CLASS: [RegExp, Tone][] = [
   [/^(blue|info|cyan)$/, 'info'],
 ];
 
-function toneOf(el: Element): Tone | undefined {
+export function toneOf(el: Element): Tone | undefined {
   for (const c of classes(el)) {
     const m = /^tone-(neutral|primary|ok|warn|danger|info)$/.exec(c);
     if (m) return m[1] as Tone;
@@ -126,15 +152,18 @@ function toneOf(el: Element): Tone | undefined {
   return undefined;
 }
 
-function iconOf(el: Element): string | undefined {
+export function iconOf(el: Element): string | undefined {
   return el.querySelector('i[data-lucide]')?.getAttribute('data-lucide') ?? undefined;
 }
 
 /** Children of an element with class-less wrapper divs expanded (for card-like articles). */
-function flattenParts(el: Element): Element[] {
+export function flattenParts(el: Element): Element[] {
   const out: Element[] = [];
   for (const c of childElements(el)) {
-    if ((tagName(c) === 'div' && classes(c).length === 0) || hasClass(c, 'grow', 'pentest-content'))
+    if (
+      (tagName(c) === 'div' && classes(c).length === 0) ||
+      hasClass(c, 'grow', 'pentest-content', 'row', 'col')
+    )
       out.push(...flattenParts(c));
     else out.push(c);
   }
@@ -173,7 +202,9 @@ export function fallback(
     return [];
   }
   ctx.report.addUnmapped(selectorOf(el), reason, ctx.slideId);
-  return [{ type: 'html', html: htmlOf(el, ctx) }];
+  const block: Block = { type: 'html', html: htmlOf(el, ctx) };
+  sourceText.set(block, textOf(el));
+  return [block];
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -197,10 +228,6 @@ const skipRule: Rule = (el, ctx) => {
     return [];
   if (name === 'hr' || name === 'br') return [];
   if (classes(el).some((c) => SCAFFOLD_SKIP.has(c))) return [];
-  if (name === 'svg' && hasClass(el, 'hero-art')) {
-    ctx.report.addDropped('hero illustration `svg.hero-art` (theme decoration)', ctx.slideId);
-    return [];
-  }
   if (isIconOnly(el)) {
     bump(fmt(ctx), 'decorative icons dropped');
     return [];
@@ -252,7 +279,7 @@ const chainRule: Rule = (el, ctx) => {
   return [{ type: 'chain', items }];
 };
 
-function cardFrom(art: Element, ctx: MapContext): CardsBlock['items'][number] | null {
+export function cardFrom(art: Element, ctx: MapContext): CardsBlock['items'][number] | null {
   const parts = flattenParts(art).filter((p) => {
     if (isEmpty(p)) {
       if (p.hasAttribute('aria-live') || p.id) bump(fmt(ctx), 'dynamic status regions dropped');
@@ -284,10 +311,17 @@ function cardFrom(art: Element, ctx: MapContext): CardsBlock['items'][number] | 
   return item;
 }
 
-function colsFor(n: number): 2 | 3 | 4 {
+export function colsFor(n: number): 2 | 3 | 4 {
   if (n <= 2) return 2;
   if (n <= 4) return n as 3 | 4;
   return n <= 6 ? 3 : 4;
+}
+
+/** Card columns for a grid: the deck's own `grid-template-columns` when it is 2–4, else by count. */
+export function cardCols(el: Element, n: number, ctx: MapContext): 2 | 3 | 4 {
+  const css = ctx.css?.gridColumns(el);
+  if (css !== undefined && css >= 2 && css <= 4) return css as 2 | 3 | 4;
+  return colsFor(n);
 }
 
 const cardsRule: Rule = (el, ctx) => {
@@ -313,10 +347,26 @@ const cardsRule: Rule = (el, ctx) => {
     items.push(item);
   }
   if (!items.length) return null;
-  if (n < 2 || n > 4) {
-    // One-column card stacks have no component yet (CardsBlock.cols is 2 | 3 | 4).
-    return fallback(el, ctx);
+  if (n === 1) {
+    // One-column card stacks have no component (CardsBlock.cols is 2 | 3 | 4). Next to other
+    // content (inside columns) a stacked list reads closest to the original; alone, 2 columns.
+    if (ctx.inColumn) {
+      ctx.report.addHeuristic('one-column card stack → bullets', selectorOf(el), ctx.slideId);
+      return [
+        {
+          type: 'bullets',
+          items: items.map((i) =>
+            [`**${escapeInline(plainText([i.kicker, i.title].filter(Boolean).join(' · ')))}**`, i.body]
+              .filter(Boolean)
+              .join(' '),
+          ),
+        },
+      ];
+    }
+    ctx.report.addHeuristic('one-column card stack → cards cols=2', selectorOf(el), ctx.slideId);
+    return [{ type: 'cards', cols: 2, items }];
   }
+  if (n < 2 || n > 4) return [{ type: 'cards', cols: colsFor(items.length), items }];
   return [{ type: 'cards', cols: n as 2 | 3 | 4, items }];
 };
 
@@ -503,7 +553,7 @@ const cardRule: Rule = (el, ctx) => {
   return [block];
 };
 
-function imageBlock(img: Element, ctx: MapContext, scope: Element): ImageBlock | null {
+export function imageBlock(img: Element, ctx: MapContext, scope: Element): ImageBlock | null {
   const asset = ctx.assets.fromImg(img);
   if (!asset) return null;
   ctx.assets.markReferenced(asset);
@@ -582,7 +632,7 @@ const videoRule: Rule = (el, ctx) => {
   return [block];
 };
 
-function pillItem(el: Element, ctx: MapContext): PillsBlock['items'][number] {
+export function pillItem(el: Element, ctx: MapContext): PillsBlock['items'][number] {
   const item: PillsBlock['items'][number] = { text: inline(ctx, el) };
   const tone = toneOf(el);
   if (tone) item.tone = tone;
@@ -604,7 +654,7 @@ const pillsRule: Rule = (el, ctx) => {
   return null;
 };
 
-function textOfDirect(el: Element): string {
+export function textOfDirect(el: Element): string {
   return Array.from(el.childNodes)
     .filter(isText)
     .map((t) => t.data)
@@ -754,9 +804,14 @@ const wrapperRule: Rule = (el, ctx) => {
 
 const GRID_BLOCKERS = 'figure, img, table, ul, ol, button, input, iframe, video, svg';
 
+/** A grid item: `<article>`, or a v9.7 `div.card` (e.g. `.qgrid > .card`). */
+const isGridItem = (k: Element): boolean =>
+  tagName(k) === 'article' || (tagName(k) === 'div' && hasClass(k, 'card'));
+
 const articleGridRule: Rule = (el, ctx) => {
   const kids = childElements(el).filter((k) => !isIconOnly(k));
-  if (kids.length < 2 || !kids.every((k) => tagName(k) === 'article')) return null;
+  if (kids.length < 2 || !kids.every(isGridItem)) return null;
+  if (!kids.every((k) => tagName(k) === tagName(kids[0] as Element))) return null;
   if (el.querySelector(GRID_BLOCKERS)) return null;
   if (classes(el).some((c) => /steps/.test(c))) {
     const items: StepsBlock['items'] = [];
@@ -777,7 +832,7 @@ const articleGridRule: Rule = (el, ctx) => {
     items.push(card);
   }
   ctx.report.addHeuristic('article grid → cards', selectorOf(el), ctx.slideId);
-  return [{ type: 'cards', cols: colsFor(items.length), items }];
+  return [{ type: 'cards', cols: cardCols(el, items.length, ctx), items }];
 };
 
 const COLUMN_CLASSES = new Set(['split', 'gate-photos', 'bio-intro', 'row', 'two-col', 'columns']);
@@ -842,7 +897,14 @@ const RULES: Rule[] = [
   skipRule,
   simRule,
   sourceLinksRule,
+  referenceFooterRule,
+  equipmentGridRule,
+  videoCardsRule,
   interactiveRule,
+  labelRowsRule,
+  generationTableRule,
+  productGridRule,
+  stripRule,
   chainRule,
   cardsRule,
   takeawayRule,
@@ -855,6 +917,7 @@ const RULES: Rule[] = [
   pillsRule,
   verdictRule,
   stepsRule,
+  flowCardsRule,
   cardRule,
   tagRule,
   wrapperRule,
@@ -868,7 +931,11 @@ const RULES: Rule[] = [
 export function mapElement(el: Element, ctx: MapContext): Block[] {
   for (const rule of RULES) {
     const out = rule(el, ctx);
-    if (out) return out;
+    if (out) {
+      const only = out.length === 1 ? out[0] : undefined;
+      if (only && !sourceText.has(only)) sourceText.set(only, textOf(el));
+      return out;
+    }
   }
   return fallback(el, ctx);
 }

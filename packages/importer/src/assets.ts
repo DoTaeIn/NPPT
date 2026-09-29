@@ -105,6 +105,27 @@ export class AssetRegistry {
     return this.addDataUri(id, src, meta);
   }
 
+  /** Fill metadata the asset does not have yet (existing values win). */
+  annotate(id: string, meta: { title?: string; credit?: string; source?: string; alt?: string }): void {
+    const draft = this.drafts.get(id);
+    if (!draft) return;
+    for (const key of ['title', 'credit', 'source', 'alt'] as const) {
+      const v = meta[key];
+      if (v && !draft[key]) draft[key] = v;
+    }
+  }
+
+  /** Replace metadata (per-deck config overrides). */
+  override(id: string, meta: { title?: string; credit?: string; source?: string; alt?: string }): boolean {
+    const draft = this.drafts.get(id);
+    if (!draft) return false;
+    for (const key of ['title', 'credit', 'source', 'alt'] as const) {
+      const v = meta[key];
+      if (v !== undefined) draft[key] = v;
+    }
+    return true;
+  }
+
   markReferenced(id: string): void {
     this.referenced.add(id);
   }

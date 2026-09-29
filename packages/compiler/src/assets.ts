@@ -3,9 +3,11 @@
  * With sharp: fit inside 1920×1080, JPEG → q82, PNG → PNG when it has alpha or ≤ 256 colours
  * (or `keepPng`), otherwise WebP q85. Without sharp the original bytes are embedded.
  */
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { isAbsolute, resolve } from 'node:path';
 import type { Diagnostic } from './diagnostics.js';
+import { htmlAssetIds } from './html-images.js';
 import type { Block, Lecture } from './ir.js';
 import type { AssetData } from './render/blocks.js';
 
@@ -35,16 +37,29 @@ function loadSharp(): Promise<SharpFactory | null> {
   return sharpLoad;
 }
 
-/** Asset ids used by image blocks, in first-use order. */
+/**
+ * Asset ids the deck shows, in first-use order: slide `art`, image blocks, and `<img>` tags in
+ * `html` blocks and `raw` slides (by `data-asset` or registered `src` path). Each id is listed
+ * once, so an image used by several blocks is read and optimised once.
+ */
 export function usedAssetIds(lecture: Lecture): string[] {
   const ids: string[] = [];
+  const add = (id: string | undefined): void => {
+    if (id !== undefined && !ids.includes(id)) ids.push(id);
+  };
+  const fromHtml = (html: string): void => htmlAssetIds(html, lecture.assets).forEach(add);
   const visit = (blocks: Block[]): void => {
     for (const b of blocks) {
-      if (b.type === 'image' && !ids.includes(b.asset)) ids.push(b.asset);
+      if (b.type === 'image') add(b.asset);
+      else if (b.type === 'html') fromHtml(b.html);
       else if (b.type === 'columns') b.columns.forEach(visit);
     }
   };
-  lecture.slides.forEach((s) => visit(s.blocks));
+  for (const s of lecture.slides) {
+    add(s.art);
+    visit(s.blocks);
+    if (s.html !== undefined) fromHtml(s.html);
+  }
   return ids;
 }
 
@@ -53,6 +68,8 @@ export async function processAssets(lecture: Lecture, opts: AssetOptions): Promi
   const data: Record<string, AssetData> = {};
   const sharp = opts.useSharp === false ? null : await loadSharp();
   let sharpWarned = opts.useSharp === false;
+  // Identical file bytes under several ids are optimised once and share one result.
+  const byHash = new Map<string, Optimised>();
   for (const id of usedAssetIds(lecture)) {
     const asset = lecture.assets[id];
     if (!asset) continue; // validator / lint report unknown asset ids
@@ -78,8 +95,9 @@ export async function processAssets(lecture: Lecture, opts: AssetOptions): Promi
       data[id] = {};
       continue;
     }
-    let out: Optimised | undefined;
-    if (sharp) {
+    const hash = createHash('sha256').update(bytes).digest('hex');
+    let out: Optimised | undefined = byHash.get(hash);
+    if (!out && sharp) {
       try {
         out = await optimise(sharp, bytes, opts.keepPng ?? false);
       } catch (e) {
@@ -89,7 +107,7 @@ export async function processAssets(lecture: Lecture, opts: AssetOptions): Promi
           message: `이미지 최적화 실패, 원본을 포함합니다: ${asset.path} (${(e as Error).message})`,
         });
       }
-    } else if (!sharpWarned) {
+    } else if (!out && !sharpWarned) {
       sharpWarned = true;
       warnings.push({
         level: 'warn',
@@ -98,6 +116,7 @@ export async function processAssets(lecture: Lecture, opts: AssetOptions): Promi
       });
     }
     out ??= original(bytes);
+    byHash.set(hash, out);
     data[id] = {
       src: `data:${out.mime};base64,${out.bytes.toString('base64')}`,
       mime: out.mime,

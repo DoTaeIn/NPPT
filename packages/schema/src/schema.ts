@@ -505,9 +505,25 @@ const slide = object<Slide>(
     tag: str(chars(BUDGETS.slide.tag, 'Eyebrow text.')),
     group: str('TOC grouping label.'),
     title: str(chars(BUDGETS.slide.title)),
+    toc: str('TOC / search label when it differs from the visible title; default title.'),
     subtitle: str(chars(BUDGETS.slide.subtitle)),
     question: str(chars(BUDGETS.slide.question, 'Guiding question strip.')),
-    alert: bool('Hero slide red variant.'),
+    alert: bool('Red variant of a hero (or divider) slide.'),
+    kicker: str(
+      'cover/hero/divider: small line above the title; a cover without one shows "${course} · ${week}주차".',
+    ),
+    tagline: str(
+      'cover/hero/divider: letter-spaced secondary line, e.g. "PHYSICAL ACCESS × IDENTITY".',
+    ),
+    meta: arr(
+      str(),
+      'cover/hero/divider: short lines under the title block; a cover without it shows [date, presenter].',
+    ),
+    art: str(
+      'cover/hero/divider: asset id (key into Lecture.assets) shown as artwork on the right.',
+      nonEmpty,
+    ),
+    dark: bool('cover/hero/divider: dark variant (light by default).'),
     refs: arr(str(undefined, { pattern: REF_ID }), 'Ref ids cited on this slide.'),
     layout: str(undefined, { enum: ['default', 'wide'] }),
     blocks: arr(ref('Block')),

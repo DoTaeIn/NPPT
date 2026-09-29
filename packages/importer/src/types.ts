@@ -1,4 +1,5 @@
-import type { BlockType, CueKind, Lecture, ValidationError } from '@marco/schema';
+import type { BlockType, CueKind, Lecture, Slide, ValidationError } from '@marco/schema';
+import type { ImportConfig } from './config.js';
 
 /** Legacy deck families the importer understands (PLAN.md §2). */
 export type LegacyFamily = 'v20' | 'v97';
@@ -10,7 +11,24 @@ export interface ImportOptions {
   assetDir?: string;
   /** Name of the input file, recorded in the report. */
   sourceName?: string;
+  /** Per-deck config (`import.config.json`): stable ids, overrides, notes mode, corrections. */
+  config?: ImportConfig;
+  /** Where `config` came from, recorded in the report (default `inline`). */
+  configSource?: string;
 }
+
+/**
+ * An IR slide with the v0.2 cover/hero/divider fields (`toc`, `kicker`, `tagline`, `meta`,
+ * `art`, `dark`; format.md §4). Additive: identical to `Slide` once `@marco/schema` ships them.
+ */
+export type ImportedSlide = Slide & {
+  toc?: string;
+  kicker?: string;
+  tagline?: string;
+  meta?: string[];
+  art?: string;
+  dark?: boolean;
+};
 
 export interface ImportedAsset {
   id: string;
@@ -82,8 +100,19 @@ export interface ImportReport {
   dropped: DroppedEntry[];
   /** Formatting that the source format cannot express and was flattened. */
   formatting: Record<string, number>;
-  /** Slides whose visible heading differs from `data-title` (heading kept as `subtitle`). */
+  /** Slides whose visible heading (now `title`) differs from `data-title` (kept as `toc`). */
   titleMismatches: { slide: string; title: string; heading: string }[];
+  /** V20: slides whose prose note was split into per-block cues. */
+  noteSplit?: { split: number; total: number };
+  /** What the per-deck config did (absent without a config). */
+  config?: ConfigReport;
+  /** Load-time correction scripts run before mapping (absent when none were requested). */
+  corrections?: CorrectionsReport;
+  /**
+   * Fields the installed `@marco/schema` does not know yet (they were removed from the copy that
+   * `validateLecture` checked; the source still carries them).
+   */
+  schemaPending: string[];
   validation: ValidationError[];
   notes: NoteStats;
   assets: { total: number; referenced: number; stripped: number; bytes: number };
@@ -92,6 +121,37 @@ export interface ImportReport {
   terms: number;
   data: { quiz?: number; sims?: number; terminals?: number; script?: number };
   warnings: string[];
+}
+
+export interface ConfigReport {
+  /** `import.config.json` path or `inline`. */
+  source: string;
+  notes: 'split' | 'prose' | 'verbatim';
+  /** Slide rules that matched: rule description → slide id. */
+  applied: { rule: string; slide: string; id?: string; fields: string[] }[];
+  /** Rules that matched no slide. */
+  unmatched: string[];
+  droppedRefs: string[];
+  assets: string[];
+}
+
+export interface CorrectionsReport {
+  requested: string[];
+  /** Scripts found and run, in document order. */
+  ran: string[];
+  missing: string[];
+  /** Exceptions thrown by a script (it ran up to that point). */
+  errors: string[];
+  /** Counts of what changed. */
+  changed: {
+    sims: boolean;
+    quiz: number;
+    notes: number;
+    slideText: number;
+    attributes: number;
+  };
+  /** Entries a script recorded in its own audit log (e.g. `window.AUDIT97.errors`). */
+  audit: string[];
 }
 
 export interface ImportResult {

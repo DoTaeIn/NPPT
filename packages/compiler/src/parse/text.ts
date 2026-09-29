@@ -1,4 +1,5 @@
 /** Small string helpers shared by the parser modules. */
+import { parse as parseYaml } from 'yaml';
 
 export function firstWord(s: string): string {
   return s.trim().split(/\s+/, 1)[0] ?? '';
@@ -72,6 +73,41 @@ export function parseIdList(value: string): string[] {
     .map((s) => s.trim().replace(/^["']|["']$/g, ''))
     .filter((s) => s !== '');
 }
+
+/**
+ * Short text list (`meta`): a YAML flow list `[a, "b, c"]`, else a comma-separated string, else a
+ * `·`-separated one. `[2026학년도 2학기 · 5주차, 중앙대학교]` keeps the `·` inside its first item.
+ */
+export function parseTextList(value: string): string[] {
+  const v = value.trim();
+  if (v === '') return [];
+  if (v.startsWith('[') && v.endsWith(']')) {
+    try {
+      const parsed: unknown = parseYaml(v);
+      if (Array.isArray(parsed))
+        return parsed
+          .map((x: unknown) =>
+            x === null || x === undefined
+              ? ''
+              : typeof x === 'object'
+                ? JSON.stringify(x)
+                : String(x),
+          )
+          .map((x) => x.trim())
+          .filter((x) => x !== '');
+    } catch {
+      /* fall back to splitting on commas */
+    }
+    return splitTrim(v.slice(1, -1), ',');
+  }
+  return splitTrim(v, v.includes(',') ? ',' : '·');
+}
+
+const splitTrim = (s: string, sep: string): string[] =>
+  s
+    .split(sep)
+    .map((x) => x.trim())
+    .filter((x) => x !== '');
 
 export function isInteger(value: string): boolean {
   return /^\d+$/.test(value.trim());

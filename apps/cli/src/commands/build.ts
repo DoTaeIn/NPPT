@@ -92,7 +92,7 @@ export async function runBuild(
 }
 
 /**
- * Rebuild on changes to the source file or its image assets (fs.watch, debounced).
+ * Rebuild on changes to the source file, its image assets or sidecar JSON (fs.watch, debounced).
  * Resolves when `signal` aborts (or on SIGINT when no signal is given).
  */
 export async function runWatch(
@@ -119,6 +119,8 @@ export async function runWatch(
     for (const asset of Object.values(result?.lecture.assets ?? {})) {
       if (!/^[a-z][a-z0-9+.-]*:/i.test(asset.path)) add(resolve(dirname(source), asset.path));
     }
+    // Sidecar JSON files (`sims: sims.json`).
+    for (const file of result?.inputs ?? []) add(file);
   };
   collect(first.result);
 

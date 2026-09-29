@@ -5,15 +5,16 @@
 import { parse as parseYaml } from 'yaml';
 import type { Diagnostic } from '../diagnostics.js';
 import type { Lecture, NoteTime, Slide, SlideNote } from '../ir.js';
-import { SLIDE_TYPES } from '../ir.js';
+import { SLIDE_TYPES, TITLE_SLIDE_TYPES } from '../ir.js';
 import { parseNote } from '@marco/schema';
 import { tokenizeAttrs } from './attrs.js';
-import { parseBody } from './body.js';
-import { type ParseContext, report } from './context.js';
+import { parseBody, registerHtmlImages, resolveImageAsset } from './body.js';
+import { type ParseContext, report, type SidecarRef } from './context.js';
 import { parseFrontMatter } from './frontmatter.js';
-import { didYouMean, parseIdList } from './text.js';
+import { didYouMean, parseIdList, parseTextList } from './text.js';
 
 export { CONTAINERS } from './body.js';
+export { SIDECAR_KEYS, type SidecarKey, type SidecarRef } from './context.js';
 
 export interface ParseOptions {
   /** File name used in diagnostics (`file:line`). */
@@ -25,6 +26,8 @@ export interface ParseResult {
   diagnostics: Diagnostic[];
   /** 1-based file line of each slide's `# slide` header, by slide index. */
   slideLines: number[];
+  /** Front-matter data given as JSON file paths (`sims: sims.json`); see `loadSidecars`. */
+  sidecars: SidecarRef[];
 }
 
 type SlideType = Slide['type'];
@@ -40,6 +43,11 @@ const FIELDS: Record<string, readonly SlideType[] | undefined> = {
   id: undefined,
   title: undefined,
   subtitle: ['cover', 'divider', 'hero', 'quote', 'content'],
+  kicker: TITLE_SLIDE_TYPES,
+  tagline: TITLE_SLIDE_TYPES,
+  meta: TITLE_SLIDE_TYPES,
+  art: TITLE_SLIDE_TYPES,
+  toc: undefined,
   tag: ['content', 'hero', 'quote', 'references', 'raw'],
   group: undefined,
   question: undefined,
@@ -74,7 +82,7 @@ export function parseMarco(text: string, options: ParseOptions = {}): ParseResul
     terms: {},
     slides: [],
   };
-  const ctx: ParseContext = { file, lecture, diagnostics: [] };
+  const ctx: ParseContext = { file, lecture, diagnostics: [], sidecars: [], htmlAssets: [] };
 
   let i = 0;
   if (lines[0]?.trim() === '---') {
@@ -142,13 +150,34 @@ export function parseMarco(text: string, options: ParseOptions = {}): ParseResul
     report(ctx, 'error', 'format.slide.none', "파일에 '# slide' 줄이 없습니다.", lines.length);
   }
   chunks.forEach((chunk, k) => lecture.slides.push(parseSlide(chunk, k + 1, ctx)));
-  return { lecture, diagnostics: ctx.diagnostics, slideLines: chunks.map((c) => c.line) };
+
+  // `<img data-asset>` in html blocks / raw slides: one warning per unknown id.
+  const warned = new Set<string>();
+  for (const ref of ctx.htmlAssets) {
+    if (Object.hasOwn(lecture.assets, ref.id) || warned.has(ref.id)) continue;
+    warned.add(ref.id);
+    report(
+      { ...ctx, ...(ref.slide !== undefined ? { slide: ref.slide } : {}) },
+      'warn',
+      'format.html.asset',
+      `HTML의 <img data-asset="${ref.id}">: 머리말 assets에 없는 이미지 id라 표시되지 않습니다.`,
+      ref.line,
+    );
+  }
+  return {
+    lecture,
+    diagnostics: ctx.diagnostics,
+    slideLines: chunks.map((c) => c.line),
+    sidecars: ctx.sidecars,
+  };
 }
 
 // ---------------------------------------------------------------------------
 
 interface FieldValue {
   value: string;
+  /** Items of a YAML block list written under the key (`meta:` + indented `- item` lines). */
+  list?: string[];
   /** 1-based file line of the field (or of the header for `key=value` tokens). */
   line: number;
 }
@@ -166,6 +195,7 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
   let type: SlideType = 'content';
   let typeSet = false;
   let alert = false;
+  let dark = false;
   const fields = new Map<string, FieldValue>();
 
   // Header tokens: type, `alert`, key=value.
@@ -197,13 +227,15 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
       typeSet = true;
     } else if (tok.value === 'alert' && !tok.quoted) {
       alert = true;
+    } else if (tok.value === 'dark' && !tok.quoted) {
+      dark = true;
     } else {
-      const hint = didYouMean(tok.value, [...SLIDE_TYPES, 'alert']);
+      const hint = didYouMean(tok.value, [...SLIDE_TYPES, 'alert', 'dark']);
       report(
         ctx,
         'error',
         'format.slide.token',
-        `슬라이드 머리줄의 알 수 없는 토큰 '${tok.value}'${hint ? ` ('${hint}'을(를) 의도했나요?)` : ''}. 허용: ${SLIDE_TYPES.join(', ')}, alert, key=value`,
+        `슬라이드 머리줄의 알 수 없는 토큰 '${tok.value}'${hint ? ` ('${hint}'을(를) 의도했나요?)` : ''}. 허용: ${SLIDE_TYPES.join(', ')}, alert, dark, key=value`,
         chunk.line,
       );
     }
@@ -224,9 +256,25 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
     if (!m?.[1]) break;
     const key = m[1];
     let value = (m[2] ?? '').trim();
+    let list: string[] | undefined;
     const fieldLine = lineAt(j);
     j++;
-    if (/^[|>][+-]?$/.test(value)) {
+    if (value === '' && /^\s+\S/.test(lines[j] ?? '')) {
+      // `meta:` followed by an indented YAML value, typically a `- item` list.
+      const block: string[] = [];
+      while (j < lines.length && /^\s+\S/.test(lines[j] ?? '')) block.push(lines[j++] ?? '');
+      const parsed = key === 'note' ? readBlockScalar(key, '|', block) : readYamlValue(key, block);
+      if (Array.isArray(parsed)) list = parsed.map(listItemText).filter((v) => v !== '');
+      else if (typeof parsed === 'string' || typeof parsed === 'number') value = String(parsed);
+      else
+        report(
+          ctx,
+          'error',
+          'format.field.invalid',
+          `필드 '${key}' 아래의 들여쓴 줄을 읽을 수 없습니다 (YAML 목록 '- 항목' 또는 한 줄 값).`,
+          fieldLine,
+        );
+    } else if (/^[|>][+-]?$/.test(value)) {
       const block: string[] = [];
       while (j < lines.length) {
         const l = lines[j] ?? '';
@@ -264,7 +312,10 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
         `필드 '${key}'가 두 번 지정되어 마지막 값을 씁니다.`,
         fieldLine,
       );
-    fields.set(key, { value, line: fieldLine });
+    fields.set(
+      key,
+      list ? { value: list.join(', '), list, line: fieldLine } : { value, line: fieldLine },
+    );
   }
 
   // Id first, so every later diagnostic carries it.
@@ -362,6 +413,17 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
         chunk.line,
       );
   }
+  if (dark) {
+    slide.dark = true;
+    if (!TITLE_SLIDE_TYPES.some((t) => t === type))
+      report(
+        ctx,
+        'warn',
+        'format.slide.dark',
+        `dark는 ${TITLE_SLIDE_TYPES.join(', ')} 슬라이드에서만 쓰입니다.`,
+        chunk.line,
+      );
+  }
   const get = (key: string): string | undefined => {
     const v = fields.get(key)?.value;
     return v === undefined || v === '' ? undefined : v;
@@ -378,14 +440,41 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
       "슬라이드에 'title:' 필드가 필요합니다.",
       chunk.line,
     );
-  for (const key of ['subtitle', 'tag', 'group', 'question', 'cite', 'no'] as const) {
+  for (const key of [
+    'subtitle',
+    'tag',
+    'group',
+    'question',
+    'cite',
+    'no',
+    'kicker',
+    'tagline',
+    'toc',
+  ] as const) {
     const v = get(key);
     if (v !== undefined) slide[key] = v;
   }
-  const refs = get('refs');
-  if (refs !== undefined) slide.refs = parseIdList(refs);
-  const only = get('only');
-  if (only !== undefined) slide.only = parseIdList(only);
+  // `kicker: ""` is kept: it turns off the cover's default `${course} · ${week}주차` line.
+  if (fields.get('kicker')?.value === '' && TITLE_SLIDE_TYPES.some((t) => t === type))
+    slide.kicker = '';
+  const meta = fields.get('meta');
+  if (meta) {
+    // `meta: []` is kept: it turns off the cover's default `[date, presenter]` line.
+    const items = meta.list ?? parseTextList(meta.value);
+    if (items.length || /^\[\s*\]$/.test(meta.value.trim())) slide.meta = items;
+  }
+  const art = fields.get('art');
+  if (art?.value) slide.art = resolveImageAsset(art.value, '', art.line, ctx);
+  const idList = (key: string): string[] | undefined => {
+    const f = fields.get(key);
+    if (f?.list) return f.list;
+    const v = get(key);
+    return v !== undefined ? parseIdList(v) : undefined;
+  };
+  const refs = idList('refs');
+  if (refs !== undefined) slide.refs = refs;
+  const only = idList('only');
+  if (only !== undefined) slide.only = only;
   const layout = fields.get('layout');
   if (layout) {
     if (layout.value === 'default' || layout.value === 'wide') slide.layout = layout.value;
@@ -402,8 +491,10 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
   // Body.
   if (type === 'raw') {
     const html = trimBlank(body).join('\n');
-    if (html) slide.html = html;
-    else
+    if (html) {
+      slide.html = html;
+      registerHtmlImages(html, lineAt(bodyStart), ctx);
+    } else
       report(
         ctx,
         'error',
@@ -413,15 +504,6 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
       );
   } else {
     slide.blocks = parseBody(body, lineAt(bodyStart), ctx);
-    if ((type === 'cover' || type === 'divider') && slide.blocks.length) {
-      report(
-        ctx,
-        'warn',
-        'format.body.ignored',
-        `${type} 슬라이드의 본문 블록은 표시되지 않습니다.`,
-        lineAt(bodyStart),
-      );
-    }
   }
 
   // Notes: inline `note:` field, trailing `note: |`, `## note` section; `time:` sets note.time.
@@ -454,7 +536,8 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
       );
     } else {
       note ??= { cues: [] };
-      if (note.time && JSON.stringify(note.time) !== JSON.stringify(parsed)) {
+      const merged = note.time ? mergeNoteTime(parsed, note.time) : parsed;
+      if (!merged) {
         report(
           ctx,
           'warn',
@@ -463,11 +546,51 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
           time.line,
         );
       }
-      note.time = parsed;
+      note.time = merged ?? parsed;
     }
   }
   if (note) slide.note = note;
   return slide;
+}
+
+/**
+ * `time:` field and `[시간]` cue together: when they agree (same minutes, and no two different
+ * clock ranges or remarks) the result keeps every detail either gives, e.g. `time: 2.5분` plus
+ * `[시간] 2.5분 · 10:00 – 12:30` → the clock range. Undefined when they conflict.
+ */
+export function mergeNoteTime(field: NoteTime, cue: NoteTime): NoteTime | undefined {
+  if (field.minutes !== cue.minutes) return undefined;
+  const range = (t: NoteTime): string | undefined =>
+    t.from !== undefined && t.to !== undefined ? `${t.from}-${t.to}` : undefined;
+  const a = range(field);
+  const b = range(cue);
+  if (a !== undefined && b !== undefined && a !== b) return undefined;
+  if (field.remark !== undefined && cue.remark !== undefined && field.remark !== cue.remark)
+    return undefined;
+  const clock = b !== undefined ? cue : a !== undefined ? field : undefined;
+  const out: NoteTime = { minutes: cue.minutes };
+  if (clock?.from !== undefined && clock.to !== undefined) {
+    out.from = clock.from;
+    out.to = clock.to;
+  }
+  const remark = cue.remark ?? field.remark;
+  if (remark !== undefined) out.remark = remark;
+  return out;
+}
+
+function listItemText(v: unknown): string {
+  if (v === null || v === undefined) return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  return (typeof v === 'object' ? JSON.stringify(v) : String(v)).trim();
+}
+
+/** Value of an indented YAML block under `key:`; undefined when it is not valid YAML. */
+function readYamlValue(key: string, block: string[]): unknown {
+  try {
+    return (parseYaml(`${key}:\n${block.join('\n')}\n`) as Record<string, unknown> | null)?.[key];
+  } catch {
+    return undefined;
+  }
 }
 
 function trimBlank(lines: string[]): string[] {

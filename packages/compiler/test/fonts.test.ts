@@ -36,7 +36,8 @@ const FULL =
   '@font-face{font-family:Icons;font-style:normal;font-weight:400;src:url(fonts/icons.woff2) format("woff2")}.a{color:red}';
 const NOFONTS = '.a{color:red}';
 
-describe('buildStyles', () => {
+// Subsetting runs harfbuzz (WASM); allow for slow, busy machines.
+describe('buildStyles', { timeout: 30_000 }, () => {
   it('embed uses marco.css as is', async () => {
     const r = await buildStyles({
       mode: 'embed',

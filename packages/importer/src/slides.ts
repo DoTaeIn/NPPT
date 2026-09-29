@@ -1,24 +1,39 @@
 /**
  * Slide scaffolds for the two legacy families: which elements carry the title, eyebrow,
  * question, footer and refs, and where the body starts. Body content goes through blocks.ts.
+ *
+ * Titles: `title` is the heading the audience sees; the legacy `data-title` (the TOC label) is
+ * kept as `toc` when it differs. Cover, hero and divider slides fill the v0.2 fields `kicker`,
+ * `tagline`, `meta` and `art` (components.md §1).
  */
-import type { Block, Slide, SlideType } from '@marco/schema';
-import { mapChildren, mapElement, type MapContext } from './blocks.js';
-import { childElements, classes, hasClass, tagName, textOf } from './dom.js';
-import { inlineOf } from './inline.js';
+import type { Block, SlideType } from '@marco/schema';
+import { fallback, mapChildren, mapElement, type MapContext } from './blocks.js';
+import { childElements, classes, hasClass, isElement, isText, tagName, textOf } from './dom.js';
+import { inlineOf, plainText } from './inline.js';
+
+export { plainText };
+import type { ImportedSlide } from './types.js';
 
 export interface SlideDraft {
   type: SlideType;
   alert?: boolean;
+  /** Legacy `data-title` (TOC label). */
   title: string;
-  /** Visible on-slide heading, when different from the title. */
+  /** Visible on-slide heading; becomes `title` (with `data-title` as `toc` when different). */
   heading?: string;
+  /** Explicit TOC label (e.g. a quote slide, whose title is the quote). */
+  toc?: string;
   subtitle?: string;
   tag?: string;
   group?: string;
   question?: string;
   no?: string;
   cite?: string;
+  kicker?: string;
+  tagline?: string;
+  meta?: string[];
+  art?: string;
+  only?: string[];
   refs: string[];
   blocks: Block[];
   footer?: string;
@@ -40,6 +55,36 @@ function footerText(el: Element): string {
 /** Ref ids in a "참고 출처 S04 · S30 ↗" button. */
 export function refIdsFromButton(text: string): string[] {
   return [...text.matchAll(/\b([A-Z]{1,3}\d{1,3})\b/g)].map((m) => m[1] as string);
+}
+
+/** Lines of a meta strip: each text node and each child element is one line. */
+function metaLines(el: Element, ctx: MapContext): string[] {
+  const lines: string[] = [];
+  let pending: Node[] = [];
+  const flush = (): void => {
+    const text = pending.length ? inline(ctx, pending) : '';
+    if (text) lines.push(text);
+    pending = [];
+  };
+  for (const node of Array.from(el.childNodes)) {
+    if (isElement(node) && !['b', 'strong', 'em', 'i', 'code', 'a'].includes(tagName(node))) {
+      flush();
+      const text = inline(ctx, node);
+      if (text) lines.push(text);
+    } else if (isElement(node) || isText(node)) pending.push(node);
+  }
+  flush();
+  return lines;
+}
+
+/** The single `<img>` asset of an artwork container, registered and marked referenced. */
+function artAsset(el: Element, ctx: MapContext): string | undefined {
+  const imgs = tagName(el) === 'img' ? [el] : Array.from(el.querySelectorAll('img'));
+  if (imgs.length !== 1) return undefined;
+  if (textOf(el)) return undefined;
+  const id = ctx.assets.fromImg(imgs[0] as Element);
+  if (id) ctx.assets.markReferenced(id);
+  return id;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -76,18 +121,12 @@ export function v20Slide(
   }
   if (slideRefs?.length) d.refs.push(...slideRefs);
 
-  const dropCourseLine = (el: Element): void => {
-    const text = textOf(el);
-    if (d.footer && text === d.footer)
-      ctx.report.addDropped('course · week line (same as the footer)', ctx.slideId);
-    else d.blocks.push({ type: 'paragraph', text: inline(ctx, el) });
-  };
-
   if (type === 'cover' || type === 'divider') {
     // Cover and divider scaffolds do not show an eyebrow; V20 used data-tag only in the TOC.
     // A divider's tag becomes the TOC `group` of the slides that follow it (see import.ts).
     if (d.tag) {
-      if (type === 'cover') ctx.report.addDropped(`cover TOC tag (\`${d.tag}\`)`, ctx.slideId);
+      if (type === 'cover')
+        ctx.report.addDropped(`cover TOC prefix (\`data-tag="${d.tag}"\`)`, ctx.slideId);
       d.groupLabel = d.tag;
       delete d.tag;
     }
@@ -97,17 +136,18 @@ export function v20Slide(
     for (const child of childElements(section)) {
       if (hasClass(child, 'slide-tag-bottom')) continue;
       if (hasClass(child, 'v-cover-art')) {
-        d.blocks.push(...mapChildren(child, ctx));
+        const art = artAsset(child, ctx);
+        if (art && !d.art) d.art = art;
+        else d.blocks.push(...mapChildren(child, ctx));
         continue;
       }
       if (hasClass(child, 'v-cover-content')) {
         for (const c of childElements(child)) {
-          if (hasClass(c, 'cover-eyebrow')) dropCourseLine(c);
+          if (hasClass(c, 'cover-eyebrow')) d.kicker = inline(ctx, c);
+          else if (hasClass(c, 'cover-en')) d.tagline = inline(ctx, c);
           else if (hasClass(c, 'cover-tagline')) d.subtitle = inline(ctx, c);
-          else if (tagName(c) === 'h1')
-            d.blocks.push({ type: 'paragraph', text: inline(ctx, c), lead: true });
-          else if (hasClass(c, 'cover-meta'))
-            d.blocks.push({ type: 'paragraph', text: inline(ctx, c) });
+          else if (tagName(c) === 'h1' && !d.heading) d.heading = inline(ctx, c);
+          else if (hasClass(c, 'cover-meta')) d.meta = metaLines(c, ctx);
           else d.blocks.push(...mapElement(c, ctx));
         }
         continue;
@@ -123,10 +163,12 @@ export function v20Slide(
       for (const c of childElements(parent)) {
         if (hasClass(c, 'slide-tag-bottom')) continue;
         if (hasClass(c, 'big-num')) d.no = textOf(c);
-        else if (hasClass(c, 'div-eyebrow')) dropCourseLine(c);
-        else if (/^h[12]$/.test(tagName(c))) d.subtitle = inline(ctx, c);
-        else if (hasClass(c, 'div-desc'))
-          d.blocks.push({ type: 'paragraph', text: inline(ctx, c) });
+        else if (hasClass(c, 'div-eyebrow')) {
+          if (d.footer && textOf(c) === d.footer)
+            ctx.report.addDropped('divider course · week line (same as the footer)', ctx.slideId);
+          else d.kicker = inline(ctx, c);
+        } else if (/^h[12]$/.test(tagName(c)) && !d.heading) d.heading = inline(ctx, c);
+        else if (hasClass(c, 'div-desc') && !d.subtitle) d.subtitle = inline(ctx, c);
         else if (tagName(c) === 'div' && classes(c).length === 0) walk(c);
         else d.blocks.push(...mapElement(c, ctx));
       }
@@ -136,10 +178,12 @@ export function v20Slide(
   }
 
   if (type === 'quote') {
-    // IR quote slide: `title` is the quote itself (rendered big), `tag` the eyebrow above it.
-    // V20's data-title / data-tag are TOC-only labels here and have no IR field.
-    const tocLabel = [d.tag, d.title].filter(Boolean).join(' · ');
-    delete d.tag;
+    // IR quote slide: `title` is the quote itself (rendered big), `tag` the eyebrow above it,
+    // `toc` the legacy TOC label.
+    if (d.tag) {
+      ctx.report.addDropped(`quote slide TOC prefix (\`data-tag="${d.tag}"\`)`, ctx.slideId);
+      delete d.tag;
+    }
     const ending = section.querySelector('.ending') ?? section;
     let quote = '';
     for (const c of childElements(ending)) {
@@ -150,17 +194,15 @@ export function v20Slide(
       else d.blocks.push(...mapElement(c, ctx));
     }
     if (quote) {
-      if (tocLabel)
-        ctx.report.addDropped(
-          `TOC label of a quote slide (\`${tocLabel}\`; the quote is the title)`,
-          ctx.slideId,
-        );
-      d.title = quote;
+      if (d.title && d.title !== quote) d.toc = d.title;
+      d.heading = quote;
     }
     return d;
   }
 
   const wrapper = section.querySelector(':scope > .slide-wrapper') ?? section;
+  const references = wrapper.querySelector('.final-references');
+  if (references) d.type = 'references';
   for (const c of childElements(wrapper)) {
     if (hasClass(c, 'slide-tag-bottom')) continue;
     if (hasClass(c, 'eyebrow')) {
@@ -172,12 +214,42 @@ export function v20Slide(
       continue;
     }
     if (hasClass(c, 's-body')) {
-      d.blocks.push(...mapChildren(c, ctx));
+      for (const b of childElements(c)) {
+        if (b === references) d.only = referenceIds(b, ctx);
+        else d.blocks.push(...mapElement(b, ctx));
+      }
       continue;
     }
     d.blocks.push(...mapElement(c, ctx));
   }
   return d;
+}
+
+/** V20 `.final-references`: grouped `a[data-reference-id]` lists → ref ids in display order. */
+function referenceIds(el: Element, ctx: MapContext): string[] {
+  const ids: string[] = [];
+  const groups: string[] = [];
+  for (const article of childElements(el)) {
+    const h = article.querySelector('h3, h4');
+    if (h) groups.push(textOf(h));
+    for (const a of Array.from(article.querySelectorAll('a'))) {
+      const id =
+        a.getAttribute('data-reference-id') ??
+        refIdsFromButton(textOf(a.querySelector('small') ?? a))[0];
+      if (id && !ids.includes(id)) ids.push(id);
+    }
+  }
+  if (groups.length)
+    ctx.report.addDropped(
+      `reference group headings (${groups.map((g) => `\`${g}\``).join(', ')}; the list keeps their order)`,
+      ctx.slideId,
+    );
+  ctx.report.addHeuristic(
+    'grouped reference list → `references` slide (`only`)',
+    'div.final-references',
+    ctx.slideId,
+  );
+  return ids;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -186,8 +258,9 @@ export function v20Slide(
 
 export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
   const cls = classes(section);
+  const hero = cls.includes('hero');
   const d: SlideDraft = {
-    type: cls.includes('hero') ? 'hero' : 'content',
+    type: hero ? 'hero' : 'content',
     title: section.getAttribute('data-title')?.trim() ?? '',
     refs: [],
     blocks: [],
@@ -217,6 +290,11 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
       if (text && !d.question) d.question = textOf(text);
       continue;
     }
+    if (tagName(c) === 'svg' && hasClass(c, 'hero-art')) {
+      // Inline illustration: no asset to point `art` at, so it stays in the body verbatim.
+      d.blocks.push(...fallback(c, ctx));
+      continue;
+    }
     if (hasClass(c, 's-head')) {
       for (const h of childElements(c)) {
         if (hasClass(h, 's-eyebrow')) {
@@ -242,16 +320,16 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
       for (const h of childElements(c)) {
         if (hasClass(h, 'cover-logos'))
           ctx.report.addDropped('cover logos (theme decoration)', ctx.slideId);
-        else if (hasClass(h, 'cover-badge')) d.tag ??= textOf(h);
+        else if (hasClass(h, 'cover-badge')) d.kicker ??= inline(ctx, h);
         else if (hasClass(h, 'cover-title') || tagName(h) === 'h1') d.heading = inline(ctx, h);
         else if (hasClass(h, 'cover-sub')) d.subtitle = inline(ctx, h);
-        else if (hasClass(h, 'cover-meta')) {
-          const parts = childElements(h)
-            .map((s) => inline(ctx, s))
-            .filter(Boolean);
-          d.blocks.push({ type: 'paragraph', text: parts.join(' · ') || inline(ctx, h) });
-        } else if (hasClass(h, 'cover-q')) {
+        else if (hasClass(h, 'cover-meta')) d.meta = metaLines(h, ctx);
+        else if (hasClass(h, 'cover-q')) {
           if (!d.question) d.question = inline(ctx, h, (x) => tagName(x) === 'span');
+        } else if (hasClass(h, 'cover-art') || tagName(h) === 'img') {
+          const art = artAsset(h, ctx);
+          if (art) d.art = art;
+          else d.blocks.push(...mapElement(h, ctx));
         } else d.blocks.push(...mapElement(h, ctx));
       }
       continue;
@@ -263,13 +341,13 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
             const no = textOf(h);
             if (/^\d+$/.test(no)) d.no = no;
             else ctx.report.addDropped(`hero marker \`${no}\` (\`.div-num\`)`, ctx.slideId);
-          } else if (hasClass(h, 'div-eyebrow')) d.tag ??= textOf(h);
+          } else if (hasClass(h, 'div-eyebrow')) d.kicker ??= inline(ctx, h);
           else if (hasClass(h, 'div-title') || /^h[12]$/.test(tagName(h)))
             d.heading = inline(ctx, h);
           else if (hasClass(h, 'grow') || (tagName(h) === 'div' && classes(h).length === 0))
             walk(h);
-          else if (hasClass(h, 'div-desc', 'quote-src'))
-            d.blocks.push({ type: 'paragraph', text: inline(ctx, h) });
+          else if (hasClass(h, 'div-desc') && !d.subtitle) d.subtitle = inline(ctx, h);
+          else if (hasClass(h, 'quote-src')) (d.meta ??= []).push(inline(ctx, h));
           else d.blocks.push(...mapElement(h, ctx));
         }
       };
@@ -288,35 +366,32 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
   return d;
 }
 
-/** Inline Markdown → plain text (for comparing a heading with `data-title`). */
-export function plainText(md: string): string {
-  const kept: string[] = [];
-  return md
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\\([\\`*_<[~])/g, (_m, c: string) => `\uE010${kept.push(c) - 1}\uE011`)
-    .replace(/\*\*|\*|`/g, '')
-    .replace(/\uE010(\d+)\uE011/g, (_m, i: string) => kept[Number(i)] ?? '')
-    .trim();
-}
-
-/** Draft → IR slide; the heading becomes the subtitle when it differs from `data-title`. */
-export function finishSlide(d: SlideDraft, id: string, ctx: MapContext): Slide {
-  const slide: Slide = { id, type: d.type, title: d.title || d.heading || '', blocks: d.blocks };
-  if (d.heading && d.title && d.heading !== d.title) {
-    if (plainText(d.heading) !== d.title) {
-      ctx.report.titleMismatches.push({ slide: id, title: d.title, heading: d.heading });
-      if (!d.subtitle) d.subtitle = d.heading;
-      else d.blocks.unshift({ type: 'paragraph', text: d.heading, lead: true });
-    }
+/**
+ * Draft → IR slide. `title` is the visible heading; `data-title` becomes `toc` when it says
+ * something else (the heading is never repeated as a subtitle).
+ */
+export function finishSlide(d: SlideDraft, id: string, ctx: MapContext): ImportedSlide {
+  const legacy = d.title;
+  const heading = d.heading;
+  const slide: ImportedSlide = { id, type: d.type, title: heading || legacy || '', blocks: d.blocks };
+  if (d.toc) slide.toc = d.toc;
+  else if (heading && legacy && plainText(heading) !== legacy) {
+    slide.toc = legacy;
+    ctx.report.titleMismatches.push({ slide: id, title: legacy, heading });
   }
-  if (d.subtitle) slide.subtitle = d.subtitle;
+  if (d.subtitle && plainText(d.subtitle) !== plainText(slide.title)) slide.subtitle = d.subtitle;
   if (d.tag) slide.tag = d.tag;
   if (d.group) slide.group = d.group;
   if (d.question) slide.question = d.question;
   if (d.alert) slide.alert = true;
+  if (d.kicker) slide.kicker = d.kicker;
+  if (d.tagline) slide.tagline = d.tagline;
+  if (d.meta?.length) slide.meta = d.meta;
+  if (d.art) slide.art = d.art;
   const refs = [...new Set(d.refs)];
   if (refs.length) slide.refs = refs;
   if (d.no) slide.no = d.no;
   if (d.cite) slide.cite = d.cite;
+  if (d.only?.length) slide.only = d.only;
   return slide;
 }

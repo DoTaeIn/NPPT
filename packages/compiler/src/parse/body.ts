@@ -27,6 +27,7 @@ import type {
   VideoBlock,
   WidgetBlock,
 } from '../ir.js';
+import { assetIdForPath, isLocalPath, scanImages } from '../html-images.js';
 import { CALLOUT_KINDS, TONES, VERDICTS } from '../ir.js';
 import {
   type ContainerAttrSpec,
@@ -1202,10 +1203,34 @@ function htmlBlock(c: ContainerCtx): Block | undefined {
     err(c, 'format.container.empty', ':::html이 비어 있습니다.');
     return undefined;
   }
-  return { type: 'html', html: lines.join('\n') };
+  const html = lines.join('\n');
+  registerHtmlImages(html, c.line, c.env.ctx);
+  return { type: 'html', html };
 }
 
 // --- assets -------------------------------------------------------------------
+
+/**
+ * `<img>` tags in author HTML (`:::html`, `raw` slides): a local `src` path is registered as an
+ * asset like an image block path; `data-asset` ids are checked once every slide is parsed.
+ */
+export function registerHtmlImages(
+  html: string,
+  line: number | undefined,
+  ctx: ParseContext,
+): void {
+  const assets = ctx.lecture.assets;
+  for (const img of scanImages(html)) {
+    if (img.asset !== undefined) {
+      ctx.htmlAssets.push({ id: img.asset, line, slide: ctx.slide });
+    } else if (isLocalPath(img.src) && assetIdForPath(assets, img.src) === undefined) {
+      const base = assetIdFromPath(img.src);
+      let id = base;
+      for (let n = 2; assets[id]; n++) id = `${base}-${n}`;
+      assets[id] = img.alt ? { path: img.src, alt: img.alt } : { path: img.src };
+    }
+  }
+}
 
 /**
  * Image reference → asset id. Accepts an id from the front matter, a path already registered

@@ -4,26 +4,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
-import { type CliIo, runCli, runWatch } from '../src/index.js';
+import { runCli, runWatch } from '../src/index.js';
+import { capture as captureIn } from './helpers.js';
 
 const ATTRIBUTION =
   'Powered by MARCO — Created by DoTaeIn, Original project: https://github.com/DoTaeIn/Marco';
 const root = mkdtempSync(join(tmpdir(), 'marco-cli-'));
 afterAll(() => rmSync(root, { recursive: true, force: true }));
 
-function capture(cwd = root): CliIo & { stdout: string[]; stderr: string[]; text(): string } {
-  const stdout: string[] = [];
-  const stderr: string[] = [];
-  return {
-    stdout,
-    stderr,
-    out: (l) => stdout.push(l),
-    err: (l) => stderr.push(l),
-    color: false,
-    cwd,
-    text: () => [...stdout, ...stderr].join('\n'),
-  };
-}
+const capture = (cwd = root) => captureIn(cwd);
 
 describe('marco new → build → lint', () => {
   const dir = join(root, 'week02');
@@ -176,14 +165,19 @@ describe('errors and lint output', () => {
     expect(version.stdout).toEqual([expect.stringMatching(/^\d+\.\d+\.\d+/)]);
   });
 
-  it('import and ai are stubs', async () => {
-    const io = capture();
-    expect(await runCli(['import', 'deck.html', '--out', 'x'], io)).toBe(0);
-    expect(await runCli(['ai', 'outline', '6주차'], io)).toBe(0);
-    expect(io.stdout).toEqual([
-      '준비 중 marco import는 @marco/importer 패키지와 함께 제공됩니다.',
-      '준비 중 marco ai는 @marco/ai 패키지와 함께 제공됩니다.',
-    ]);
+  it('help lists every command and every ai step', async () => {
+    const help = capture();
+    expect(await runCli(['help'], help)).toBe(0);
+    for (const cmd of ['new', 'build', 'watch', 'lint', 'pdf', 'import', 'ai'])
+      expect(help.text()).toMatch(new RegExp(`^  ${cmd}\\b`, 'm'));
+    const ai = capture();
+    expect(await runCli(['ai', '--help'], ai)).toBe(0);
+    for (const step of ['kit', 'outline', 'slides', 'notes', 'revise', 'repair', 'merge-notes'])
+      expect(ai.text()).toMatch(new RegExp(`^  ${step}\\b`, 'm'));
+    // Missing arguments are usage errors, not crashes.
+    expect(await runCli(['import', 'only-one.html'], capture())).toBe(1);
+    expect(await runCli(['import', 'nope.html', 'out'], capture())).toBe(1);
+    expect(await runCli(['pdf', 'nope.marco.md'], capture())).toBe(1);
   });
 });
 
@@ -205,6 +199,27 @@ describe('marco watch', () => {
     expect(await done).toBe(0);
     expect(readFileSync(join(dir, 'w.html'), 'utf8')).toContain('바뀐 제목');
     expect(io.stdout.some((l) => l.includes('변경 감지'))).toBe(true);
+  }, 15_000);
+
+  it('rebuilds when a sidecar JSON file changes', async () => {
+    const dir = mkdtempSync(join(root, 'watch-sidecar-'));
+    writeFileSync(join(dir, 'sims.json'), '{"a": 1}');
+    writeFileSync(
+      join(dir, 's.marco.md'),
+      '---\ntitle: 감시\nsims: sims.json\n---\n# slide\ntitle: A\n',
+    );
+    const io = capture(dir);
+    const ac = new AbortController();
+    const done = runWatch('s.marco.md', { fonts: 'none' }, io, ac.signal, 20);
+    const waitFor = async (pred: () => boolean): Promise<void> => {
+      for (let i = 0; i < 200 && !pred(); i++) await new Promise((r) => setTimeout(r, 25));
+    };
+    await waitFor(() => io.stdout.some((l) => l.startsWith('변경을 감시합니다')));
+    writeFileSync(join(dir, 'sims.json'), '{"changed": "바뀐 값"}');
+    await waitFor(() => readFileSync(join(dir, 's.html'), 'utf8').includes('바뀐 값'));
+    ac.abort();
+    expect(await done).toBe(0);
+    expect(readFileSync(join(dir, 's.html'), 'utf8')).toContain('"changed":"바뀐 값"');
   }, 15_000);
 });
 

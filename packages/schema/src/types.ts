@@ -112,10 +112,29 @@ export interface Slide {
   /** TOC grouping, e.g. "표지 · 도입". */
   group?: string;
   title: string;
+  /** TOC / search label when it differs from the visible title (any slide type). Default: `title`. */
+  toc?: string;
   subtitle?: string;
   /** Guiding question strip under the title (hero slides in v9.7). */
   question?: string;
+  /** Red-toned variant of a hero (or divider) slide: `# slide hero alert`. */
   alert?: boolean;
+  /**
+   * cover / hero / divider: small line above the title. A cover without one shows
+   * `${course} · ${week}주차` (see `normalizeLecture`'s `coverDefaults`).
+   */
+  kicker?: string;
+  /** cover / hero / divider: letter-spaced secondary line, e.g. "PHYSICAL ACCESS × IDENTITY". */
+  tagline?: string;
+  /**
+   * cover / hero / divider: short lines under the title block, one per entry, e.g.
+   * `["2026학년도 2학기 · 5주차", "중앙대학교 산업보안학과"]`. A cover without it shows `[date, presenter]`.
+   */
+  meta?: string[];
+  /** cover / hero / divider: asset id (key into `Lecture.assets`) shown as artwork on the right. */
+  art?: string;
+  /** cover / hero / divider: dark variant (`# slide cover dark`); these slides are light by default. */
+  dark?: boolean;
   /** Ref ids cited on this slide → "참고 출처" button. */
   refs?: string[];
   layout?: 'default' | 'wide';

@@ -37,6 +37,41 @@ export const DEFAULT_META = Object.freeze({
 /** Title given to a `references` slide that has none. */
 export const DEFAULT_REFERENCES_TITLE = '참고 자료';
 
+export interface NormalizeOptions {
+  /**
+   * Write the cover defaults into every `cover` slide that lacks them: `kicker` =
+   * `${course} · ${week}주차` (`coverKicker`) and `meta` = `[date, presenter]` (`coverMeta`).
+   * Off by default: renderers apply the same defaults when the fields are absent, so the IR
+   * (and any source serialized from it) keeps only what the author wrote.
+   */
+  coverDefaults?: boolean;
+}
+
+const nonEmptyText = (value: unknown): value is string | number =>
+  (typeof value === 'string' && value.trim() !== '') ||
+  (typeof value === 'number' && Number.isFinite(value));
+
+/**
+ * Default cover kicker: `${course} · ${week}주차`, or whichever part exists; `undefined` when
+ * neither does (components.md §1).
+ */
+export function coverKicker(
+  meta: Partial<Pick<LectureMeta, 'course' | 'week'>>,
+): string | undefined {
+  const parts: string[] = [];
+  if (nonEmptyText(meta.course)) parts.push(String(meta.course).trim());
+  if (nonEmptyText(meta.week)) parts.push(`${String(meta.week).trim()}주차`);
+  return parts.length ? parts.join(' · ') : undefined;
+}
+
+/** Default cover meta lines: `[date, presenter]` without the missing ones; `undefined` when empty. */
+export function coverMeta(
+  meta: Partial<Pick<LectureMeta, 'date' | 'presenter'>>,
+): string[] | undefined {
+  const lines = [meta.date, meta.presenter].filter(nonEmptyText).map((line) => String(line).trim());
+  return lines.length ? lines : undefined;
+}
+
 /** String fields whose whitespace is significant: never trimmed. */
 const VERBATIM_KEYS: ReadonlySet<string> = new Set(['code', 'html', 'raw']);
 /** Plugin payloads: cloned as-is (no trimming, no defaults). */
@@ -99,6 +134,17 @@ function normalizeBlocks(blocks: unknown): void {
   }
 }
 
+function applyCoverDefaults(slide: Json, meta: Json): void {
+  if (slide.kicker === undefined) {
+    const kicker = coverKicker(meta as Partial<LectureMeta>);
+    if (kicker !== undefined) slide.kicker = kicker;
+  }
+  if (slide.meta === undefined) {
+    const lines = coverMeta(meta as Partial<LectureMeta>);
+    if (lines !== undefined) slide.meta = lines;
+  }
+}
+
 function normalizeNote(note: Json): void {
   if (!Array.isArray(note.cues)) {
     if (typeof note.raw === 'string') {
@@ -126,8 +172,11 @@ function normalizeNote(note: Json): void {
  * - All strings are trimmed except `code`, `html` and `note.raw`; `params`, `sims` and
  *   `terminals` are copied verbatim. Empty `refs[].url` and `assets.*.source` are dropped.
  * - Unknown properties are kept, so `validateLecture` can still report them.
+ * - With `{ coverDefaults: true }`, cover slides without `kicker`/`meta` get `coverKicker(meta)`
+ *   and `coverMeta(meta)` (only when those are non-empty). An explicit value, even `""` or `[]`,
+ *   is kept.
  */
-export function normalizeLecture(input: LectureInput): Lecture {
+export function normalizeLecture(input: LectureInput, options: NormalizeOptions = {}): Lecture {
   if (!isRecord(input)) throw new TypeError('normalizeLecture: input must be an object');
   const src = cloneValue(input, undefined, true) as Json;
 
@@ -185,6 +234,7 @@ export function normalizeLecture(input: LectureInput): Lecture {
     }
     if (slide.blocks === undefined) slide.blocks = [];
     normalizeBlocks(slide.blocks);
+    if (options.coverDefaults && slide.type === 'cover') applyCoverDefaults(slide, meta);
     const note = slide.note;
     if (!isRecord(note) || !Array.isArray(note.cues)) return;
     note.cues.forEach((cue: unknown, cueIndex: number) => {

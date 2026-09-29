@@ -2,7 +2,7 @@
 import { isMap, LineCounter, parseDocument } from 'yaml';
 import type { Asset, LectureMeta, QuizItem, Ref, Video } from '../ir.js';
 import { EDITIONS, REF_KINDS, THEMES } from '../ir.js';
-import { type ParseContext, report } from './context.js';
+import { type ParseContext, report, SIDECAR_KEYS } from './context.js';
 import { parseSeconds } from './text.js';
 
 const KNOWN_KEYS = new Set([
@@ -203,13 +203,42 @@ export function parseFrontMatter(text: string, startLine: number, ctx: ParseCont
       }
     }
   }
-  if (data.quiz !== undefined) {
-    if (Array.isArray(data.quiz)) lecture.quiz = data.quiz as QuizItem[];
-    else
-      report(ctx, 'error', 'format.frontmatter.quiz', 'quiz는 목록이어야 합니다.', lineOf('quiz'));
+  // Plugin data: inline (quiz list, sims/terminals maps) or a JSON file path (`sims: sims.json`).
+  for (const key of SIDECAR_KEYS) {
+    const value = data[key];
+    if (value === undefined || value === null) continue;
+    if (typeof value === 'string') {
+      if (value.trim()) ctx.sidecars.push({ key, path: value.trim(), line: lineOf(key) });
+      else
+        report(
+          ctx,
+          'error',
+          `format.frontmatter.${key}`,
+          `${key}에 JSON 파일 경로가 비어 있습니다.`,
+          lineOf(key),
+        );
+    } else if (key === 'quiz') {
+      if (Array.isArray(value)) lecture.quiz = value as QuizItem[];
+      else
+        report(
+          ctx,
+          'error',
+          'format.frontmatter.quiz',
+          'quiz는 목록이거나 JSON 파일 경로(quiz: quiz.json)여야 합니다.',
+          lineOf('quiz'),
+        );
+    } else if (isObj(value)) {
+      lecture[key] = value;
+    } else {
+      report(
+        ctx,
+        'error',
+        `format.frontmatter.${key}`,
+        `${key}는 맵이거나 JSON 파일 경로(${key}: ${key}.json)여야 합니다.`,
+        lineOf(key),
+      );
+    }
   }
-  if (isObj(data.sims)) lecture.sims = data.sims;
-  if (isObj(data.terminals)) lecture.terminals = data.terminals;
 }
 
 /** Accepts a map `id → {…}` (or `id → "title"`) or a list of `{ id, … }`. */

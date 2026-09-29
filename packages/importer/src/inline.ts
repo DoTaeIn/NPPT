@@ -211,3 +211,14 @@ export function inlineOf(nodes: Node | Node[], opts: InlineOptions = {}): string
   const raw = build(list, opts).replace(/\s+/g, ' ');
   return resolveEmphasis(raw, opts.stats).replace(/\s+/g, ' ').trim();
 }
+
+/** Inline Markdown → plain text (links keep their label, emphasis and code marks are removed). */
+export function plainText(md: string): string {
+  const kept: string[] = [];
+  return md
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\\([\\`*_<[~])/g, (_m, c: string) => `\uE010${kept.push(c) - 1}\uE011`)
+    .replace(/\*\*|\*|`/g, '')
+    .replace(/\uE010(\d+)\uE011/g, (_m, i: string) => kept[Number(i)] ?? '')
+    .trim();
+}

@@ -2,7 +2,7 @@
   "name": "@marco/cli",
   "version": "0.0.1",
   "private": true,
-  "description": "marco CLI: new | build | watch | lint | import | ai",
+  "description": "marco CLI: new | build | watch | lint | pdf | import | ai",
   "license": "SEE LICENSE IN ../../LICENSE",
   "type": "module",
   "main": "./dist/index.js",

@@ -340,6 +340,10 @@
           "type": "string",
           "description": "Budget: 34 chars."
         },
+        "toc": {
+          "type": "string",
+          "description": "TOC / search label when it differs from the visible title; default title."
+        },
         "subtitle": {
           "type": "string",
           "description": "Budget: 60 chars."
@@ -350,7 +354,31 @@
         },
         "alert": {
           "type": "boolean",
-          "description": "Hero slide red variant."
+          "description": "Red variant of a hero (or divider) slide."
+        },
+        "kicker": {
+          "type": "string",
+          "description": "cover/hero/divider: small line above the title; a cover without one shows \"${course} · ${week}주차\"."
+        },
+        "tagline": {
+          "type": "string",
+          "description": "cover/hero/divider: letter-spaced secondary line, e.g. \"PHYSICAL ACCESS × IDENTITY\"."
+        },
+        "meta": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "cover/hero/divider: short lines under the title block; a cover without it shows [date, presenter]."
+        },
+        "art": {
+          "type": "string",
+          "minLength": 1,
+          "description": "cover/hero/divider: asset id (key into Lecture.assets) shown as artwork on the right."
+        },
+        "dark": {
+          "type": "boolean",
+          "description": "cover/hero/divider: dark variant (light by default)."
         },
         "refs": {
           "type": "array",

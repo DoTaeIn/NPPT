@@ -3,17 +3,35 @@
  * v9.7 week-5 family, PLAN.md §2) → Lecture IR + `.marco.md` source + assets + report.
  */
 import { parseHTML } from 'linkedom';
-import { normalizeLecture, parseNote, validateLecture } from '@marco/schema';
-import type { Lecture, LectureMeta, QuizItem, Ref, Slide, SlideNote, Video } from '@marco/schema';
+import {
+  lectureSchema,
+  normalizeLecture,
+  parseNote,
+  validateLecture,
+  type ValidationError,
+} from '@marco/schema';
+import type { Lecture, LectureMeta, QuizItem, Ref, SlideNote, Video } from '@marco/schema';
 import { AssetRegistry } from './assets.js';
 import type { MapContext } from './blocks.js';
+import type { ImportConfig, SlideOverrides, SlideRule } from './config.js';
+import { runCorrections, type CorrectionData } from './corrections.js';
+import { CssIndex } from './css.js';
 import { textOf } from './dom.js';
+import { plainText } from './inline.js';
 import { extractWindowData } from './jsdata.js';
+import { splitProseNote } from './notesplit.js';
 import { PayloadTable } from './payloads.js';
 import { finishReport, ReportBuilder } from './report.js';
 import { serializeMarco } from './serialize.js';
 import { finishSlide, v20Slide, v97Slide, type SlideDraft } from './slides.js';
-import type { ImportOptions, ImportResult, LegacyFamily } from './types.js';
+import type {
+  ConfigReport,
+  CorrectionsReport,
+  ImportedSlide,
+  ImportOptions,
+  ImportResult,
+  LegacyFamily,
+} from './types.js';
 
 export function detectFamily(html: string): LegacyFamily {
   if (/class="[^"]*\bv20-slide\b/.test(html) || /class='[^']*\bv20-slide\b/.test(html))
@@ -37,7 +55,7 @@ function slideId(index: number): string {
   return `s-${String(index + 1).padStart(2, '0')}`;
 }
 
-function noteFromV20(text: string): SlideNote | undefined {
+function proseNote(text: string): SlideNote | undefined {
   const prose = text.replace(/\s+/g, ' ').trim();
   if (!prose) return undefined;
   return parseNote(`[대사] ${prose}`);
@@ -74,14 +92,153 @@ export function quizFrom(value: unknown): QuizItem[] | undefined {
   return out.length ? out : undefined;
 }
 
+// ---------------------------------------------------------------------------------------------
+// config helpers
+// ---------------------------------------------------------------------------------------------
+
+function ruleLabel(rule: SlideRule): string {
+  return rule.at !== undefined ? `at ${rule.at}` : `legacyTitle "${rule.legacyTitle ?? ''}"`;
+}
+
+/** Which config rule applies to each slide position (by `at`, else by legacy `data-title`). */
+function matchRules(
+  rules: SlideRule[],
+  legacyTitles: string[][],
+  report: ConfigReport | undefined,
+): (SlideRule[] | undefined)[] {
+  const out: (SlideRule[] | undefined)[] = legacyTitles.map(() => undefined);
+  for (const rule of rules) {
+    const hits =
+      rule.at !== undefined
+        ? rule.at <= legacyTitles.length
+          ? [rule.at - 1]
+          : []
+        : legacyTitles.flatMap((titles, i) => (titles.includes(rule.legacyTitle ?? '') ? [i] : []));
+    if (!hits.length) report?.unmatched.push(ruleLabel(rule));
+    for (const i of hits) (out[i] ??= []).push(rule);
+  }
+  return out;
+}
+
+const OVERRIDE_KEYS = [
+  'title',
+  'subtitle',
+  'toc',
+  'tag',
+  'group',
+  'question',
+  'kicker',
+  'tagline',
+  'meta',
+  'art',
+  'dark',
+  'layout',
+] as const satisfies readonly (keyof SlideOverrides)[];
+
+function applyOverrides(target: ImportedSlide, set: SlideOverrides): string[] {
+  const slide = target as unknown as Record<string, unknown>;
+  const fields: string[] = [];
+  for (const key of OVERRIDE_KEYS) {
+    const v = set[key];
+    if (v === undefined) continue;
+    fields.push(key);
+    if (v === '' || (Array.isArray(v) && !v.length && key !== 'meta')) {
+      delete slide[key];
+      continue;
+    }
+    slide[key] = v;
+  }
+  return fields;
+}
+
+// ---------------------------------------------------------------------------------------------
+// schema compatibility: fields the installed @marco/schema does not know yet
+// ---------------------------------------------------------------------------------------------
+
+const COVER_FIELDS = ['toc', 'kicker', 'tagline', 'meta', 'art', 'dark'] as const;
+
+function schemaSlideFields(): Set<string> {
+  const defs = (lectureSchema as { $defs?: Record<string, { properties?: object }> }).$defs;
+  return new Set(Object.keys(defs?.Slide?.properties ?? {}));
+}
+
+/** Validate, leaving out slide fields the installed schema does not know (they are reported). */
+function validateCompat(lecture: Lecture): { errors: ValidationError[]; pending: string[] } {
+  const known = schemaSlideFields();
+  const pending = COVER_FIELDS.filter(
+    (f) => !known.has(f) && lecture.slides.some((s) => f in (s as ImportedSlide)),
+  );
+  const copy: Lecture = pending.length
+    ? {
+        ...lecture,
+        slides: lecture.slides.map((s) => {
+          const c = { ...s } as Record<string, unknown>;
+          for (const f of pending) delete c[f];
+          return c as unknown as Lecture['slides'][number];
+        }),
+      }
+    : lecture;
+  const result = validateLecture(copy);
+  return { errors: result.ok ? [] : result.errors, pending: [...pending] };
+}
+
+// ---------------------------------------------------------------------------------------------
+// import
+// ---------------------------------------------------------------------------------------------
+
 export function importLegacyDeck(html: string, opts: ImportOptions = {}): ImportResult {
+  const config: ImportConfig = opts.config ?? {};
   const family: LegacyFamily =
-    !opts.family || opts.family === 'auto' ? detectFamily(html) : opts.family;
+    opts.family && opts.family !== 'auto' ? opts.family : (config.family ?? detectFamily(html));
   const payloads = new PayloadTable();
   const tokenized = payloads.tokenize(html);
   const { document } = parseHTML(tokenized);
   const report = new ReportBuilder();
   const assets = new AssetRegistry(payloads, (opts.assetDir ?? 'assets').replace(/\/+$/, ''));
+  const css = new CssIndex(
+    Array.from(document.querySelectorAll('style'))
+      .map((s) => s.textContent ?? '')
+      .join('\n'),
+  );
+  const configReport: ConfigReport | undefined = opts.config
+    ? {
+        source: opts.configSource ?? 'inline',
+        notes: family === 'v20' ? (config.notes ?? 'split') : 'verbatim',
+        applied: [],
+        unmatched: [],
+        droppedRefs: [],
+        assets: [],
+      }
+    : undefined;
+
+  const selector = family === 'v20' ? 'section.slide.v20-slide' : 'section.slide';
+  let sections = Array.from(document.querySelectorAll(selector));
+  if (family === 'v20' && !sections.length)
+    sections = Array.from(document.querySelectorAll('section.slide'));
+  const legacyTitles = sections.map((s) => [s.getAttribute('data-title')?.trim() ?? '']);
+
+  // ---- load-time corrections (opt-in per deck) ---------------------------------------------
+  let corrected: CorrectionData | undefined;
+  let correctionsReport: CorrectionsReport | undefined;
+  if (config.corrections?.length) {
+    const data: CorrectionData = {};
+    for (const key of ['SIMS', 'QUIZ', 'SCRIPT'] as const) {
+      const found = extractWindowData(html, key);
+      if (found) data[key] = found.value;
+    }
+    const result = runCorrections(document, config.corrections, data);
+    corrected = result;
+    correctionsReport = result.report;
+    sections.forEach((s, i) => {
+      const now = s.getAttribute('data-title')?.trim() ?? '';
+      const titles = legacyTitles[i];
+      if (titles && !titles.includes(now)) titles.push(now);
+    });
+  }
+  const windowData = (key: 'SIMS' | 'QUIZ' | 'SCRIPT' | 'TERMS'): { value: unknown } | undefined =>
+    corrected && key !== 'TERMS' && corrected[key] !== undefined
+      ? { value: corrected[key] }
+      : extractWindowData(html, key);
 
   const refs: Ref[] = [];
   const videos = new Map<string, Video>();
@@ -120,7 +277,7 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
           );
           if (dropped.length) {
             report.warn(
-              `Video \`${v.id}\`: fields without an IR home were not imported (${dropped.join(', ')}); the slide's html block still shows them.`,
+              `Video \`${v.id}\`: fields without an IR home were not imported (${dropped.join(', ')}).`,
             );
           }
         }
@@ -129,7 +286,7 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
       }
     } else report.warn('No #lecture-data script found (assets, refs and videos are missing).');
   } else {
-    const quiz = extractWindowData(html, 'QUIZ');
+    const quiz = windowData('QUIZ');
     if (quiz) {
       const items = quizFrom(quiz.value);
       if (items) {
@@ -137,22 +294,23 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
         data.quiz = items.length;
       } else report.warn('window.QUIZ does not have the QuizItem shape; not imported.');
     }
-    const sims = extractWindowData(html, 'SIMS');
+    const sims = windowData('SIMS');
     if (sims && sims.value && typeof sims.value === 'object') {
       lecture.sims = sims.value as Record<string, unknown>;
       data.sims = Object.keys(lecture.sims).length;
-      if (/correctAttackFlows|window\.SIMS\.\w+\s*=|B\.s_\w+\.flows/.test(html)) {
+      const patched = /correctAttackFlows|applyCorrections97|window\.SIMS\.\w+\s*=/.test(html);
+      if (patched && !correctionsReport?.changed.sims) {
         report.warn(
-          'window.SIMS is patched at runtime by later scripts (v9.3 fact corrections); only the base literal was imported.',
+          'window.SIMS is patched at load time by later scripts (`correctAttackFlows`, `applyCorrections97`); only the base literal was imported. List them under `corrections` in import.config.json to apply them.',
         );
       }
     }
-    const terminals = extractWindowData(html, 'TERMS');
+    const terminals = windowData('TERMS');
     if (terminals && terminals.value && typeof terminals.value === 'object') {
       lecture.terminals = terminals.value as Record<string, unknown>;
       data.terminals = Object.keys(lecture.terminals).length;
     }
-    const script = extractWindowData(html, 'SCRIPT');
+    const script = windowData('SCRIPT');
     if (script && script.value && typeof script.value === 'object') {
       data.script = Object.keys(script.value).length;
       report.warn(
@@ -176,18 +334,17 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
   };
 
   // ---- slides ----------------------------------------------------------------------------
-  const sections = Array.from(
-    document.querySelectorAll(family === 'v20' ? 'section.slide.v20-slide' : 'section.slide'),
-  );
-  if (family === 'v20' && !sections.length)
-    sections.push(...Array.from(document.querySelectorAll('section.slide')));
-  const slides: Slide[] = [];
+  const rulesAt = matchRules(config.slides ?? [], legacyTitles, configReport);
+  const ids = sections.map((_s, i) => rulesAt[i]?.find((r) => r.id)?.id ?? slideId(i));
+  const slides: ImportedSlide[] = [];
   const footers = new Map<string, number>();
   // V20 TOC: a divider opens a group ("1부 · 인증과 하드웨어") that runs until the next divider;
   // the quote slide closes it (buildToc in the V20 runtime).
   let v20Group: string | undefined;
+  const splitNotes = family === 'v20' && (config.notes ?? 'split') === 'split';
+  let splitCount = 0;
   sections.forEach((section, index) => {
-    const id = slideId(index);
+    const id = ids[index] ?? slideId(index);
     const ctx: MapContext = {
       family,
       slideId: id,
@@ -198,6 +355,7 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
       addRef,
       slideRefs: [],
       inColumn: false,
+      css,
     };
     const draft: SlideDraft =
       family === 'v20' ? v20Slide(section, ctx, slideRefs[index]) : v97Slide(section, ctx);
@@ -210,9 +368,13 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
     }
     if (draft.footer) footers.set(draft.footer, (footers.get(draft.footer) ?? 0) + 1);
     const slide = finishSlide(draft, id, ctx);
-    if (!slide.title) report.warn(`${id} has no title (no data-title and no heading).`);
     const noteText = section.getAttribute('data-note') ?? '';
-    const note = family === 'v20' ? noteFromV20(noteText) : noteFromV97(noteText);
+    let note: SlideNote | undefined;
+    if (family === 'v20') {
+      note = splitNotes ? splitProseNote(noteText, slide.blocks, id) : undefined;
+      if (note) splitCount++;
+      else note = proseNote(noteText);
+    } else note = noteFromV97(noteText);
     if (note) {
       slide.note = note;
       const hazard = (note.raw ?? '')
@@ -223,20 +385,67 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
           `${id}: note line \`${hazard.slice(0, 40)}\` can be misread as a fence or slide/note header in the source.`,
         );
     }
+    for (const rule of rulesAt[index] ?? []) {
+      const fields = rule.set ? applyOverrides(slide, rule.set) : [];
+      const applied: ConfigReport['applied'][number] = { rule: ruleLabel(rule), slide: id, fields };
+      if (rule.id) applied.id = rule.id;
+      configReport?.applied.push(applied);
+    }
+    if (index === 0 && config.cover) {
+      const fields = applyOverrides(slide, config.cover);
+      configReport?.applied.push({ rule: 'cover', slide: id, fields });
+    }
+    if (slide.art) assets.markReferenced(slide.art);
+    if (!slide.title) report.warn(`${id} has no title (no data-title and no heading).`);
     slides.push(slide);
   });
+  if (family === 'v20') report.noteSplit = { split: splitCount, total: sections.length };
 
+  // ---- refs --------------------------------------------------------------------------------
+  const drop = new Set(config.dropRefs ?? []);
+  for (const id of drop) {
+    const at = refs.findIndex((r) => r.id === id);
+    if (at < 0) {
+      report.warn(`config.dropRefs: \`${id}\` is not in the reference list.`);
+      continue;
+    }
+    refs.splice(at, 1);
+    configReport?.droppedRefs.push(id);
+  }
   for (const s of slides) {
+    if (drop.size && s.refs) {
+      s.refs = s.refs.filter((r) => !drop.has(r));
+      if (!s.refs.length) delete s.refs;
+    }
+    if (drop.size && s.only) s.only = s.only.filter((r) => !drop.has(r));
     for (const r of s.refs ?? [])
       if (!refs.some((x) => x.id === r))
         report.warn(`${s.id} cites \`${r}\`, which is not in the reference list.`);
+    if (s.type === 'references' && s.only) {
+      const missing = s.only.filter((r) => !refs.some((x) => x.id === r));
+      if (missing.length)
+        report.warn(`${s.id} lists refs that are not in the reference list: ${missing.join(', ')}.`);
+      const unlisted = refs.filter((r) => !s.only?.includes(r.id)).map((r) => r.id);
+      if (unlisted.length)
+        report.warn(`${s.id}: refs not in the legacy reference list: ${unlisted.join(', ')}.`);
+      if (s.only.join(',') === refs.map((r) => r.id).join(',')) delete s.only;
+    }
   }
+
+  // ---- assets ------------------------------------------------------------------------------
+  for (const [id, meta] of Object.entries(config.assets ?? {})) {
+    if (assets.override(id, meta)) configReport?.assets.push(id);
+    else report.warn(`config.assets: \`${id}\` is not an imported asset.`);
+  }
+  for (const s of slides)
+    if (s.art && !assets.has(s.art)) report.warn(`${s.id}: art \`${s.art}\` is not an asset.`);
 
   // ---- meta ------------------------------------------------------------------------------
   const footer = [...footers.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const first = slides[0];
   const meta: LectureMeta = {
     title:
-      slides[0]?.title ||
+      (first ? plainText(first.toc ?? first.title) : '') ||
       textOf(document.querySelector('title') ?? document.createElement('title')) ||
       'Untitled',
     lang: document.documentElement?.getAttribute('lang') === 'en' ? 'en' : 'ko',
@@ -265,47 +474,40 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
   if (lecture.terminals) draftLecture.terminals = lecture.terminals;
 
   const normalized = normalizeLecture(draftLecture);
-  const validation = validateLecture(normalized);
-  const finalLecture = validation.ok ? validation.lecture : normalized;
-  // The source keeps the notes as authored: normalizeLecture assigns cue ids (pNN-cKKK) that
-  // would otherwise be pinned into the text; the compiler assigns the same ids at build.
-  const asAuthored: Lecture = {
-    ...finalLecture,
-    slides: finalLecture.slides.map((s, i) => {
-      const note = draftLecture.slides[i]?.note;
-      const copy: Slide = { ...s };
-      delete copy.note;
-      if (note) copy.note = note;
-      return copy;
-    }),
-  };
+  const validation = validateCompat(normalized);
   const sidecars: Record<string, unknown> = {};
   const sidecarPaths: Partial<Record<'sims' | 'terminals', string>> = {};
   for (const key of ['sims', 'terminals'] as const) {
-    const value = finalLecture[key];
+    const value = draftLecture[key];
     if (value && JSON.stringify(value).length > SIDECAR_THRESHOLD) {
       sidecarPaths[key] = `${key}.json`;
       sidecars[`${key}.json`] = value;
     }
   }
-  const source = serializeMarco(asAuthored, { sidecars: sidecarPaths });
+  // The source is written from the draft: notes as authored (normalizeLecture would pin cue
+  // ids pNN-cKKK into the text; the compiler assigns the same ids at build).
+  const source = serializeMarco(draftLecture, { sidecars: sidecarPaths });
 
   const imported = assets.toImported();
+  const finished = finishReport(report, draftLecture, family, {
+    ...(opts.sourceName ? { sourceName: opts.sourceName } : {}),
+    validation: validation.errors,
+    schemaPending: validation.pending,
+    assets: {
+      total: imported.length,
+      referenced: [...assets.referenced].filter((id) => assets.has(id)).length,
+      stripped: imported.filter((a) => a.stripped).length,
+      bytes: imported.reduce((n, a) => n + a.bytes.length, 0),
+    },
+    data,
+  });
+  if (configReport) finished.config = configReport;
+  if (correctionsReport) finished.corrections = correctionsReport;
   return {
-    lecture: finalLecture,
+    lecture: normalized,
     source,
     assets: imported,
     sidecars,
-    report: finishReport(report, asAuthored, family, {
-      ...(opts.sourceName ? { sourceName: opts.sourceName } : {}),
-      validation: validation.ok ? [] : validation.errors,
-      assets: {
-        total: imported.length,
-        referenced: [...assets.referenced].filter((id) => assets.has(id)).length,
-        stripped: imported.filter((a) => a.stripped).length,
-        bytes: imported.reduce((n, a) => n + a.bytes.length, 0),
-      },
-      data,
-    }),
+    report: finished,
   };
 }

@@ -1,5 +1,5 @@
 /**
- * `marco` command line: new | build | watch | lint | import | ai.
+ * `marco` command line: new | build | watch | lint | pdf | import | ai.
  * `runCli(argv, io)` is the testable entry point; it returns the exit code instead of exiting.
  */
 import { Command, CommanderError, Option } from 'commander';
@@ -10,9 +10,12 @@ import {
   type FontMode,
   type ThemeId,
 } from '@marco/compiler';
+import { addAiCommands } from './commands/ai.js';
 import { type BuildOptions, runBuild, runWatch } from './commands/build.js';
+import { IMPORT_FAMILIES, type ImportFamily, runImportCommand } from './commands/import.js';
 import { runLint } from './commands/lint.js';
 import { runNew } from './commands/new.js';
+import { PDF_MODES, type PdfMode, type PdfOptions, runPdf } from './commands/pdf.js';
 import { type CliIo, defaultIo, paint } from './output.js';
 
 const THEMES: readonly ThemeId[] = ['v20-violet', 'cau-navy'];
@@ -104,7 +107,7 @@ export function createProgram(io: CliIo, setExit: (code: number) => void): Comma
   addBuildOptions(
     program
       .command('watch')
-      .description('원고와 이미지가 바뀔 때마다 다시 빌드합니다')
+      .description('원고·이미지·사이드카 JSON이 바뀔 때마다 다시 빌드합니다')
       .argument('<file>', '.marco.md 원고'),
   ).action(async (file: string, o: RawBuildOptions) => {
     setExit(await runWatch(file, buildOptions(o), io));
@@ -121,24 +124,85 @@ export function createProgram(io: CliIo, setExit: (code: number) => void): Comma
     });
 
   program
-    .command('import')
-    .description('기존 HTML 덱을 .marco.md로 변환합니다 (준비 중)')
-    .argument('[args...]')
-    .allowUnknownOption()
-    .action(() => {
-      io.out(
-        `${paint(io, 'yellow', '준비 중')} marco import는 @marco/importer 패키지와 함께 제공됩니다.`,
-      );
-    });
+    .command('pdf')
+    .description('덱을 PDF로 저장합니다 (Chromium 필요; 원고를 주면 먼저 빌드)')
+    .argument('<file>', '.marco.md 원고 또는 빌드한 .html')
+    .addOption(
+      new Option('--mode <mode>', 'lecture: 슬라이드 한 장당 1920×1080 한 쪽 · handout: A4 유인물')
+        .choices(PDF_MODES)
+        .default('lecture'),
+    )
+    .option('-o, --out <file>', 'PDF 경로 (기본: 입력 옆 <이름>.pdf, 유인물은 <이름>.handout.pdf)')
+    .addOption(new Option('--edition <edition>', '원고를 빌드할 때의 판본').choices(EDITIONS))
+    .addOption(new Option('--theme <theme>', '원고를 빌드할 때의 테마').choices(THEMES))
+    .addOption(
+      new Option('--fonts <mode>', '원고를 빌드할 때의 글꼴 처리')
+        .choices(FONT_MODES)
+        .default('subset'),
+    )
+    .option('--keep-png', '원고를 빌드할 때 PNG 유지')
+    .option('--timeout <sec>', '런타임 준비를 기다리는 최대 초', '60')
+    .action(
+      async (
+        file: string,
+        o: {
+          mode: PdfMode;
+          out?: string;
+          edition?: Edition;
+          theme?: ThemeId;
+          fonts?: FontMode;
+          keepPng?: boolean;
+          timeout: string;
+        },
+      ) => {
+        const timeout = Number(o.timeout);
+        const opts: PdfOptions = { mode: o.mode };
+        if (o.out) opts.out = o.out;
+        if (o.edition) opts.edition = o.edition;
+        if (o.theme) opts.theme = o.theme;
+        if (o.fonts) opts.fonts = o.fonts;
+        if (o.keepPng) opts.keepPng = true;
+        if (Number.isFinite(timeout) && timeout > 0) opts.timeoutMs = timeout * 1000;
+        setExit(await runPdf(file, opts, io));
+      },
+    );
 
   program
-    .command('ai')
-    .description('AI로 개요·슬라이드·노트를 작성하고 고칩니다 (준비 중)')
-    .argument('[args...]')
-    .allowUnknownOption()
-    .action(() => {
-      io.out(`${paint(io, 'yellow', '준비 중')} marco ai는 @marco/ai 패키지와 함께 제공됩니다.`);
-    });
+    .command('import')
+    .description('기존 한 파일짜리 HTML 덱(V20 · v9.7)을 .marco.md 원고와 이미지로 바꿉니다')
+    .argument('<legacy.html>', '가져올 HTML 덱')
+    .argument('<outDir>', '출력 폴더 (lecture.marco.md, assets/, IMPORT-REPORT.md …)')
+    .addOption(
+      new Option('--family <family>', '덱 계열 (auto: 자동 판별)')
+        .choices(IMPORT_FAMILIES)
+        .default('auto'),
+    )
+    .option('--keep-source', '이미 있는 lecture.marco.md는 그대로 두고 나머지만 다시 씀')
+    .option('--asset-dir <dir>', '이미지 폴더 이름', 'assets')
+    .action(
+      async (
+        input: string,
+        outDir: string,
+        o: { family: ImportFamily; keepSource?: boolean; assetDir?: string },
+      ) => {
+        setExit(
+          (
+            await runImportCommand(
+              input,
+              outDir,
+              {
+                family: o.family,
+                ...(o.keepSource ? { keepSource: true } : {}),
+                ...(o.assetDir ? { assetDir: o.assetDir } : {}),
+              },
+              io,
+            )
+          ).code,
+        );
+      },
+    );
+
+  addAiCommands(program, io, setExit);
 
   return program;
 }

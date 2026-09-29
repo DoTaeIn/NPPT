@@ -366,8 +366,8 @@ describe('slide scaffolds (components.md §1)', () => {
       }),
     ).toBe(
       '<section class="slide cover" id="s-01" data-type="cover" data-title="물리보안 · 출입통제 IAM">\n' +
-        '<div class="slide-wrapper"><div class="cover-kicker">보안시스템 운영 및 활용 · 3주차</div><h1 class="cover-title">물리보안 · 출입통제 IAM</h1>' +
-        '<p class="cover-sub">기술과 운영</p><div class="cover-meta"><span>2026-09-29</span><span>홍길동</span></div><div class="cover-brand"></div></div>\n' +
+        '<div class="slide-wrapper"><div class="cover-main"><div class="cover-kicker">보안시스템 운영 및 활용 · 3주차</div><h1 class="cover-title">물리보안 · 출입통제 IAM</h1>' +
+        '<p class="cover-sub">기술과 운영</p><div class="cover-meta"><span>2026-09-29</span><span>홍길동</span></div></div><div class="cover-brand"></div></div>\n' +
         '</section>',
     );
   });
@@ -384,7 +384,7 @@ describe('slide scaffolds (components.md §1)', () => {
       }),
     ).toBe(
       '<section class="slide divider" id="part-1" data-type="divider" data-title="인증과 하드웨어">\n' +
-        '<div class="slide-wrapper"><div class="divider-no">01</div><h2 class="divider-title">인증과 하드웨어</h2><p class="divider-lead">문 앞과 문 뒤</p></div>\n' +
+        '<div class="slide-wrapper"><div class="cover-main"><div class="divider-no">01</div><h2 class="divider-title">인증과 하드웨어</h2><p class="divider-lead">문 앞과 문 뒤</p></div></div>\n' +
         '</section>',
     );
     expect(

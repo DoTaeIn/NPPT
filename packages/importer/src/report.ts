@@ -11,7 +11,8 @@ import type {
   NoteStats,
   UnmappedEntry,
 } from './types.js';
-import type { FormattingStats } from './inline.js';
+import { alignMarkdownTables } from './format.js';
+import { plainText, type FormattingStats } from './inline.js';
 
 function addTo<T extends { count: number; slides: string[] }>(
   map: Map<string, T>,
@@ -35,6 +36,7 @@ export class ReportBuilder {
   readonly formatting: FormattingStats = {};
   readonly titleMismatches: ImportReport['titleMismatches'] = [];
   readonly warnings: string[] = [];
+  noteSplit?: { split: number; total: number };
 
   addUnmapped(selector: string, reason: UnmappedEntry['reason'], slide: string): void {
     addTo(
@@ -135,6 +137,7 @@ export function finishReport(
   extra: Pick<ImportReport, 'assets' | 'data'> & {
     sourceName?: string;
     validation: ValidationError[];
+    schemaPending?: string[];
   },
 ): ImportReport {
   const counts = countBlocks(lecture);
@@ -157,6 +160,7 @@ export function finishReport(
     ),
     titleMismatches: b.titleMismatches,
     validation: extra.validation,
+    schemaPending: extra.schemaPending ?? [],
     notes: noteStats(lecture),
     assets: extra.assets,
     refs: lecture.refs.length,
@@ -166,6 +170,7 @@ export function finishReport(
     warnings: b.warnings,
   };
   if (extra.sourceName) report.sourceName = extra.sourceName;
+  if (b.noteSplit) report.noteSplit = b.noteSplit;
   return report;
 }
 
@@ -260,17 +265,17 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
     L.push('');
   }
 
-  L.push('## Title vs. on-slide heading', '');
+  L.push('## Title vs. TOC label', '');
   if (!r.titleMismatches.length)
     L.push('`data-title` matches the visible heading on every slide.', '');
   else {
     L.push(
-      '`title` comes from `data-title` (TOC label); the visible heading differs and is kept as `subtitle`.',
+      '`title` is the visible heading; the legacy `data-title` (TOC label) differs and is kept as `toc`.',
       '',
     );
-    L.push('| Slide | title (`data-title`) | heading |', '|---|---|---|');
+    L.push('| Slide | `title` (visible heading) | `toc` (`data-title`) |', '|---|---|---|');
     for (const t of r.titleMismatches)
-      L.push(`| ${t.slide} | ${cell(t.title)} | ${cell(t.heading)} |`);
+      L.push(`| ${t.slide} | ${cell(plainText(t.heading))} | ${cell(t.title)} |`);
     L.push('');
   }
 
@@ -281,6 +286,11 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
     for (const e of r.validation) L.push(`| \`${cell(e.path)}\` | ${cell(e.message)} |`);
     L.push('');
   }
+  if (r.schemaPending.length)
+    L.push(
+      `The installed \`@marco/schema\` does not know ${r.schemaPending.map((f) => `\`${f}\``).join(', ')} yet; they were left out of the validated copy (the source keeps them).`,
+      '',
+    );
 
   const n = r.notes;
   L.push('## Notes', '');
@@ -292,6 +302,10 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
       .map(([k, v]) => `${k} ${v}`)
       .join(', ')}) |`,
   );
+  if (r.noteSplit)
+    L.push(
+      `| Prose notes split per block | ${r.noteSplit.split} / ${r.noteSplit.total} (one \`[대사]\` cue per block, \`@<block id>\` focus) |`,
+    );
   L.push(`| Explicit cue ids | ${n.explicitCueIds} |`);
   L.push(`| Slides with \`[시간]\` | ${n.timedSlides} (total ${n.totalMinutes} min) |`);
   L.push(`| Characters | ${n.chars} |`);
@@ -315,8 +329,9 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
       );
     }
     if (r.data.sims !== undefined) {
+      const fixed = r.corrections?.changed.sims;
       L.push(
-        `| \`window.SIMS\` | \`lecture.sims\` (${r.data.sims} entries, passed through) → sidecar \`sims.json\`, front matter \`sims: sims.json\` | base literal only; runtime patches not applied; schema TBD (PLAN.md §12) |`,
+        `| \`window.SIMS\` | \`lecture.sims\` (${r.data.sims} entries, passed through) → sidecar \`sims.json\`, front matter \`sims: sims.json\` | ${fixed ? 'load-time corrections applied (see below)' : 'base literal only; load-time corrections not applied'}; schema TBD (PLAN.md §12) |`,
       );
     }
     if (r.data.terminals !== undefined) {
@@ -332,6 +347,46 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
     L.push('');
   }
 
+  if (r.config) {
+    const c = r.config;
+    L.push('## Import config', '');
+    L.push(
+      `Applied \`${c.source}\`. Notes: ${c.notes === 'split' ? '`split` (per-block cues)' : `\`${c.notes}\``}.`,
+      '',
+    );
+    if (c.applied.length) {
+      L.push('| Rule | Slide | Id | Fields set |', '|---|---|---|---|');
+      for (const a of c.applied)
+        L.push(
+          `| ${cell(a.rule)} | ${a.slide} | ${a.id ? `\`${a.id}\`` : ''} | ${a.fields.map((f) => `\`${f}\``).join(', ')} |`,
+        );
+      L.push('');
+    }
+    if (c.unmatched.length) L.push(`Rules that matched no slide: ${c.unmatched.join('; ')}.`, '');
+    if (c.droppedRefs.length) L.push(`Refs dropped: ${c.droppedRefs.join(', ')}.`, '');
+    if (c.assets.length) L.push(`Asset metadata overridden: ${c.assets.join(', ')}.`, '');
+  }
+
+  if (r.corrections) {
+    const k = r.corrections;
+    L.push('## Load-time corrections', '');
+    L.push(
+      'The deck rewrites its own data and text after loading. These scripts were run over the parsed deck before mapping (`corrections` in the import config), so the source holds what the audience sees.',
+      '',
+    );
+    L.push('| | |', '|---|---|');
+    L.push(`| Ran (document order) | ${k.ran.map((x) => `\`${x}\``).join(', ') || 'none'} |`);
+    if (k.missing.length)
+      L.push(`| Not found | ${k.missing.map((x) => `\`${x}\``).join(', ')} |`);
+    L.push(`| \`window.SIMS\` changed | ${k.changed.sims ? 'yes' : 'no'} |`);
+    L.push(`| Quiz items changed | ${k.changed.quiz} |`);
+    L.push(`| Slides whose notes changed | ${k.changed.notes} |`);
+    L.push(`| Slides whose visible text changed | ${k.changed.slideText} |`);
+    L.push(`| Slides whose TOC/question/simulator attributes changed | ${k.changed.attributes} |`);
+    L.push(`| Script errors | ${k.errors.length ? k.errors.map(cell).join('; ') : 'none'} |`);
+    L.push(`| Script audit errors | ${k.audit.length ? k.audit.map(cell).join('; ') : 'none'} |`, '');
+  }
+
   if (r.warnings.length) {
     L.push('## Warnings', '');
     for (const w of r.warnings) L.push(`- ${w}`);
@@ -339,8 +394,10 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
   }
   for (const s of extraSections) L.push(s.trimEnd(), '');
   return (
-    L.join('\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .trimEnd() + '\n'
+    alignMarkdownTables(
+      L.join('\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trimEnd(),
+    ) + '\n'
   );
 }

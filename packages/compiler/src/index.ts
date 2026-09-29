@@ -8,13 +8,32 @@ import { processAssets } from './assets.js';
 import { type Diagnostic, hasErrors } from './diagnostics.js';
 import { buildLectureData, emitDocument, readRuntime } from './emit.js';
 import { buildStyles, type FontMode } from './fonts.js';
+import { inlineHtmlAssets } from './html-images.js';
 import type { Edition, Lecture, LintIssue, ThemeId } from './ir.js';
 import { parseMarco } from './parse/index.js';
 import { renderLecture } from './render/slides.js';
+import { loadSidecars } from './sidecars.js';
 import { lintLecture, normalizeLecture, validateLecture } from '@marco/schema';
 import { ENGINE_VERSION } from './version.js';
 
-export { parseMarco, CONTAINERS, type ParseOptions, type ParseResult } from './parse/index.js';
+export {
+  parseMarco,
+  mergeNoteTime,
+  CONTAINERS,
+  SIDECAR_KEYS,
+  type ParseOptions,
+  type ParseResult,
+  type SidecarKey,
+  type SidecarRef,
+} from './parse/index.js';
+export { loadSidecars, type SidecarResult } from './sidecars.js';
+export {
+  scanImages,
+  resolveHtmlImages,
+  inlineHtmlAssets,
+  htmlAssetIds,
+  type HtmlImage,
+} from './html-images.js';
 export {
   renderLecture,
   renderSlide,
@@ -29,7 +48,13 @@ export {
 } from './render/blocks.js';
 export { renderInline, plainText, wrapTerms } from './render/inline.js';
 export { iconSvg, iconHtml, lintIcons } from './render/icons.js';
-export { processAssets, sniffImage, type AssetOptions, type AssetResult } from './assets.js';
+export {
+  processAssets,
+  sniffImage,
+  usedAssetIds,
+  type AssetOptions,
+  type AssetResult,
+} from './assets.js';
 export { buildStyles, usedChars, FONT_MODES, type FontMode, type StyleResult } from './fonts.js';
 export {
   emitDocument,
@@ -40,7 +65,15 @@ export {
 } from './emit.js';
 export { formatDiagnostic, hasErrors, type Diagnostic } from './diagnostics.js';
 export { ATTRIBUTION, ENGINE_NAME, ENGINE_VERSION } from './version.js';
-export type { Lecture, Slide, LectureMeta, LintIssue, Edition, ThemeId } from './ir.js';
+export type {
+  Lecture,
+  Slide,
+  SlideTitleFields,
+  LectureMeta,
+  LintIssue,
+  Edition,
+  ThemeId,
+} from './ir.js';
 
 /** @deprecated use ENGINE_VERSION */
 export const COMPILER_VERSION = ENGINE_VERSION;
@@ -77,6 +110,8 @@ export interface CompileResult {
   stats: { slides: number; bytes: number; fonts?: FontMode };
   /** 1-based source line of each slide header, keyed by slide id. */
   slideLines: Record<string, number>;
+  /** Absolute paths of other files the source pulled in (sidecar JSON), for watchers. */
+  inputs: string[];
   outFile?: string;
 }
 
@@ -86,15 +121,31 @@ export interface CheckResult {
   lint: LintIssue[];
   /** 1-based source line of each slide header, keyed by slide id (for lint output). */
   slideLines: Record<string, number>;
+  /** Absolute paths of sidecar JSON files read (`sims: sims.json`). */
+  inputs: string[];
 }
 
-/** Parse, normalize, validate and lint a source text without rendering. */
-export function checkSource(
-  text: string,
-  options: { file?: string; edition?: Edition; theme?: ThemeId } = {},
-): CheckResult {
+export interface CheckOptions {
+  /** File name for diagnostics; also locates sidecar files when `baseDir` is not given. */
+  file?: string;
+  /** Directory that sidecar paths (`sims: sims.json`) are relative to. Default: the file's directory, else the working directory. */
+  baseDir?: string;
+  edition?: Edition;
+  theme?: ThemeId;
+}
+
+/** Parse, load sidecars, normalize, validate and lint a source text without rendering. */
+export function checkSource(text: string, options: CheckOptions = {}): CheckResult {
   const parsed = parseMarco(text, options.file !== undefined ? { file: options.file } : {});
   const diagnostics = parsed.diagnostics;
+  const baseDir =
+    options.baseDir ??
+    (options.file !== undefined ? dirname(resolve(options.file)) : process.cwd());
+  const sidecars = loadSidecars(parsed.lecture, parsed.sidecars, {
+    baseDir,
+    ...fileOf(options.file),
+  });
+  diagnostics.push(...sidecars.diagnostics);
   if (options.edition) parsed.lecture.meta.edition = options.edition;
   if (options.theme) parsed.lecture.meta.theme = options.theme;
   let lecture = parsed.lecture;
@@ -141,7 +192,7 @@ export function checkSource(
     const line = parsed.slideLines[i];
     if (line !== undefined && slideLines[s.id] === undefined) slideLines[s.id] = line;
   });
-  return { lecture, diagnostics, lint, slideLines };
+  return { lecture, diagnostics, lint, slideLines, inputs: sidecars.files };
 }
 
 const fileOf = (file: string | undefined): { file?: string } =>
@@ -153,10 +204,10 @@ export async function compile(
 ): Promise<CompileResult> {
   const absolute = resolve(sourcePath);
   const text = await readFile(absolute, 'utf8');
-  const checkOpts: { file?: string; edition?: Edition; theme?: ThemeId } = { file: sourcePath };
+  const checkOpts: CheckOptions = { file: sourcePath, baseDir: dirname(absolute) };
   if (options.edition) checkOpts.edition = options.edition;
   if (options.theme) checkOpts.theme = options.theme;
-  const { lecture, diagnostics, lint, slideLines } = checkSource(text, checkOpts);
+  const { lecture, diagnostics, lint, slideLines, inputs } = checkSource(text, checkOpts);
   const warnings: Diagnostic[] = [];
   const result: CompileResult = {
     ok: false,
@@ -166,6 +217,7 @@ export async function compile(
     lint,
     warnings,
     slideLines,
+    inputs,
     stats: { slides: lecture.slides.length, bytes: 0 },
   };
   if (hasErrors(diagnostics)) return result;
@@ -177,7 +229,11 @@ export async function compile(
   });
   warnings.push(...assets.warnings);
 
-  const slidesHtml = renderLecture(lecture, { assets: assets.data, warn: (d) => warnings.push(d) });
+  // `<img data-asset>` / `src="assets/…"` in html blocks and raw slides get the data URI too.
+  const slidesHtml = renderLecture(inlineHtmlAssets(lecture, assets.data), {
+    assets: assets.data,
+    warn: (d) => warnings.push(d),
+  });
   const data = buildLectureData(lecture);
   const runtime = readRuntime(options.runtimePath);
   if (runtime.warning) warnings.push(runtime.warning);

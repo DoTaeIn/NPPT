@@ -9,6 +9,8 @@ export interface CliIo {
   color: boolean;
   /** Base directory for relative paths. */
   cwd: string;
+  /** Environment for `marco ai` provider selection (default `process.env`). */
+  env?: Record<string, string | undefined>;
 }
 
 export function defaultIo(): CliIo {
@@ -22,6 +24,7 @@ export function defaultIo(): CliIo {
     err: (line) => process.stderr.write(`${line}\n`),
     color,
     cwd: process.cwd(),
+    env,
   };
 }
 

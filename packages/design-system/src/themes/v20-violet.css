@@ -126,7 +126,65 @@ html[data-theme='v20-violet'] {
   --chip-line: transparent;
   --video-bg: linear-gradient(135deg, #12142c 0%, var(--navy) 100%); /* .video-poster */
 
-  /* ---- Slides ---- */
+  /* ---- Title slides (cover, hero, divider), light: V20 `.v20-slide.cover` (l.949) ---- */
+  --title-bg: linear-gradient(120deg, #fff 0%, #fbfaff 42%, #f4f1ff 100%);
+  --title-glow:
+    radial-gradient(circle at 88% 16%, rgba(107, 75, 255, 0.07) 0%, transparent 40%),
+    radial-gradient(circle at 72% 92%, rgba(62, 156, 245, 0.06) 0%, transparent 38%);
+  --title-dots: rgba(107, 75, 255, 0.2);
+  --title-bar: none;
+  --title-bar-w: 0px;
+  --title-ink: var(--navy);
+  --title-text: #475569; /* .cover-tagline */
+  --title-muted: #64748b; /* .cover-meta */
+  --title-accent: var(--primary); /* .cover-eyebrow */
+  --title-em: var(--primary-dark);
+  --title-strong: var(--primary-dark);
+  --title-rule: #ddd6f1;
+  --title-tagline: #66728a; /* .cover-en */
+  --title-no-fill: linear-gradient(
+    180deg,
+    rgba(107, 75, 255, 0.92) 0%,
+    rgba(107, 75, 255, 0.2) 100%
+  ); /* .big-num on light */
+  --title-no-stroke: 0 transparent;
+  --title-pill-bg: rgba(245, 242, 255, 0.73); /* .cover-chips span */
+  --title-pill-line: #cfc2ff;
+  --title-pill-text: var(--primary-dark);
+  --kicker-tracking: 0.19em; /* 5px at 26px */
+  --kicker-icon-display: none;
+  --meta-icon-display: none;
+  /* Layout: text column 1080px from 112px (.v-cover-content); art 58% bleeding, faded left. */
+  --cover-pad-x: 112px;
+  --cover-main-w: 1192px;
+  --cover-title-size: 82px;
+  --cover-title-weight: var(--fw-heavy);
+  --cover-title-lh: 1.22;
+  --cover-title-tracking: -3px;
+  --cover-sub-w: 1080px;
+  --cover-title-art-w: 900px;
+  --cover-sub-art-w: 760px;
+  --cover-art-w: 58%;
+  --cover-art-inset: 0 0 0 auto;
+  --cover-art-fit: cover;
+  --cover-art-pos: 54% center;
+  --cover-art-fade: linear-gradient(
+    90deg,
+    #fbfaff 0%,
+    rgba(251, 250, 255, 0.67) 14%,
+    rgba(251, 250, 255, 0) 45%
+  );
+  --divider-pad-x: 210px; /* .div-content max-width 1500px, centred */
+  --divider-gap: 60px;
+  --divider-main-w: 1200px;
+  --divider-art-w: 42%;
+  --divider-no-size: 245px;
+  --divider-title-size: 76px;
+  --divider-lead-size: 32px;
+  --divider-lead-lh: 1.7;
+  --divider-lead-w: 900px; /* .div-desc */
+
+  /* ---- Title slides, dark (`# slide cover dark`): V20 .cover/.divider (l.81-121) ---- */
   --cover-bg: linear-gradient(135deg, #1a1b4d 0%, #262466 30%, #3d2d80 60%, #1a1b4d 100%);
   --cover-glow:
     radial-gradient(circle at 78% 65%, rgba(107, 75, 255, 0.4) 0%, transparent 38%),
@@ -143,6 +201,8 @@ html[data-theme='v20-violet'] {
     rgba(107, 75, 255, 0.18) 100%
   );
   --divider-accent: #f5c242; /* .div-desc b */
+
+  /* ---- Other slides ---- */
   --quote-slide-bg: var(--bg-soft);
   --quote-mark: var(--primary-light);
 }
