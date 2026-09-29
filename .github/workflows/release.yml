@@ -1,0 +1,81 @@
+name: release
+# Tag v<version> (matching the root package.json) → build, test and pack the marco-engine npm
+# package, attach the tarball to a GitHub Release, and publish it to npm when the NPM_TOKEN
+# secret is set. See docs/release.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # create the GitHub Release
+  id-token: write # npm provenance
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Check that the tag matches the version
+        id: version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match the root package.json version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # Pre-releases (1.2.0-rc.1) go to the `next` dist-tag.
+          if [[ "$version" == *-* ]]; then echo "tag=next" >> "$GITHUB_OUTPUT"; else echo "tag=latest" >> "$GITHUB_OUTPUT"; fi
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Build the marco-engine package
+        run: pnpm --filter marco-engine build
+        env:
+          MARCO_ENGINE_STRICT: '1'
+
+      - name: Test the packed package (install from tarball, build decks, render in Chromium)
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm --filter marco-engine test
+
+      - name: npm pack
+        id: pack
+        working-directory: packages/marco-engine/dist
+        run: |
+          file=$(npm pack --json --pack-destination .. | node -e "process.stdout.write(JSON.parse(require('fs').readFileSync(0, 'utf8'))[0].filename)")
+          echo "file=packages/marco-engine/$file" >> "$GITHUB_OUTPUT"
+          ls -l "../$file"
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.pack.outputs.file }}
+          generate_release_notes: true
+          prerelease: ${{ steps.version.outputs.tag == 'next' }}
+
+      - name: Publish to npm
+        if: ${{ env.NPM_TOKEN != '' }}
+        working-directory: packages/marco-engine/dist
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish "$GITHUB_WORKSPACE/${{ steps.pack.outputs.file }}" --provenance --access public --tag ${{ steps.version.outputs.tag }}
+
+      - name: npm publish skipped
+        if: ${{ env.NPM_TOKEN == '' }}
+        run: echo "::notice::NPM_TOKEN secret not set; the tarball is attached to the GitHub Release but was not published to npm."

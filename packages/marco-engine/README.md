@@ -32,15 +32,19 @@ marco import old-deck.html week05        # convert a legacy single-file HTML dec
 marco ai kit -o kit                      # the prompt kit to paste into any chat assistant
 ```
 
-| Command                              | What it does                                                   |
-| ------------------------------------ | -------------------------------------------------------------- |
-| `marco new <dir>`                    | new lecture folder with a starter `lecture.marco.md`           |
-| `marco build <file>`                 | source → one HTML deck (`--edition student`, `--theme`, `--fonts`) |
-| `marco watch <file>`                 | rebuild when the source, its images or sidecar JSON change     |
-| `marco lint <file>`                  | check the source (`--json` for machine-readable output)        |
-| `marco pdf <file>`                   | PDF via Playwright's Chromium (see below)                      |
+| Command                               | What it does                                                  |
+| ------------------------------------- | ------------------------------------------------------------- |
+| `marco new <dir>`                     | new lecture folder with a starter `lecture.marco.md`          |
+| `marco build <file>`                  | source → one HTML deck (`--edition`, `--theme`, `--fonts`)    |
+| `marco watch <file>`                  | rebuild when the source, its images or sidecar JSON change    |
+| `marco lint <file>`                   | check the source (`--json` for machine-readable output)       |
+| `marco pdf <file>`                    | PDF via Playwright's Chromium (see below)                     |
 | `marco import <legacy.html> <outDir>` | legacy deck → source + images + `IMPORT-REPORT.md`            |
-| `marco ai kit \| outline \| slides \| notes \| revise \| repair \| merge-notes` | AI authoring pipeline: paste prompts into any chat (default, no network) or call an OpenAI-compatible API (`MARCO_AI_BASE_URL`, `MARCO_AI_MODEL`, `MARCO_AI_API_KEY`) |
+| `marco ai <step>`                     | AI authoring: `kit`, `outline`, `slides`, `notes`, `revise` … |
+
+`marco ai` works without any network by default: each model call is a prompt file you paste into
+any chat, and the command continues when you save the answer next to it. Set `MARCO_AI_BASE_URL`
+and `MARCO_AI_MODEL` (and `MARCO_AI_API_KEY` if needed) to call an OpenAI-compatible API instead.
 
 Every command has `--help`. Messages are in Korean; exit code 0 means success, 1 an error.
 
@@ -63,24 +67,26 @@ Every command has `--help`. Messages are in Korean; exit code 0 means success, 1
 
 ## Using it from an AI
 
-- **MCP server.** `marco-mcp` serves the engine over stdio to Claude Desktop, Claude Code,
-  Cursor and other MCP clients: tools to scaffold, build, lint, check and revise slides, import
-  legacy decks and preview, plus the spec, schema and prompt kit as resources. Every path must lie
-  under `--root` (default: the current folder); `--read-only` refuses all writes.
+- **MCP server.** `marco-mcp` (or `marco mcp`, the same server) serves the engine over stdio to
+  Claude Desktop, Claude Code, Cursor and other MCP clients: tools to scaffold, build, lint, check
+  and revise slides, import legacy decks and preview, plus the spec, schema and prompt kit as
+  resources. Every path must lie under `--root` (default: the current folder); `--read-only`
+  refuses all writes.
 
   ```json
   {
     "mcpServers": {
       "marco": {
         "command": "npx",
-        "args": ["-y", "-p", "marco-engine", "marco-mcp", "--root", "/path/to/lectures"]
+        "args": ["-y", "marco-engine", "mcp", "--root", "/path/to/lectures"]
       }
     }
   }
   ```
 
-  Claude Code: `claude mcp add marco -- npx -y -p marco-engine marco-mcp --root ~/lectures`.
-  Run `marco-mcp --help` for all options.
+  Claude Code: `claude mcp add marco -- npx -y marco-engine mcp --root ~/lectures`. With a global
+  install, use `"command": "marco-mcp", "args": ["--root", "/path/to/lectures"]`. Run
+  `marco-mcp --help` for all options.
 
 - **Agent skill.** The `marco` skill (how to write and fix MARCO sources, with the format
   reference and examples) ships in `assets/skill/marco/`. For Claude Code:
@@ -125,7 +131,8 @@ marco import 예전-덱.html week05          # 예전 HTML 덱을 원고로 가�
   경고(`asset.sharp`)만 표시합니다.
 - PDF(`marco pdf`)에는 Playwright와 Chromium이 필요합니다:
   `npm install -g marco-engine playwright && npx playwright install chromium`
-- AI 도구에서 쓰려면 MCP 서버 `marco-mcp`(위 설정 예)나 `assets/skill/marco/` 스킬을 쓰세요.
+- AI 도구에서 쓰려면 MCP 서버(`npx -y marco-engine mcp --root <폴더>`, 위 설정 예)나
+  `assets/skill/marco/` 스킬을 쓰세요.
 
 ## License and attribution
 

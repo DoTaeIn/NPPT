@@ -6,7 +6,7 @@
  *
  * Skipped when the registry is unreachable (`npm ping`), on Windows, or with MARCO_PACK_TEST=0.
  */
-import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   appendFileSync,
   existsSync,
@@ -25,16 +25,14 @@ import { ATTRIBUTION, DIST, ROOT, readJson, readText, type PublishedManifest } f
 
 const MINUTE = 60_000;
 
-interface McpMessage {
-  id?: number;
-  result?: Record<string, unknown>;
-  error?: unknown;
-}
 const REFERENCE_DECK = join(ROOT, 'reference', 'decks', 'week03-iam-v20.stripped.html');
 
 function npmOnline(): boolean {
   if (process.env.MARCO_PACK_TEST === '0' || process.platform === 'win32') return false;
-  const r = spawnSync('npm', ['ping'], { encoding: 'utf8', timeout: 30_000 });
+  const r = spawnSync('npm', ['ping', '--fetch-retries=0', '--fetch-timeout=15000'], {
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
   return r.status === 0;
 }
 
@@ -97,7 +95,12 @@ describe.skipIf(!online)('npm package (pack → install → run)', () => {
       encoding: 'utf8',
       timeout,
     });
-    return { code: r.status, out: r.stdout ?? '', err: r.stderr ?? '', all: `${r.stdout}${r.stderr}` };
+    return {
+      code: r.status,
+      out: r.stdout ?? '',
+      err: r.stderr ?? '',
+      all: `${r.stdout}${r.stderr}`,
+    };
   }
   const marco = (...args: string[]) => run('marco', args);
 
@@ -130,7 +133,8 @@ describe.skipIf(!online)('npm package (pack → install → run)', () => {
 
   /** The built deck inlines the packaged runtime and CSS and keeps the attribution. */
   function expectPackagedDeck(html: string): void {
-    const inline = (js: string) => `<script>\n${js.replace(/<\/script/gi, '<\\/script')}\n</script>`;
+    const inline = (js: string) =>
+      `<script>\n${js.replace(/<\/script/gi, '<\\/script')}\n</script>`;
     const runtime = ['marco-runtime.js', 'marco-runtime.all.js'].map((f) =>
       readText(join(pkgDir, 'assets', 'runtime', f)),
     );
@@ -149,11 +153,22 @@ describe.skipIf(!online)('npm package (pack → install → run)', () => {
       expect(r.out.trim()).toBe(manifest.version);
     }
     expect(existsSync(join(prefix, 'bin', 'marco-mcp'))).toBe(true);
+    for (const file of ['LICENSE', 'NOTICE', 'README.md'])
+      expect(existsSync(join(pkgDir, file)), file).toBe(true);
     execFileSync(process.execPath, ['--check', join(pkgDir, 'bin', 'marco-mcp.js')]);
   });
 
   it('new → build → lint', () => {
-    let r = marco('new', 'week06', '--title', '6주차 · IDS/IPS', '--course', '보안시스템 운영 및 활용', '--week', '6');
+    let r = marco(
+      'new',
+      'week06',
+      '--title',
+      '6주차 · IDS/IPS',
+      '--course',
+      '보안시스템 운영 및 활용',
+      '--week',
+      '6',
+    );
     expect(r.code, r.all).toBe(0);
     expect(existsSync(join(work, 'week06', 'lecture.marco.md'))).toBe(true);
     expect(readText(join(work, 'week06', 'lecture.marco.md'))).toContain('6주차 · IDS/IPS');
@@ -185,42 +200,48 @@ describe.skipIf(!online)('npm package (pack → install → run)', () => {
     expectPackagedDeck(readText(join(work, 'w03', 'lecture.html')));
   });
 
-  it('decks render in headless Chromium without console errors', async (ctx) => {
-    const { chromium } = await import('@playwright/test');
-    let browser;
-    try {
-      browser = await chromium.launch();
-    } catch (e) {
-      ctx.skip(`Chromium is not installed: ${(e as Error).message.split('\n')[0]}`);
-      return;
-    }
-    try {
-      const decks = ['week06', 'w03']
-        .map((d) => join(work, d, 'lecture.html'))
-        .filter((f) => existsSync(f));
-      expect(decks.length).toBeGreaterThan(0);
-      for (const file of decks) {
-        const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-        const errors: string[] = [];
-        page.on('console', (m) => {
-          if (m.type() === 'error') errors.push(m.text());
-        });
-        page.on('pageerror', (e) => errors.push(e.message));
-        await page.goto(pathToFileURL(file).href);
-        await page.waitForFunction(
-          `document.documentElement.getAttribute('data-marco') === 'ready' && typeof window.MARCO === 'object'`,
-          undefined,
-          { timeout: 30_000 },
-        );
-        const slides = await page.evaluate<number>(`document.querySelectorAll('section.slide').length`);
-        expect(slides, file).toBeGreaterThan(0);
-        expect(errors, file).toEqual([]);
-        await page.close();
+  it(
+    'decks render in headless Chromium without console errors',
+    async (ctx) => {
+      const { chromium } = await import('@playwright/test');
+      let browser;
+      try {
+        browser = await chromium.launch();
+      } catch (e) {
+        ctx.skip(`Chromium is not installed: ${(e as Error).message.split('\n')[0]}`);
+        return;
       }
-    } finally {
-      await browser.close();
-    }
-  }, 2 * MINUTE);
+      try {
+        const decks = ['week06', 'w03']
+          .map((d) => join(work, d, 'lecture.html'))
+          .filter((f) => existsSync(f));
+        expect(decks.length).toBeGreaterThan(0);
+        for (const file of decks) {
+          const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+          const errors: string[] = [];
+          page.on('console', (m) => {
+            if (m.type() === 'error') errors.push(m.text());
+          });
+          page.on('pageerror', (e) => errors.push(e.message));
+          await page.goto(pathToFileURL(file).href);
+          await page.waitForFunction(
+            `document.documentElement.getAttribute('data-marco') === 'ready' && typeof window.MARCO === 'object'`,
+            undefined,
+            { timeout: 30_000 },
+          );
+          const slides = await page.evaluate<number>(
+            `document.querySelectorAll('section.slide').length`,
+          );
+          expect(slides, file).toBeGreaterThan(0);
+          expect(errors, file).toEqual([]);
+          await page.close();
+        }
+      } finally {
+        await browser.close();
+      }
+    },
+    2 * MINUTE,
+  );
 
   it('images are embedded as-is when sharp is missing, optimised when it is present', () => {
     writeFileSync(join(work, 'week06', 'assets', 'gradient.png'), gradientPng());
@@ -246,70 +267,60 @@ describe.skipIf(!online)('npm package (pack → install → run)', () => {
     expect(readText(join(work, 'week06', 'sharp.html'))).toContain('data:image/webp;base64,');
   });
 
-  it('marco-mcp serves the packaged spec and kit over stdio', async (ctx) => {
-    if (readText(join(pkgDir, 'bin', 'marco-mcp.js')).includes('does not include the MCP server')) {
-      ctx.skip('this build ships the marco-mcp stub (packages/mcp was not built)');
-      return;
+  /**
+   * Start an installed bin as an MCP server over stdio with the MCP SDK's client (the SDK comes
+   * from packages/mcp's dependencies), list its tools and read every resource: the spec, schema
+   * and prompt kit must come from the packaged assets. Returns the tool names.
+   */
+  async function mcpSession(bin: string, args: string[]): Promise<string[]> {
+    const { Client } =
+      await import('../../mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js');
+    const { StdioClientTransport } =
+      await import('../../mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js');
+    const transport = new StdioClientTransport({
+      command: join(prefix, 'bin', bin),
+      args,
+      cwd: work,
+      stderr: 'pipe',
+    });
+    let stderr = '';
+    transport.stderr?.on('data', (d: Buffer) => (stderr += d.toString()));
+    const client = new Client({ name: 'marco-engine-pack-test', version: '0' });
+    try {
+      await client.connect(transport);
+      expect(client.getServerVersion()?.version, stderr).toBe(manifest.version);
+      const { tools } = await client.listTools();
+      expect(tools.length, stderr).toBeGreaterThan(0);
+      if (client.getServerCapabilities()?.resources) {
+        const { resources } = await client.listResources();
+        for (const { uri } of resources) {
+          const { contents } = await client.readResource({ uri });
+          expect(
+            contents.some((c) => 'text' in c && typeof c.text === 'string' && c.text.length > 0),
+            uri,
+          ).toBe(true);
+        }
+      }
+      return tools.map((t) => t.name);
+    } finally {
+      await client.close();
     }
+  }
+
+  it('marco-mcp serves the engine over stdio (MCP SDK client)', async () => {
+    const script = readText(join(pkgDir, 'bin', 'marco-mcp.js'));
+    expect(script, 'bin/marco-mcp.js is the stub').not.toContain('does not include the MCP server');
     const version = run('marco-mcp', ['--version']);
     expect(version.code, version.all).toBe(0);
     expect(version.out.trim()).toBe(manifest.version);
+    const tools = await mcpSession('marco-mcp', ['--root', work, '--read-only']);
+    expect(tools).toEqual(expect.arrayContaining(['marco_build', 'marco_lint', 'marco_new']));
+    console.info(`marco-mcp tools: ${tools.join(', ')}`);
+  });
 
-    const child = spawn(join(prefix, 'bin', 'marco-mcp'), ['--root', work, '--read-only'], {
-      cwd: work,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    const pending = new Map<number, (m: McpMessage) => void>();
-    let buffer = '';
-    let stderr = '';
-    child.stderr.on('data', (d: Buffer) => (stderr += d.toString()));
-    child.stdout.on('data', (d: Buffer) => {
-      buffer += d.toString();
-      let nl: number;
-      while ((nl = buffer.indexOf('\n')) >= 0) {
-        const line = buffer.slice(0, nl).trim();
-        buffer = buffer.slice(nl + 1);
-        if (!line) continue;
-        const m = JSON.parse(line) as McpMessage;
-        if (typeof m.id === 'number') pending.get(m.id)?.(m);
-      }
-    });
-    let nextId = 0;
-    const request = (method: string, params: Record<string, unknown> = {}) =>
-      new Promise<McpMessage>((done, fail) => {
-        const id = ++nextId;
-        const timer = setTimeout(() => fail(new Error(`${method}: no reply\n${stderr}`)), 30_000);
-        pending.set(id, (m) => {
-          clearTimeout(timer);
-          done(m);
-        });
-        child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
-      });
-    try {
-      const init = await request('initialize', {
-        protocolVersion: '2025-06-18',
-        capabilities: {},
-        clientInfo: { name: 'marco-engine-pack-test', version: '0' },
-      });
-      expect(init.error, stderr).toBeUndefined();
-      child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`);
-      const tools = await request('tools/list');
-      expect((tools.result?.tools as unknown[] | undefined)?.length, stderr).toBeGreaterThan(0);
-      const capabilities = init.result?.capabilities as Record<string, unknown> | undefined;
-      if (capabilities?.resources) {
-        const list = await request('resources/list');
-        const resources = (list.result?.resources ?? []) as { uri: string }[];
-        for (const { uri } of resources) {
-          const read = await request('resources/read', { uri });
-          expect(read.error, `${uri}: ${JSON.stringify(read.error)}`).toBeUndefined();
-          const contents = (read.result?.contents ?? []) as { text?: string }[];
-          expect(contents.some((c) => (c.text ?? '').length > 0), uri).toBe(true);
-        }
-      }
-    } finally {
-      child.stdin.end();
-      child.kill();
-    }
+  it('marco mcp runs the same server from the CLI bundle', async () => {
+    const tools = await mcpSession('marco', ['mcp', '--root', work, '--read-only']);
+    expect(tools).toEqual(expect.arrayContaining(['marco_build', 'marco_lint', 'marco_new']));
   });
 
   it('pdf without Playwright explains how to install it', () => {

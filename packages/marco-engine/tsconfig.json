@@ -1,5 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "noEmit": true },
-  "include": ["src", "test"]
+  // The entry wrappers and tests import workspace sources directly (they are bundled, not
+  // linked); ../compiler/src/types holds the ambient module types those sources need.
+  "include": ["src", "test", "vitest.config.ts", "../compiler/src/types"]
 }

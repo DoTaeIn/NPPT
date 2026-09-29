@@ -29,6 +29,8 @@
  *             packages it copies are built.
  *   --pack    run `npm pack` in dist/ afterwards; the tarball goes next to this file (or to
  *             --pack-destination).
+ * Environment: MARCO_ENGINE_STRICT=1 (same as --strict), MARCO_ENGINE_MCP=stub (ship the
+ * marco-mcp stub even when packages/mcp is built).
  */
 import { execFileSync } from 'node:child_process';
 import {
@@ -85,7 +87,10 @@ const INPUTS = {
  */
 const REWRITES = {
   'apps/cli/src/commands/new.ts': [
-    ["new URL('../../templates/', import.meta.url)", "new URL('../assets/templates/', import.meta.url)"],
+    [
+      "new URL('../../templates/', import.meta.url)",
+      "new URL('../assets/templates/', import.meta.url)",
+    ],
   ],
   'packages/ai/src/prompts.ts': [
     ["new URL('../prompts/', import.meta.url)", "new URL('../assets/kit/', import.meta.url)"],
@@ -204,14 +209,18 @@ function workspacePlugin(workspace, report) {
         let text = readFileSync(args.path, 'utf8');
         for (const [from, to] of REWRITES[file] ?? []) {
           if (!text.includes(from))
-            return { errors: [{ text: `${file}: expected \`${from}\` (update REWRITES in build.mjs)` }] };
+            return {
+              errors: [{ text: `${file}: expected \`${from}\` (update REWRITES in build.mjs)` }],
+            };
           text = text.split(from).join(to);
           report.rewritten.add(file);
         }
         text.split('\n').forEach((line, i) => {
           const code = line.trim();
           if (!code.includes('import.meta') || /^(\/\/|\/\*|\*)/.test(code)) return;
-          for (const m of code.matchAll(/createRequire\(import\.meta\.url\)\.resolve\('([^'.][^']*)'\)/g))
+          for (const m of code.matchAll(
+            /createRequire\(import\.meta\.url\)\.resolve\('([^'.][^']*)'\)/g,
+          ))
             if (!m[1].startsWith('@marco/')) report.resolved.add(packageName(m[1]));
           const safe = [...SAFE_IMPORT_META, ...(SAFE_IMPORT_META_IN[file] ?? [])];
           const rest = safe.reduce((s, re) => s.replace(re, ''), code);
@@ -300,7 +309,8 @@ async function main() {
   );
   const bundles = [cli];
   let mcpBundled = false;
-  if (existsSync(join(ROOT, INPUTS.mcpDist)) && existsSync(join(ROOT, INPUTS.mcpSrc))) {
+  const mcpReady = existsSync(join(ROOT, INPUTS.mcpDist)) && existsSync(join(ROOT, INPUTS.mcpSrc));
+  if (mcpReady && process.env.MARCO_ENGINE_MCP !== 'stub') {
     bundles.push(
       await bundle(
         join(HERE, 'src', 'mcp-entry.ts'),
@@ -311,7 +321,11 @@ async function main() {
     );
     mcpBundled = true;
   } else {
-    warn(`${INPUTS.mcpDist} not found: bin/marco-mcp.js is a stub. Rebuild after packages/mcp.`);
+    warn(
+      mcpReady
+        ? 'MARCO_ENGINE_MCP=stub: bin/marco-mcp.js is a stub.'
+        : `${INPUTS.mcpDist} not found: bin/marco-mcp.js is a stub. Rebuild after packages/mcp.`,
+    );
     writeFileSync(
       join(OUT, 'bin', 'marco-mcp.js'),
       `${banner('marco-mcp stub')}\nprocess.stderr.write('marco-mcp: this marco-engine ${version} build does not include the MCP server (packages/mcp was not built when the package was assembled). Use the marco CLI, or install a release that ships marco-mcp.\\n');\nprocess.exitCode = 1;\n`,
@@ -326,7 +340,9 @@ async function main() {
   }
   const missingRewrites = Object.keys(REWRITES).filter((f) => !cli.rewritten.has(f));
   if (missingRewrites.length)
-    throw new Error(`REWRITES were not applied (module not bundled?): ${missingRewrites.join(', ')}`);
+    throw new Error(
+      `REWRITES were not applied (module not bundled?): ${missingRewrites.join(', ')}`,
+    );
 
   // 2. Dependencies from what the bundles import.
   const external = new Set(bundles.flatMap((b) => [...b.external]));
@@ -357,7 +373,11 @@ async function main() {
   copyDir(src(INPUTS.templates), join(assets, 'templates'));
   mkdirSync(join(assets, 'schema'), { recursive: true });
   copyFileSync(src(INPUTS.schema), join(assets, 'schema', 'lecture.schema.json'));
-  copyDir(src(INPUTS.spec), join(assets, 'spec'), (p) => statSync(p).isDirectory() || p.endsWith('.md'));
+  copyDir(
+    src(INPUTS.spec),
+    join(assets, 'spec'),
+    (p) => statSync(p).isDirectory() || p.endsWith('.md'),
+  );
   const skill = existsSync(join(src(INPUTS.skill), 'SKILL.md'));
   if (skill) copyDir(src(INPUTS.skill), join(assets, 'skill', 'marco'));
   else warn(`${INPUTS.skill}/SKILL.md not found: the package ships no agent skill.`);
@@ -391,7 +411,8 @@ async function main() {
       'marco-engine': 'bin/marco.js',
       'marco-mcp': 'bin/marco-mcp.js',
     },
-    files: ['bin', 'assets'],
+    // npm always adds package.json, README.md and LICENSE; NOTICE must be listed.
+    files: ['bin', 'assets', 'NOTICE'],
     engines: rootManifest.engines ?? { node: '>=20' },
     dependencies,
     optionalDependencies,
@@ -407,11 +428,27 @@ async function main() {
   const total = sizeOf(OUT);
   log(`marco-engine ${version} → ${rel(OUT)}/`);
   log(`  inlined     ${[...new Set(bundles.flatMap((b) => [...b.inlined]))].sort().join(', ')}`);
-  log(`  mcp         ${mcpBundled ? 'bundled from packages/mcp' : 'stub (packages/mcp not built)'}`);
+  log(
+    `  mcp         ${mcpBundled ? 'bundled from packages/mcp' : 'stub (packages/mcp not built)'}`,
+  );
   log(`  skill       ${skill ? 'assets/skill/marco' : '—'}`);
-  log(`  deps        ${Object.entries(dependencies).map(([n, r]) => `${n}@${r}`).join(', ')}`);
-  log(`  optional    ${Object.entries(optionalDependencies).map(([n, r]) => `${n}@${r}`).join(', ') || '—'}`);
-  log(`  peer (opt.) ${Object.entries(PEER_DEPENDENCIES).map(([n, r]) => `${n}@${r}`).join(', ')}`);
+  log(
+    `  deps        ${Object.entries(dependencies)
+      .map(([n, r]) => `${n}@${r}`)
+      .join(', ')}`,
+  );
+  log(
+    `  optional    ${
+      Object.entries(optionalDependencies)
+        .map(([n, r]) => `${n}@${r}`)
+        .join(', ') || '—'
+    }`,
+  );
+  log(
+    `  peer (opt.) ${Object.entries(PEER_DEPENDENCIES)
+      .map(([n, r]) => `${n}@${r}`)
+      .join(', ')}`,
+  );
   const rows = [
     'bin/marco.js',
     'bin/marco-mcp.js',
@@ -432,14 +469,16 @@ async function main() {
   // 6. Tarball.
   if (PACK) {
     mkdirSync(PACK_DEST, { recursive: true });
-    const out = execFileSync(
-      'npm',
-      ['pack', '--json', '--pack-destination', PACK_DEST],
-      { cwd: OUT, encoding: 'utf8', shell: process.platform === 'win32' },
-    );
+    const out = execFileSync('npm', ['pack', '--json', '--pack-destination', PACK_DEST], {
+      cwd: OUT,
+      encoding: 'utf8',
+      shell: process.platform === 'win32',
+    });
     const [info] = JSON.parse(out);
     const tgz = join(PACK_DEST, info.filename);
-    log(`packed ${rel(tgz).startsWith('..') ? tgz : rel(tgz)} · ${kb(info.size)} (unpacked ${mb(info.unpackedSize)}, ${info.entryCount} files)`);
+    log(
+      `packed ${rel(tgz).startsWith('..') ? tgz : rel(tgz)} · ${kb(info.size)} (unpacked ${mb(info.unpackedSize)}, ${info.entryCount} files)`,
+    );
     log(`  install: npm install -g ${tgz}`);
   }
 }

@@ -14,14 +14,7 @@ import {
   runtimeDistDir,
   setAssetRoots,
 } from '../../compiler/src/index.js';
-import {
-  DIST,
-  ROOT,
-  packageName,
-  readJson,
-  readText,
-  type PublishedManifest,
-} from './helpers.js';
+import { DIST, ROOT, packageName, readJson, readText, type PublishedManifest } from './helpers.js';
 
 const manifest = readJson<PublishedManifest>(join(DIST, 'package.json'));
 const cli = readText(join(DIST, 'bin', 'marco.js'));
@@ -46,7 +39,7 @@ describe('published manifest', () => {
       'marco-engine': 'bin/marco.js',
       'marco-mcp': 'bin/marco-mcp.js',
     });
-    expect(manifest.files).toEqual(['bin', 'assets']);
+    expect(manifest.files).toEqual(['bin', 'assets', 'NOTICE']);
     expect(manifest).not.toHaveProperty('private');
     expect(manifest).not.toHaveProperty('scripts');
     expect(manifest).not.toHaveProperty('devDependencies');
@@ -86,6 +79,19 @@ describe('bundles', () => {
       expect(bundleImports(code).filter((s) => s.startsWith('@marco/'))).toEqual([]);
       expect(code).not.toMatch(/\brequire\(\s*["']@marco\//);
     }
+  });
+
+  it('bin/marco-mcp.js is the real MCP server, not the stub', () => {
+    const mcp = readText(join(DIST, 'bin', 'marco-mcp.js'));
+    expect(mcp.match(/^#!/gm)).toHaveLength(1);
+    expect(mcp).not.toContain('does not include the MCP server');
+    expect(mcp).toContain('// packages/mcp/src/main.ts');
+    expect(cli).toContain('// packages/mcp/src/index.ts'); // `marco mcp`
+    const mcpManifest = readJson<{ dependencies: Record<string, string> }>(
+      join(ROOT, 'packages', 'mcp', 'package.json'),
+    );
+    for (const dep of ['@modelcontextprotocol/sdk', 'zod'])
+      expect(manifest.dependencies[dep], dep).toBe(mcpManifest.dependencies[dep]);
   });
 
   it('locate the kit and templates next to themselves', () => {
