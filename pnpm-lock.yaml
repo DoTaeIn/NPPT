@@ -56,6 +56,9 @@ importers:
       '@marco/importer':
         specifier: workspace:*
         version: link:../../packages/importer
+      '@marco/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
       '@marco/schema':
         specifier: workspace:*
         version: link:../../packages/schema

@@ -657,11 +657,16 @@ export function createMarcoServer(options: MarcoServerOptions = {}): {
       description:
         'Check MARCO source without rendering (fast; writes nothing): parse errors (format.*, with line), schema errors and lint (character budgets, slide density, refs, assets, notes, time) grouped by slide, each with a Korean repair_hint. Same checks as marco_build; use it while iterating on text, then marco_build for the file. ok=false means errors (they would stop the build or are broken references).',
       inputSchema: {
-        source_path: z.string().optional().describe('.marco.md under the root'),
+        source_path: z
+          .string()
+          .optional()
+          .describe(
+            '.marco.md under the root; with source_text, only the folder paths resolve from',
+          ),
         source_text: cappedText('source_text')
           .optional()
           .describe(
-            'MARCO source to check instead of a file (sidecar paths resolve from .marco/mcp/)',
+            "MARCO source to check instead of the file (never saved); relative paths resolve from source_path's folder, else from .marco/mcp/",
           ),
       },
       outputSchema: checkedOutput,
@@ -749,8 +754,11 @@ export function createMarcoServer(options: MarcoServerOptions = {}): {
       const fm = front_matter?.trim()
         ? frontMatterBlock(front_matter)
         : '---\ntitle: 슬라이드 검사\n---\n';
-      let body = slide_source.replace(/\r\n?/g, '\n').replace(/^\s*\n/, '');
-      let offset = newlineCount(fm) + 1;
+      const text = slide_source.replace(/\r\n?/g, '\n');
+      const lead = /^\s*\n/.exec(text)?.[0] ?? '';
+      let body = text.slice(lead.length);
+      // Lines of the wrapped deck before slide_source's first line (dropped blank lines count back).
+      let offset = newlineCount(fm) + 1 - newlineCount(lead);
       if (!/^# slide(?:\s|$)/m.test(body)) {
         body = `# slide\n${body}`;
         offset += 1;

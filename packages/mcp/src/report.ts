@@ -174,7 +174,7 @@ export function nextStep(
   if (toFix.length) {
     const ids = toFix.map((g) => g.slide).join(', ');
     parts.push(
-      `Fix the error/warn issues on ${toFix.length === 1 ? 'slide' : 'slides'} ${ids} (only those slides, following each hint; marco_replace_slide edits one slide in place), then call ${rebuildWith} again. Stop when no error/warn remains or after 3 rounds.`,
+      `Fix the error/warn issues on ${toFix.length === 1 ? 'slide' : 'slides'} ${ids} (follow each hint and leave the other slides alone; marco_replace_slide edits one slide in place), then call ${rebuildWith} again. Stop when no error/warn remains or after 3 rounds.`,
     );
   } else if (groups.some((g) => g.issues.some((i) => i.level === 'error'))) {
     parts.push(`Fix the deck-level errors (front matter), then call ${rebuildWith} again.`);

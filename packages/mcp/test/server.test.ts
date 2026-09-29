@@ -288,6 +288,14 @@ describe('marco_check_slide', () => {
     expect(d?.repair_hint).toBeTruthy();
   });
 
+  it('keeps lines relative to slide_source when it starts with blank lines', async () => {
+    const r = await call('marco_check_slide', {
+      slide_source: '\n\n# slide\ntitle: 빈 줄 뒤\n\n:::cardz\n:::\n',
+    });
+    const d = r.structuredContent!.diagnostics!.find((x) => x.code === 'format.container.unknown');
+    expect(d?.line).toBe(6);
+  });
+
   it('reports the body height estimate and skips id checks without front matter', async () => {
     const r = await call('marco_check_slide', {
       slide_source: 'title: 머리줄 없는 슬라이드\nrefs: [S99]\n\n- 하나\n- 둘\n',

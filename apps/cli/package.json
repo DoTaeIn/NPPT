@@ -32,6 +32,7 @@
     "@marco/compiler": "workspace:*",
     "@marco/importer": "workspace:*",
     "@marco/ai": "workspace:*",
-    "commander": "^15.0.0"
+    "commander": "^15.0.0",
+    "@marco/mcp": "workspace:*"
   }
 }

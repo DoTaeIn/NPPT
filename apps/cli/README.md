@@ -8,7 +8,8 @@
 > `lint` checks format, budgets, refs and timing, `pdf` prints a deck with Playwright's Chromium
 > (lecture: one 1920×1080 page per slide; handout: A4 thumbnails + notes), `import` converts a legacy
 > V20 / v9.7 HTML deck into a source folder (`@marco/importer`), and `ai …` runs the `@marco/ai`
-> authoring pipeline (outline → slides → notes → revise / repair). `marco ai` works without any
+> authoring pipeline (outline → slides → notes → revise / repair); `mcp` serves the engine to AI
+> apps as MCP tools over stdio (`@marco/mcp`). `marco ai` works without any
 > network: by default every model call is a prompt file you paste into any chat window, and the
 > command continues when you save the answer next to it. Set `MARCO_AI_BASE_URL` and
 > `MARCO_AI_MODEL` to call an OpenAI-compatible endpoint instead. All messages are in Korean;
@@ -43,6 +44,7 @@ node apps/cli/dist/main.js --help       # 또는 pnpm exec marco --help (bin: ma
 | `marco ai revise <slide> "<요청>"`     | 슬라이드 하나 고치기                                  |
 | `marco ai repair`                      | 린트 문제가 있는 슬라이드를 AI에게 고치게 하기        |
 | `marco ai merge-notes <reply.md>`      | 채팅창에서 받은 해설을 원고에 합치기 (모델 호출 없음) |
+| `marco mcp [--root <dir>]`             | AI 앱(Claude Desktop·Claude Code·Cursor)용 MCP 서버   |
 
 모든 명령은 `-h, --help`로 옵션을 보여 줍니다. `marco -v`는 엔진 버전을 표시합니다.
 
@@ -282,6 +284,27 @@ marco ai merge-notes reply.md --slide 7        # 답이 '## note' 하나뿐일 �
 
 슬라이드는 명시한 id(`# slide id=…`), 그다음 똑같은 머리줄로 찾습니다. `[시간]`이 있는 해설을
 합치면 그 슬라이드의 `time:` 필드는 지웁니다.
+
+## mcp
+
+```bash
+marco mcp --root ~/lectures              # stdin/stdout으로 MCP 서버 실행 (AI 앱이 띄움)
+marco mcp --root ~/lectures --read-only  # 파일을 쓰지 않고 점검만
+```
+
+AI 앱이 `marco_build`, `marco_lint`, `marco_check_slide`, `marco_new`, `marco_import` 같은 도구로
+엔진을 직접 부르게 하는 MCP 서버(`@marco/mcp`)를 이 프로세스 안에서 실행합니다. `marco-mcp` 명령과
+같은 서버입니다. stdout은 프로토콜 전용이라 상태 메시지는 stderr로만 나옵니다.
+
+| 옵션            | 설명                                                                         |
+| --------------- | ---------------------------------------------------------------------------- |
+| `--root <dir>`  | 도구가 읽고 쓸 수 있는 폴더 (기본: 현재 폴더, `~` 확장, 없으면 만듦)         |
+| `--allow-write` | 루트 안에 쓰기 허용 (기본값)                                                 |
+| `--read-only`   | 새 강의·저장·가져오기를 거부하고, 빌드는 HTML을 쓰지 않고 검사 결과만 돌려줌 |
+
+AI 앱 설정 방법과 대화 예시는 [docs/guide-ko/mcp.md](../../docs/guide-ko/mcp.md), 도구 목록과 결과
+형식은 [packages/mcp/README.md](../../packages/mcp/README.md)에 있습니다. `@marco/mcp`를
+먼저 빌드해야 합니다(`pnpm --filter @marco/mcp build`).
 
 ## 환경 변수
 

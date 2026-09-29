@@ -2,8 +2,6 @@
  * `marco mcp [--root dir]`: the MARCO MCP server (@marco/mcp) over stdio, in this process.
  * stdout carries the protocol, so this command writes only to stderr.
  */
-import { createRequire } from 'node:module';
-import { pathToFileURL } from 'node:url';
 import { type CliIo, paint } from '../output.js';
 
 export interface McpCommandOptions {
@@ -23,26 +21,9 @@ interface McpModule {
   }): Promise<void>;
 }
 
-/**
- * Load `@marco/mcp`: by package name (bundled and installed builds inline or resolve it), else
- * the monorepo's built package, because the CLI does not declare the dependency yet.
- */
+/** Load `@marco/mcp` (a workspace dependency; bundled builds inline it). */
 export async function loadMcpModule(): Promise<McpModule> {
-  try {
-    // @ts-expect-error -- @marco/mcp is not a dependency of @marco/cli yet; drop this line and the fallback below once it is.
-    return (await import('@marco/mcp')) as McpModule;
-  } catch (e) {
-    if ((e as { code?: string }).code !== 'ERR_MODULE_NOT_FOUND') throw e;
-  }
-  let path: string;
-  try {
-    path = createRequire(import.meta.url).resolve('../../../../packages/mcp/dist/index.js');
-  } catch {
-    throw new Error(
-      'MCP 서버 모듈(@marco/mcp)을 찾을 수 없습니다. `pnpm --filter @marco/mcp build`로 빌드한 뒤 다시 실행하세요.',
-    );
-  }
-  return (await import(pathToFileURL(path).href)) as McpModule;
+  return (await import('@marco/mcp')) as McpModule;
 }
 
 /** Serve until the MCP client disconnects. Returns the exit code. */
