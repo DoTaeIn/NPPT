@@ -4,3 +4,4 @@ reference
 pnpm-lock.yaml
 examples/**/*.html
 **/*.marco.md
+docs/spec/**

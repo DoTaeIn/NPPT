@@ -1,6 +1,6 @@
 /** Terminal output: colours, diagnostics, lint grouped by slide, sizes (messages in Korean). */
 import { isAbsolute, relative } from 'node:path';
-import type { Diagnostic, Lecture, LintIssue } from '@marco/compiler';
+import { plainText, type Diagnostic, type Lecture, type LintIssue } from '@marco/compiler';
 
 export interface CliIo {
   out(line: string): void;
@@ -109,7 +109,7 @@ export function printLint(
     const line = opts.slideLines[id];
     const where = line ? `${opts.file}:${line}` : opts.file;
     io.out(
-      `  ${paint(io, 'bold', id)}${index ? paint(io, 'dim', ` #${index}`) : ''} ${slide ? slide.title : ''} ${paint(io, 'dim', `(${where})`)}`,
+      `  ${paint(io, 'bold', id)}${index ? paint(io, 'dim', ` #${index}`) : ''} ${slide ? plainText(slide.title) : ''} ${paint(io, 'dim', `(${where})`)}`,
     );
     for (const l of bySlide.get(id) ?? []) io.out(issueLine(l));
   }
