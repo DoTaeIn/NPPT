@@ -2,7 +2,7 @@
   "name": "@marco/cli",
   "version": "0.0.1",
   "private": true,
-  "description": "marco CLI: new | build | lint | import | ai",
+  "description": "marco CLI: new | build | watch | lint | import | ai",
   "license": "SEE LICENSE IN ../../LICENSE",
   "type": "module",
   "main": "./dist/index.js",
@@ -15,7 +15,8 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "templates"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

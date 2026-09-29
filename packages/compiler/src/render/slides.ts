@@ -23,7 +23,9 @@ const SLIDE_CLASS: Record<Slide['type'], string> = {
 export function footerText(lecture: Pick<Lecture, 'meta'>): string {
   const { footer, course, week } = lecture.meta;
   if (footer !== undefined) return footer;
-  return [course ?? '', week !== undefined ? `${week}주차` : ''].filter((s) => s !== '').join(' · ');
+  return [course ?? '', week !== undefined ? `${week}주차` : '']
+    .filter((s) => s !== '')
+    .join(' · ');
 }
 
 export function renderLecture(lecture: Lecture, opts: LectureRenderOptions = {}): string {

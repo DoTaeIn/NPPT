@@ -1,5 +1,10 @@
 /** HTML escaping for text content and attribute values. */
-const TEXT_ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+const TEXT_ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+};
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"]/g, (c) => TEXT_ESCAPES[c] ?? c);

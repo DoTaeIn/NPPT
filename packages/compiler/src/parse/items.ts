@@ -57,7 +57,8 @@ export function parseItems(
 
   const base = indentOf(lines[first] ?? '');
   const items: ParsedItem[] = [];
-  let cur: Extract<ParsedItem, { kind: 'map' }> | Extract<ParsedItem, { kind: 'scalar' }> | undefined;
+  let cur:
+    Extract<ParsedItem, { kind: 'map' }> | Extract<ParsedItem, { kind: 'scalar' }> | undefined;
   let lastKey: string | undefined;
   let keyIndent = 0;
   let block: { key: string; style: '|' | '>'; lines: string[]; indent: number } | undefined;
@@ -74,7 +75,12 @@ export function parseItems(
     const body = block.lines.map((l) => l.slice(Math.min(minIndent, indentOf(l))));
     while (body.length && body[body.length - 1]?.trim() === '') body.pop();
     cur.fields[block.key] =
-      block.style === '|' ? body.join('\n') : body.map((l) => l.trim()).join(' ').trim();
+      block.style === '|'
+        ? body.join('\n')
+        : body
+            .map((l) => l.trim())
+            .join(' ')
+            .trim();
     block = undefined;
   };
 
@@ -120,7 +126,10 @@ export function parseItems(
       return;
     }
     if (!cur || indent <= base) {
-      issues.push({ line: lineNo, message: `YAML 목록 항목('- ')으로 시작해야 합니다: ${trimmed}` });
+      issues.push({
+        line: lineNo,
+        message: `YAML 목록 항목('- ')으로 시작해야 합니다: ${trimmed}`,
+      });
       return;
     }
     const kv = KEY_LINE.exec(trimmed);
@@ -130,7 +139,8 @@ export function parseItems(
     }
     // Indented continuation of the previous value.
     if (cur.kind === 'scalar') cur.text = `${cur.text} ${trimmed}`.trim();
-    else if (lastKey !== undefined) cur.fields[lastKey] = `${cur.fields[lastKey] ?? ''} ${unquote(trimmed)}`.trim();
+    else if (lastKey !== undefined)
+      cur.fields[lastKey] = `${cur.fields[lastKey] ?? ''} ${unquote(trimmed)}`.trim();
   });
   closeBlock();
   return { format: 'yaml', items, issues };

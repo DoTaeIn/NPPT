@@ -15,16 +15,32 @@ import { lintLecture, normalizeLecture, validateLecture } from '@marco/schema';
 import { ENGINE_VERSION } from './version.js';
 
 export { parseMarco, CONTAINERS, type ParseOptions, type ParseResult } from './parse/index.js';
-export { renderLecture, renderSlide, footerText, type LectureRenderOptions } from './render/slides.js';
-export { renderBlock, DEFAULT_VERDICT_LABELS, type AssetData, type RenderOptions } from './render/blocks.js';
+export {
+  renderLecture,
+  renderSlide,
+  footerText,
+  type LectureRenderOptions,
+} from './render/slides.js';
+export {
+  renderBlock,
+  DEFAULT_VERDICT_LABELS,
+  type AssetData,
+  type RenderOptions,
+} from './render/blocks.js';
 export { renderInline, plainText, wrapTerms } from './render/inline.js';
-export { iconSvg, iconHtml } from './render/icons.js';
+export { iconSvg, iconHtml, lintIcons } from './render/icons.js';
 export { processAssets, sniffImage, type AssetOptions, type AssetResult } from './assets.js';
 export { buildStyles, usedChars, FONT_MODES, type FontMode, type StyleResult } from './fonts.js';
-export { emitDocument, buildLectureData, scriptJson, noticeComment, type LectureData } from './emit.js';
+export {
+  emitDocument,
+  buildLectureData,
+  scriptJson,
+  noticeComment,
+  type LectureData,
+} from './emit.js';
 export { formatDiagnostic, hasErrors, type Diagnostic } from './diagnostics.js';
 export { ATTRIBUTION, ENGINE_NAME, ENGINE_VERSION } from './version.js';
-export type { Lecture, Slide, LectureMeta } from './ir.js';
+export type { Lecture, Slide, LectureMeta, LintIssue, Edition, ThemeId } from './ir.js';
 
 /** @deprecated use ENGINE_VERSION */
 export const COMPILER_VERSION = ENGINE_VERSION;
@@ -85,7 +101,12 @@ export function checkSource(
   try {
     lecture = normalizeLecture(parsed.lecture);
   } catch (e) {
-    diagnostics.push({ level: 'error', code: 'schema.normalize', message: `정규화 실패: ${(e as Error).message}`, ...fileOf(options.file) });
+    diagnostics.push({
+      level: 'error',
+      code: 'schema.normalize',
+      message: `정규화 실패: ${(e as Error).message}`,
+      ...fileOf(options.file),
+    });
   }
   const validation = validateLecture(lecture);
   if (!validation.ok) {
@@ -108,7 +129,12 @@ export function checkSource(
   try {
     lint = lintLecture(lecture);
   } catch (e) {
-    diagnostics.push({ level: 'warn', code: 'schema.lint', message: `린트 실행 실패: ${(e as Error).message}`, ...fileOf(options.file) });
+    diagnostics.push({
+      level: 'warn',
+      code: 'schema.lint',
+      message: `린트 실행 실패: ${(e as Error).message}`,
+      ...fileOf(options.file),
+    });
   }
   const slideLines: Record<string, number> = {};
   lecture.slides.forEach((s, i) => {
@@ -118,9 +144,13 @@ export function checkSource(
   return { lecture, diagnostics, lint, slideLines };
 }
 
-const fileOf = (file: string | undefined): { file?: string } => (file !== undefined ? { file } : {});
+const fileOf = (file: string | undefined): { file?: string } =>
+  file !== undefined ? { file } : {};
 
-export async function compile(sourcePath: string, options: CompileOptions = {}): Promise<CompileResult> {
+export async function compile(
+  sourcePath: string,
+  options: CompileOptions = {},
+): Promise<CompileResult> {
   const absolute = resolve(sourcePath);
   const text = await readFile(absolute, 'utf8');
   const checkOpts: { file?: string; edition?: Edition; theme?: ThemeId } = { file: sourcePath };
@@ -153,7 +183,9 @@ export async function compile(sourcePath: string, options: CompileOptions = {}):
   if (runtime.warning) warnings.push(runtime.warning);
 
   // Everything the audience or presenter can see feeds the font subset.
-  const runtimeText = runtime.js.replace(/[\x00-\x7f]+/g, '');
+  const runtimeText = [...new Set(runtime.js)]
+    .filter((ch) => (ch.codePointAt(0) ?? 0) > 0x7f)
+    .join('');
   const styles = await buildStyles({
     mode: options.fonts ?? 'subset',
     text: `${slidesHtml}\n${JSON.stringify(data)}\n${runtimeText}\n${lecture.meta.title}`,
@@ -164,7 +196,11 @@ export async function compile(sourcePath: string, options: CompileOptions = {}):
   const html = emitDocument({ lecture, slidesHtml, css: styles.css, runtimeJs: runtime.js, data });
   result.ok = true;
   result.html = html;
-  result.stats = { slides: lecture.slides.length, bytes: Buffer.byteLength(html), fonts: styles.mode };
+  result.stats = {
+    slides: lecture.slides.length,
+    bytes: Buffer.byteLength(html),
+    fonts: styles.mode,
+  };
   if (options.outFile) {
     await writeFile(options.outFile, html);
     result.outFile = options.outFile;

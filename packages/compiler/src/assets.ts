@@ -57,7 +57,11 @@ export async function processAssets(lecture: Lecture, opts: AssetOptions): Promi
     const asset = lecture.assets[id];
     if (!asset) continue; // validator / lint report unknown asset ids
     if (/^[a-z][a-z0-9+.-]*:/i.test(asset.path)) {
-      warnings.push({ level: 'warn', code: 'asset.remote', message: `이미지 '${id}'는 원격 경로라 포함하지 않습니다: ${asset.path}` });
+      warnings.push({
+        level: 'warn',
+        code: 'asset.remote',
+        message: `이미지 '${id}'는 원격 경로라 포함하지 않습니다: ${asset.path}`,
+      });
       data[id] = {};
       continue;
     }
@@ -66,7 +70,11 @@ export async function processAssets(lecture: Lecture, opts: AssetOptions): Promi
     try {
       bytes = await readFile(file);
     } catch {
-      warnings.push({ level: 'warn', code: 'asset.missing', message: `이미지 파일을 찾을 수 없습니다: ${asset.path} (asset '${id}')` });
+      warnings.push({
+        level: 'warn',
+        code: 'asset.missing',
+        message: `이미지 파일을 찾을 수 없습니다: ${asset.path} (asset '${id}')`,
+      });
       data[id] = {};
       continue;
     }
@@ -83,7 +91,11 @@ export async function processAssets(lecture: Lecture, opts: AssetOptions): Promi
       }
     } else if (!sharpWarned) {
       sharpWarned = true;
-      warnings.push({ level: 'warn', code: 'asset.sharp', message: 'sharp를 불러올 수 없어 이미지를 원본 그대로 포함합니다.' });
+      warnings.push({
+        level: 'warn',
+        code: 'asset.sharp',
+        message: 'sharp를 불러올 수 없어 이미지를 원본 그대로 포함합니다.',
+      });
     }
     out ??= original(bytes);
     data[id] = {
@@ -116,7 +128,9 @@ async function optimise(sharp: SharpFactory, input: Buffer, keepPng: boolean): P
   const resize = w > MAX_W || h > MAX_H;
   const pipeline = (): ReturnType<SharpFactory> => {
     const p = sharp(input, { failOn: 'none' }).rotate();
-    return resize ? p.resize({ width: MAX_W, height: MAX_H, fit: 'inside', withoutEnlargement: true }) : p;
+    return resize
+      ? p.resize({ width: MAX_W, height: MAX_H, fit: 'inside', withoutEnlargement: true })
+      : p;
   };
 
   let result: { data: Buffer; info: { width: number; height: number } };
@@ -125,7 +139,8 @@ async function optimise(sharp: SharpFactory, input: Buffer, keepPng: boolean): P
     result = await pipeline().jpeg({ quality: 82 }).toBuffer({ resolveWithObject: true });
     mime = 'image/jpeg';
   } else if (format === 'png') {
-    const alpha = meta.hasAlpha === true && !(await sharp(input, { failOn: 'none' }).stats()).isOpaque;
+    const alpha =
+      meta.hasAlpha === true && !(await sharp(input, { failOn: 'none' }).stats()).isOpaque;
     const colours = await countColours(sharp, input, 256);
     if (alpha || colours <= 256 || keepPng) {
       result = await pipeline()
@@ -149,10 +164,19 @@ async function optimise(sharp: SharpFactory, input: Buffer, keepPng: boolean): P
 
 /** Number of distinct RGBA colours, counting at most `limit + 1`. */
 async function countColours(sharp: SharpFactory, input: Buffer, limit: number): Promise<number> {
-  const { data } = await sharp(input, { failOn: 'none' }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { data } = await sharp(input, { failOn: 'none' })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
   const seen = new Set<number>();
   for (let i = 0; i + 3 < data.length; i += 4) {
-    seen.add((((data[i] ?? 0) << 24) | ((data[i + 1] ?? 0) << 16) | ((data[i + 2] ?? 0) << 8) | (data[i + 3] ?? 0)) >>> 0);
+    seen.add(
+      (((data[i] ?? 0) << 24) |
+        ((data[i + 1] ?? 0) << 16) |
+        ((data[i + 2] ?? 0) << 8) |
+        (data[i + 3] ?? 0)) >>>
+        0,
+    );
     if (seen.size > limit) break;
   }
   return seen.size;
@@ -161,7 +185,11 @@ async function countColours(sharp: SharpFactory, input: Buffer, limit: number): 
 /** Original bytes with the MIME type and size read from the file header. */
 export function original(bytes: Buffer): Optimised {
   const sniffed = sniffImage(bytes);
-  return { bytes, mime: sniffed.mime, ...(sniffed.width ? { width: sniffed.width, height: sniffed.height } : {}) };
+  return {
+    bytes,
+    mime: sniffed.mime,
+    ...(sniffed.width ? { width: sniffed.width, height: sniffed.height } : {}),
+  };
 }
 
 export function sniffImage(b: Buffer): { mime: string; width?: number; height?: number } {
@@ -179,28 +207,55 @@ export function sniffImage(b: Buffer): { mime: string; width?: number; height?: 
         continue;
       }
       const marker = b[i + 1] ?? 0;
-      if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      if (
+        marker >= 0xc0 &&
+        marker <= 0xcf &&
+        marker !== 0xc4 &&
+        marker !== 0xc8 &&
+        marker !== 0xcc
+      ) {
         return { mime: 'image/jpeg', height: b.readUInt16BE(i + 5), width: b.readUInt16BE(i + 7) };
       }
       i += 2 + b.readUInt16BE(i + 2);
     }
     return { mime: 'image/jpeg' };
   }
-  if (b.length >= 30 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') {
+  if (
+    b.length >= 30 &&
+    b.toString('latin1', 0, 4) === 'RIFF' &&
+    b.toString('latin1', 8, 12) === 'WEBP'
+  ) {
     const chunk = b.toString('latin1', 12, 16);
-    if (chunk === 'VP8 ') return { mime: 'image/webp', width: b.readUInt16LE(26) & 0x3fff, height: b.readUInt16LE(28) & 0x3fff };
+    if (chunk === 'VP8 ')
+      return {
+        mime: 'image/webp',
+        width: b.readUInt16LE(26) & 0x3fff,
+        height: b.readUInt16LE(28) & 0x3fff,
+      };
     if (chunk === 'VP8L') {
       const bits = b.readUInt32LE(21);
-      return { mime: 'image/webp', width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
+      return {
+        mime: 'image/webp',
+        width: (bits & 0x3fff) + 1,
+        height: ((bits >> 14) & 0x3fff) + 1,
+      };
     }
-    if (chunk === 'VP8X') return { mime: 'image/webp', width: 1 + b.readUIntLE(24, 3), height: 1 + b.readUIntLE(27, 3) };
+    if (chunk === 'VP8X')
+      return {
+        mime: 'image/webp',
+        width: 1 + b.readUIntLE(24, 3),
+        height: 1 + b.readUIntLE(27, 3),
+      };
     return { mime: 'image/webp' };
   }
   const head = b.toString('utf8', 0, Math.min(b.length, 1024));
   if (/<svg[\s>]/i.test(head)) {
     const w = /<svg[^>]*\swidth="(\d+(?:\.\d+)?)(?:px)?"/i.exec(head)?.[1];
     const h = /<svg[^>]*\sheight="(\d+(?:\.\d+)?)(?:px)?"/i.exec(head)?.[1];
-    return { mime: 'image/svg+xml', ...(w && h ? { width: Math.round(Number(w)), height: Math.round(Number(h)) } : {}) };
+    return {
+      mime: 'image/svg+xml',
+      ...(w && h ? { width: Math.round(Number(w)), height: Math.round(Number(h)) } : {}),
+    };
   }
   return { mime: 'application/octet-stream' };
 }

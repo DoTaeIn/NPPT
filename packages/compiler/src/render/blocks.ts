@@ -95,7 +95,9 @@ export function renderBlock(block: Block, id: string, opts: RenderOptions = {}):
       };
       const head = block.head.map((h, n) => `<th${cls(n)}>${t(h)}</th>`).join('');
       const rows = block.rows
-        .map((r, n) => `<tr${item(n)}>${r.map((c, k) => `<td${cls(k)}>${t(c)}</td>`).join('')}</tr>`)
+        .map(
+          (r, n) => `<tr${item(n)}>${r.map((c, k) => `<td${cls(k)}>${t(c)}</td>`).join('')}</tr>`,
+        )
         .join('');
       return `<table${root('v-table')}>${block.caption ? `<caption>${t(block.caption)}</caption>` : ''}${
         head ? `<thead><tr>${head}</tr></thead>` : ''
@@ -121,7 +123,10 @@ export function renderBlock(block: Block, id: string, opts: RenderOptions = {}):
 
     case 'steps':
       return `<ol${root('steps')}>${block.items
-        .map((it, n) => `<li${item(n)}><b>${t(it.title)}</b>${it.body ? `<span>${t(it.body)}</span>` : ''}</li>`)
+        .map(
+          (it, n) =>
+            `<li${item(n)}><b>${t(it.title)}</b>${it.body ? `<span>${t(it.body)}</span>` : ''}</li>`,
+        )
         .join('')}</ol>`;
 
     case 'bullets':
@@ -150,7 +155,9 @@ export function renderBlock(block: Block, id: string, opts: RenderOptions = {}):
         : '';
       const caption = block.caption ? t(block.caption) : '';
       const figcaption =
-        caption || zoom ? `<figcaption>${caption}${caption && zoom ? ' ' : ''}${zoom}</figcaption>` : '';
+        caption || zoom
+          ? `<figcaption>${caption}${caption && zoom ? ' ' : ''}${zoom}</figcaption>`
+          : '';
       return `<figure${root(`figure${block.fit ? ` fit-${block.fit}` : ''}`, [
         ['data-asset', block.asset],
         ['style', block.height !== undefined ? `--h:${block.height}px` : undefined],

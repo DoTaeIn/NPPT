@@ -19,6 +19,10 @@ export function hasErrors(list: readonly Diagnostic[]): boolean {
 
 /** `file:line: level [code] message` — the format editors and CI logs understand. */
 export function formatDiagnostic(d: Diagnostic): string {
-  const loc = d.file ? `${d.file}${d.line ? `:${d.line}` : ''}: ` : d.line ? `line ${d.line}: ` : '';
+  const loc = d.file
+    ? `${d.file}${d.line ? `:${d.line}` : ''}: `
+    : d.line
+      ? `line ${d.line}: `
+      : '';
   return `${loc}${d.level} [${d.code}] ${d.message}`;
 }

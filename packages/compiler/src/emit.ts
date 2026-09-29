@@ -52,7 +52,8 @@ export function buildLectureData(lecture: Lecture): LectureData {
     const notes: Record<string, SlideNote> = {};
     for (const s of lecture.slides) {
       if (!s.note) continue;
-      const { raw: _raw, ...note } = s.note;
+      const note: SlideNote = { ...s.note };
+      delete note.raw;
       notes[s.id] = note;
     }
     data.notes = notes;

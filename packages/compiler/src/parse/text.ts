@@ -30,7 +30,12 @@ export function splitPipes(line: string): string[] {
   cells.push(cur);
   const trimmed = line.trim();
   if (trimmed.startsWith('|') && cells.length > 1 && cells[0]?.trim() === '') cells.shift();
-  if (trimmed.endsWith('|') && !trimmed.endsWith('\\|') && cells.length > 1 && cells[cells.length - 1]?.trim() === '')
+  if (
+    trimmed.endsWith('|') &&
+    !trimmed.endsWith('\\|') &&
+    cells.length > 1 &&
+    cells[cells.length - 1]?.trim() === ''
+  )
     cells.pop();
   return cells.map((c) => c.trim());
 }

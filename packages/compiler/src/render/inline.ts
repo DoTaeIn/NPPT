@@ -67,7 +67,10 @@ function matcherFor(terms: Terms): TermMatcher | null {
   const alternatives = [...byHtml.keys()]
     .sort((a, b) => b.length - a.length || (a < b ? -1 : 1))
     .map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const re = new RegExp(`(&[#A-Za-z0-9]+;)|(?<![A-Za-z0-9_])(${alternatives.join('|')})(?![A-Za-z0-9_])`, 'g');
+  const re = new RegExp(
+    `(&[#A-Za-z0-9]+;)|(?<![A-Za-z0-9_])(${alternatives.join('|')})(?![A-Za-z0-9_])`,
+    'g',
+  );
   const m = { re, byHtml };
   matchers.set(terms, m);
   return m;

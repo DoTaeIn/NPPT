@@ -4,9 +4,10 @@
  * - `embed`:  `dist/marco.css` as is (fonts included by the design system).
  * - `subset`: `dist/marco.nofonts.css` + `@font-face` rules whose fonts are subset with
  *   subset-font to the characters the deck uses (plus ASCII and common Korean punctuation).
- *   Font faces are read from the `@font-face` rules of `marco.css` (their `url(fonts/x.woff2)`
- *   files in `dist/fonts/` or inline data URLs); if it has none, from `dist/fonts/*.woff2`
- *   file names (`Family-Weight.woff2`).
+ *   Font faces come from, in order: the `dist/fonts/fonts.json` manifest
+ *   (`[{ family, weight, style, file }]`), the `@font-face` rules of `marco.css` (their
+ *   `url(fonts/x.woff2)` files or inline data URLs), or `dist/fonts/*.woff2` file names
+ *   (`Family-Weight.woff2`).
  * - `none`:   `marco.nofonts.css` + a system font stack.
  * Subsetting problems or missing files fall back to `embed` with a warning.
  */
@@ -37,12 +38,12 @@ export interface StyleResult {
 /** ASCII printable and punctuation common in Korean lecture text, always kept in subsets. */
 export const BASE_CHARS =
   Array.from({ length: 0x7f - 0x20 }, (_, i) => String.fromCharCode(0x20 + i)).join('') +
-  ' ·•…‥–—―‘’“”«»‹›「」『』《》〈〉【】〔〕※→←↑↓↔↗↘⇒⇔▶▷◀◁○●◎■□▲△▼▽◆◇★☆✓✔✕✗×÷±≠≤≥≈°℃%‰①②③④⑤⑥⑦⑧⑨⑩、。・～';
+  '\u00a0·•…‥–—―‘’“”«»‹›「」『』《》〈〉【】〔〕※→←↑↓↔↗↘⇒⇔▶▷◀◁○●◎■□▲△▼▽◆◇★☆✓✔✕✗×÷±≠≤≥≈°℃%‰①②③④⑤⑥⑦⑧⑨⑩、。・～';
 
+/** Appended in `none` mode: the design system reads `--font-sans` for all text. */
 export const SYSTEM_FONT_CSS =
   '\n/* MARCO: --fonts none — system font stack */\n' +
-  ':root{--font-sans:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}' +
-  'html,body{font-family:var(--font-sans)}\n';
+  ':root{--font-sans:system-ui,-apple-system,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}\n';
 
 export const MISSING_CSS_PLACEHOLDER =
   '/* MARCO PLACEHOLDER: @marco/design-system dist/marco.css was not found. Build it with `pnpm --filter @marco/design-system build`. */';
@@ -73,9 +74,19 @@ export async function buildStyles(opts: StyleOptions): Promise<StyleResult> {
   const nofonts = dir ? read(join(dir, 'marco.nofonts.css')) : undefined;
 
   const embed = (reason?: string): StyleResult => {
-    if (reason) warnings.push({ level: 'warn', code: 'font.fallback', message: `${reason} → 글꼴 전체 포함(embed)으로 대체합니다.` });
+    if (reason)
+      warnings.push({
+        level: 'warn',
+        code: 'font.fallback',
+        message: `${reason} → 글꼴 전체 포함(embed)으로 대체합니다.`,
+      });
     if (full === undefined) {
-      warnings.push({ level: 'warn', code: 'build.css.missing', message: '디자인 시스템 CSS(@marco/design-system/dist/marco.css)가 없어 자리표시자를 넣었습니다.' });
+      warnings.push({
+        level: 'warn',
+        code: 'build.css.missing',
+        message:
+          '디자인 시스템 CSS(@marco/design-system/dist/marco.css)가 없어 자리표시자를 넣었습니다.',
+      });
       return { css: MISSING_CSS_PLACEHOLDER, mode: 'embed', warnings };
     }
     return { css: full, mode: 'embed', warnings };
@@ -93,7 +104,11 @@ export async function buildStyles(opts: StyleOptions): Promise<StyleResult> {
     for (const face of faces) {
       const text = face.range ? chars.filter((c) => inRange(c, face.range ?? [])) : chars;
       if (!text.length) continue;
-      const subset = await subsetFont(face.bytes, text.map((c) => String.fromCodePoint(c)).join(""), { targetFormat: 'woff2' });
+      const subset = await subsetFont(
+        face.bytes,
+        text.map((c) => String.fromCodePoint(c)).join(''),
+        { targetFormat: 'woff2' },
+      );
       rules.push(
         `@font-face{font-family:${face.family};font-style:${face.style};font-weight:${face.weight};${
           face.stretch ? `font-stretch:${face.stretch};` : ''
@@ -105,7 +120,11 @@ export async function buildStyles(opts: StyleOptions): Promise<StyleResult> {
   } catch (e) {
     return embed(`글꼴 서브셋 실패 (${(e as Error).message})`);
   }
-  return { css: `/* MARCO: fonts subset to ${chars.length} characters */\n${rules.join('\n')}\n${nofonts}`, mode: 'subset', warnings };
+  return {
+    css: `/* MARCO: fonts subset to ${chars.length} characters */\n${rules.join('\n')}\n${nofonts}`,
+    mode: 'subset',
+    warnings,
+  };
 }
 
 /** Sorted, de-duplicated code points of `text` plus BASE_CHARS (control characters dropped). */
@@ -158,18 +177,28 @@ const WEIGHTS: Record<string, string> = {
 };
 
 function collectFaces(css: string | undefined, fontsDir: string | undefined): FontFace[] {
+  const manifest = fontsDir ? manifestFaces(fontsDir) : [];
+  if (manifest.length) return manifest;
   const faces: FontFace[] = [];
   for (const m of (css ?? '').matchAll(/@font-face\s*\{([^}]*)\}/g)) {
     const body = m[1] ?? '';
-    const desc = (name: string): string | undefined => new RegExp(`(?:^|[;{\\s])${name}\\s*:\\s*([^;]+)`).exec(body)?.[1]?.trim();
+    const desc = (name: string): string | undefined =>
+      new RegExp(`(?:^|[;{\\s])${name}\\s*:\\s*([^;]+)`).exec(body)?.[1]?.trim();
     const family = desc('font-family');
     if (!family) continue;
-    const urls = [...body.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)(?:\s*format\(\s*['"]?([\w-]+)['"]?\s*\))?/g)].map((u) => ({
+    const urls = [
+      ...body.matchAll(/url\(\s*(['"]?)(.*?)\1\s*\)(?:\s*format\(\s*['"]?([\w-]+)['"]?\s*\))?/g),
+    ].map((u) => ({
       url: u[2] ?? '',
       format: u[3],
     }));
     const pick =
-      urls.find((u) => u.format === 'woff2' || /\.woff2(?:[?#].*)?$/.test(u.url) || u.url.startsWith('data:font/woff2')) ?? urls[0];
+      urls.find(
+        (u) =>
+          u.format === 'woff2' ||
+          /\.woff2(?:[?#].*)?$/.test(u.url) ||
+          u.url.startsWith('data:font/woff2'),
+      ) ?? urls[0];
     if (!pick) continue;
     const bytes = fontBytes(pick.url, fontsDir);
     if (!bytes) continue;
@@ -187,18 +216,52 @@ function collectFaces(css: string | undefined, fontsDir: string | undefined): Fo
   }
   if (faces.length || !fontsDir || !existsSync(fontsDir)) return faces;
   // No @font-face rules to follow: derive faces from file names (Family-Weight[-Italic].woff2).
-  for (const file of readdirSync(fontsDir).filter((f) => f.endsWith('.woff2')).sort()) {
+  for (const file of readdirSync(fontsDir)
+    .filter((f) => f.endsWith('.woff2'))
+    .sort()) {
     const stem = file.replace(/\.woff2$/, '');
     const m = /^(.+?)[-_]([A-Za-z]+|\d{3})(?:[-_]?(Italic))?$/.exec(stem);
     const family = m?.[1] ?? stem;
     const weightWord = (m?.[2] ?? 'regular').toLowerCase();
-    const weight = /^\d{3}$/.test(weightWord) ? weightWord : (WEIGHTS[weightWord.replace(/italic$/, '')] ?? '400');
+    const weight = /^\d{3}$/.test(weightWord)
+      ? weightWord
+      : (WEIGHTS[weightWord.replace(/italic$/, '')] ?? '400');
     faces.push({
       family: JSON.stringify(family),
       weight,
       style: m?.[3] || /italic$/i.test(stem) ? 'italic' : 'normal',
       bytes: readFileSync(join(fontsDir, file)),
       source: file,
+    });
+  }
+  return faces;
+}
+
+/** `fonts.json` written by the design-system build: `[{ family, weight, style, file }]`. */
+function manifestFaces(fontsDir: string): FontFace[] {
+  const text = read(join(fontsDir, 'fonts.json'));
+  if (text === undefined) return [];
+  let entries: unknown;
+  try {
+    entries = JSON.parse(text);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(entries)) return [];
+  const faces: FontFace[] = [];
+  for (const e of entries as Record<string, unknown>[]) {
+    if (typeof e?.family !== 'string' || typeof e.file !== 'string') continue;
+    const bytes = fontBytes(e.file, fontsDir);
+    if (!bytes) continue;
+    const range = typeof e.unicodeRange === 'string' ? e.unicodeRange : undefined;
+    faces.push({
+      family: JSON.stringify(e.family),
+      weight:
+        typeof e.weight === 'string' || typeof e.weight === 'number' ? String(e.weight) : '400',
+      style: typeof e.style === 'string' ? e.style : 'normal',
+      ...(range ? { rangeRaw: range, range: parseUnicodeRange(range) } : {}),
+      bytes,
+      source: e.file,
     });
   }
   return faces;

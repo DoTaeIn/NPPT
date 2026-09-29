@@ -44,7 +44,23 @@ export type {
 export const TONES = ['neutral', 'primary', 'ok', 'warn', 'danger', 'info'] as const;
 export const THEMES = ['v20-violet', 'cau-navy'] as const;
 export const EDITIONS = ['student', 'instructor'] as const;
-export const SLIDE_TYPES = ['cover', 'divider', 'quote', 'hero', 'content', 'references', 'raw'] as const;
+export const SLIDE_TYPES = [
+  'cover',
+  'divider',
+  'quote',
+  'hero',
+  'content',
+  'references',
+  'raw',
+] as const;
 export const VERDICTS = ['allow', 'drop', 'ok', 'hot', 'info'] as const;
 export const CALLOUT_KINDS = ['info', 'warn', 'ok', 'danger'] as const;
-export const REF_KINDS = ['standard', 'law', 'paper', 'vendor', 'article', 'video', 'other'] as const;
+export const REF_KINDS = [
+  'standard',
+  'law',
+  'paper',
+  'vendor',
+  'article',
+  'video',
+  'other',
+] as const;
