@@ -73,7 +73,7 @@ export function toggleToc(force?: boolean): void {
     removeOverlay('toc');
     if (aside.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
   }
-  fitCanvas();
+  fitCanvas(true);
   pub('ui');
 }
 

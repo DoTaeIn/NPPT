@@ -23,7 +23,9 @@ const num = (v: unknown): number | undefined => {
   return typeof n === 'number' && Number.isFinite(n) ? n : undefined;
 };
 const strArr = (v: unknown): string[] =>
-  Array.isArray(v) ? v.filter((x) => typeof x === 'string' || typeof x === 'number').map(String) : [];
+  Array.isArray(v)
+    ? v.filter((x) => typeof x === 'string' || typeof x === 'number').map(String)
+    : [];
 
 const KNOWN = ['ir', 'engine', 'meta', 'refs', 'videos', 'assets', 'slideRefs', 'terms', 'notes'];
 

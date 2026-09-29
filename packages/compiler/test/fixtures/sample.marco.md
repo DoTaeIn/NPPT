@@ -82,7 +82,7 @@ refs: [S13]
 
 ## note
 [대사] 카드가 읽혔다고 사람이 들어간 것은 아닙니다.
-[주목] @s-03-b1 @principle-chain-b1-i2 두 번째 단계를 짚는다.
+[주목] @principle-chain-b1 @principle-chain-b1-i2 두 번째 단계를 짚는다.
 [전환] 다음 부에서 장비를 본다.
 
 # slide divider no=01

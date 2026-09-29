@@ -11,8 +11,13 @@ describe('dialogs and media', () => {
     expect($('#dialog')?.hidden).toBe(false);
     expect($('#dialog')?.dataset.kind).toBe('sources');
     expect($('#dialog-title')?.textContent).toBe('참고 출처');
-    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('#dialog .dlg-sources a'));
-    expect(links.map((a) => a.textContent)).toEqual(['S04 · NIST PACS · PIV', 'S13 · Axis Secure Entry']);
+    const links = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('#dialog .dlg-sources a'),
+    );
+    expect(links.map((a) => a.textContent)).toEqual([
+      'S04 · NIST PACS · PIV',
+      'S13 · Axis Secure Entry',
+    ]);
     expect(links[0]?.getAttribute('href')).toBe('https://csrc.nist.gov/pubs/sp/800/116/r1/final');
     expect(links[0]?.getAttribute('rel')).toBe('noopener noreferrer');
     press('Escape');
@@ -26,7 +31,9 @@ describe('dialogs and media', () => {
     expect($('#dialog')?.dataset.kind).toBe('image');
     expect($('#dialog-title')?.textContent).toBe('사옥의 3선 방어 개념도');
     const img = $<HTMLImageElement>('#dialog .dlg-image')!;
-    expect(img.getAttribute('src')).toBe($<HTMLImageElement>('#s-03 figure img')?.getAttribute('src'));
+    expect(img.getAttribute('src')).toBe(
+      $<HTMLImageElement>('#s-03 figure img')?.getAttribute('src'),
+    );
     expect(img.alt).toBe('사옥 외곽, 로비, 핵심구역의 3선 방어 개념도');
     expect($('#dialog .dlg-caption')?.textContent).toContain('생성 개념도');
   });
@@ -37,7 +44,9 @@ describe('dialogs and media', () => {
     $('#s-03 .video-open')?.click();
     expect($('#dialog')?.dataset.kind).toBe('video');
     const src = $<HTMLIFrameElement>('#dialog iframe')?.getAttribute('src') || '';
-    expect(src.startsWith('https://www.youtube-nocookie.com/embed/tTAISQqmxWQ?start=441')).toBe(true);
+    expect(src.startsWith('https://www.youtube-nocookie.com/embed/tTAISQqmxWQ?start=441')).toBe(
+      true,
+    );
     expect($('#dialog')?.textContent).toContain('인터넷 연결이 필요합니다');
     $<HTMLButtonElement>('#dialog .dlg-close')?.click();
     expect($('#dialog iframe')).toBeNull();

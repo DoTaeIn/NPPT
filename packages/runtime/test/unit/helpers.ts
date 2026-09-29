@@ -30,13 +30,18 @@ export function boot(name?: string, mutate?: (html: string) => string): MarcoApi
   return init();
 }
 
-export function press(key: string, opts: KeyboardEventInit = {}, target: EventTarget = document.body): KeyboardEvent {
+export function press(
+  key: string,
+  opts: KeyboardEventInit = {},
+  target: EventTarget = document.body,
+): KeyboardEvent {
   const e = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...opts });
   target.dispatchEvent(e);
   return e;
 }
 
-export const $ = <T extends Element = HTMLElement>(sel: string): T | null => document.querySelector<T>(sel);
+export const $ = <T extends Element = HTMLElement>(sel: string): T | null =>
+  document.querySelector<T>(sel);
 
 /** Registers dispose() after every test in the calling file. */
 export function autoDispose(): void {

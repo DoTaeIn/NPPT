@@ -49,7 +49,13 @@ describe('lecture data', () => {
         slideRefs: { 's-01': ['A', 2, null], 's-02': 'bad' },
         terms: { X: 'ex', Y: 3, Z: null },
         notes: {
-          's-01': { cues: [{ k: 'NOPE', t: '?' }, { k: 'SAY' }, { k: 'SAY', t: 'ok', focus: { targets: 'bad' } }] },
+          's-01': {
+            cues: [
+              { k: 'NOPE', t: '?' },
+              { k: 'SAY' },
+              { k: 'SAY', t: 'ok', focus: { targets: 'bad' } },
+            ],
+          },
           's-02': '평문 노트',
           's-03': 5,
         },
@@ -64,7 +70,10 @@ describe('lecture data', () => {
     expect(d.assets).toEqual({ a: { credit: 'c' }, b: {} });
     expect(d.slideRefs).toEqual({ 's-01': ['A', '2'], 's-02': [] });
     expect(d.terms).toEqual({ X: 'ex', Y: '3' });
-    expect(d.notes?.['s-01']?.cues).toEqual([{ k: 'MEMO', t: '?' }, { k: 'SAY', t: 'ok' }]);
+    expect(d.notes?.['s-01']?.cues).toEqual([
+      { k: 'MEMO', t: '?' },
+      { k: 'SAY', t: 'ok' },
+    ]);
     expect(d.notes?.['s-02']).toEqual({ cues: [], raw: '평문 노트' });
     expect(d.notes?.['s-03']).toBeUndefined();
     expect(d.quiz).toEqual([{ id: 'Q01' }]);

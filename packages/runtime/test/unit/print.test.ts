@@ -43,7 +43,9 @@ describe('print modes', () => {
     const pages = document.querySelectorAll('#handout .ho-page');
     expect(pages).toHaveLength(6);
     const first = pages[1]!;
-    expect(first.querySelector('.ho-title')?.textContent).toBe('카드 인식, 허용, 문 열림, 사람 통과는 다른 단계다');
+    expect(first.querySelector('.ho-title')?.textContent).toBe(
+      '카드 인식, 허용, 문 열림, 사람 통과는 다른 단계다',
+    );
     const clone = first.querySelector<HTMLElement>('.ho-shot > section.slide')!;
     expect(clone.classList.contains('active')).toBe(true);
     expect(clone.style.transform).toMatch(/^scale\(0\.36/);

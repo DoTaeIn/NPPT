@@ -1,4 +1,5 @@
-// `#nav-dock`: bottom-centre navigation dock that hides itself when the pointer is idle.
+// `#nav-dock`: navigation dock (bottom-left, clear of the right-aligned slide footer) that hides
+// itself when the pointer is idle.
 import { $, h, pad2 } from '../dom';
 import { ICON } from '../icons';
 import { S, listen, sub } from '../state';

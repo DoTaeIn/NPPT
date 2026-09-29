@@ -6,8 +6,18 @@ import { CH, CW } from '../layout';
 import { S, listen, pub, sub } from '../state';
 import { setLaser } from './laser';
 
-export type Tool = 'pen' | 'highlighter' | 'eraser' | 'text' | 'rect' | 'ellipse' | 'line' | 'arrow';
-export const TOOLS: ReadonlyArray<Tool> = ['pen', 'highlighter', 'eraser', 'text', 'rect', 'ellipse', 'line', 'arrow'];
+export type Tool =
+  'pen' | 'highlighter' | 'eraser' | 'text' | 'rect' | 'ellipse' | 'line' | 'arrow';
+export const TOOLS: ReadonlyArray<Tool> = [
+  'pen',
+  'highlighter',
+  'eraser',
+  'text',
+  'rect',
+  'ellipse',
+  'line',
+  'arrow',
+];
 const SHAPES = new Set<Tool>(['rect', 'ellipse', 'line', 'arrow']);
 
 export interface Stroke {
@@ -56,7 +66,10 @@ export function initPen(host: HTMLElement): void {
 /** Backing-store resolution follows the on-screen scale (capped at 2×) to keep memory modest. */
 function sizeBacking(force: boolean): void {
   if (!cv) return;
-  const want = Math.min(2, Math.max(1, Math.ceil((window.devicePixelRatio || 1) * S.scale * 4) / 4));
+  const want = Math.min(
+    2,
+    Math.max(1, Math.ceil((window.devicePixelRatio || 1) * S.scale * 4) / 4),
+  );
   if (!force && want === ratio) return;
   ratio = want;
   cv.width = Math.round(CW * ratio);
@@ -158,7 +171,15 @@ export function drawStroke(c: CanvasRenderingContext2D, s: Stroke): void {
   } else if (s.tool === 'rect') {
     c.strokeRect(p(0), p(1), p(2) - p(0), p(3) - p(1));
   } else if (s.tool === 'ellipse') {
-    c.ellipse((p(0) + p(2)) / 2, (p(1) + p(3)) / 2, Math.abs(p(2) - p(0)) / 2, Math.abs(p(3) - p(1)) / 2, 0, 0, Math.PI * 2);
+    c.ellipse(
+      (p(0) + p(2)) / 2,
+      (p(1) + p(3)) / 2,
+      Math.abs(p(2) - p(0)) / 2,
+      Math.abs(p(3) - p(1)) / 2,
+      0,
+      0,
+      Math.PI * 2,
+    );
     c.stroke();
   } else if (s.tool === 'line' || s.tool === 'arrow') {
     c.moveTo(p(0), p(1));
@@ -178,7 +199,12 @@ export function drawStroke(c: CanvasRenderingContext2D, s: Stroke): void {
     c.moveTo(p(0), p(1));
     if (n === 1) c.lineTo(p(0) + 0.01, p(1));
     for (let i = 1; i < n - 1; i++) {
-      c.quadraticCurveTo(p(2 * i), p(2 * i + 1), (p(2 * i) + p(2 * i + 2)) / 2, (p(2 * i + 1) + p(2 * i + 3)) / 2);
+      c.quadraticCurveTo(
+        p(2 * i),
+        p(2 * i + 1),
+        (p(2 * i) + p(2 * i + 2)) / 2,
+        (p(2 * i + 1) + p(2 * i + 3)) / 2,
+      );
     }
     if (n > 1) c.lineTo(p(2 * n - 2), p(2 * n - 1));
     c.stroke();
@@ -215,7 +241,13 @@ function commitText(): void {
   textBox = null;
   const text = box.value.trim();
   if (text) {
-    push({ tool: 'text', color: box.style.color || INK.color, size: INK.size, pts: [Number(box.dataset.x), Number(box.dataset.y)], text });
+    push({
+      tool: 'text',
+      color: box.style.color || INK.color,
+      size: INK.size,
+      pts: [Number(box.dataset.x), Number(box.dataset.y)],
+      text,
+    });
   }
   box.remove();
   redraw();

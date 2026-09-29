@@ -103,7 +103,9 @@ export function dispose(): void {
   closeDialog();
   resetState();
   for (const id of CHROME_IDS) document.getElementById(id)?.remove();
-  document.querySelectorAll('.ink-text,.slide-no,.slide-progress,.widget-placeholder').forEach((e) => e.remove());
+  document
+    .querySelectorAll('.ink-text,.slide-no,.slide-progress,.widget-placeholder')
+    .forEach((e) => e.remove());
   document.body?.classList.remove(
     'notes-open',
     'toc-open',

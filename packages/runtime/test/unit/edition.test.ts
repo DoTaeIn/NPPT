@@ -19,14 +19,18 @@ describe('editions', () => {
   });
 
   it('student edition ignores notes a build left in the data', () => {
-    const m = boot('minimal-deck.html', (h) => h.replace('data-edition="instructor"', 'data-edition="student"'));
+    const m = boot('minimal-deck.html', (h) =>
+      h.replace('data-edition="instructor"', 'data-edition="student"'),
+    );
     expect(m.data.notes).toBeUndefined();
     expect($('#notes-panel')).toBeNull();
   });
 
   it('falls back to meta.edition when html[data-edition] is absent', () => {
     boot('minimal-deck.html', (h) =>
-      h.replace(' data-edition="instructor"', '').replace('"edition": "instructor"', '"edition": "student"'),
+      h
+        .replace(' data-edition="instructor"', '')
+        .replace('"edition": "instructor"', '"edition": "student"'),
     );
     expect(document.documentElement.dataset.edition).toBe('student');
     expect($('#nav-notes')?.hidden).toBe(true);

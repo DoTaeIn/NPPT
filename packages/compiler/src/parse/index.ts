@@ -113,10 +113,7 @@ export function parseMarco(text: string, options: ParseOptions = {}): ParseResul
   if (!chunks.length) {
     report(ctx, 'error', 'format.slide.none', "파일에 '# slide' 줄이 없습니다.", lines.length);
   }
-  chunks.forEach((chunk, k) => {
-    lecture.slides.push(parseSlide(chunk, k + 1, ctx));
-    ctx.slide = undefined;
-  });
+  chunks.forEach((chunk, k) => lecture.slides.push(parseSlide(chunk, k + 1, ctx)));
   return { lecture, diagnostics: ctx.diagnostics, slideLines: chunks.map((c) => c.line) };
 }
 
@@ -128,7 +125,16 @@ interface FieldValue {
   /** Parsed array for list-valued fields written as `[a, b]`. */
 }
 
-function parseSlide(chunk: Chunk, position: number, ctx: ParseContext): Slide {
+function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Slide {
+  // Header and field diagnostics are buffered until the slide id is known.
+  const ctx: ParseContext = { ...parentCtx, diagnostics: [] };
+  const flushPending = (): void => {
+    for (const d of ctx.diagnostics) {
+      if (ctx.slide) d.slide = ctx.slide;
+      parentCtx.diagnostics.push(d);
+    }
+    ctx.diagnostics = parentCtx.diagnostics;
+  };
   let type: SlideType = 'content';
   let typeSet = false;
   let alert = false;
@@ -214,6 +220,7 @@ function parseSlide(chunk: Chunk, position: number, ctx: ParseContext): Slide {
     else report(ctx, 'error', 'format.slide.id', `슬라이드 id는 영문자로 시작하고 영문·숫자·-·_만 쓸 수 있습니다: '${idField.value}'`, idField.line);
   }
   ctx.slide = id;
+  flushPending();
 
   for (const [key, f] of fields) {
     const types = FIELDS[key];

@@ -26,7 +26,13 @@ describe('help overlay', () => {
     const text = $('#help')?.textContent || '';
     expect(text).toContain('MARCO Engine v0.1.0');
     expect(text).toContain(`런타임 v${RUNTIME_VERSION}`);
-    for (const label of ['다음 슬라이드', '목차 열기', '발표 노트 열기', '해설서 인쇄', '레이저 포인터']) {
+    for (const label of [
+      '다음 슬라이드',
+      '목차 열기',
+      '발표 노트 열기',
+      '해설서 인쇄',
+      '레이저 포인터',
+    ]) {
       expect(text).toContain(label);
     }
   });

@@ -1,0 +1,234 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`serializeBlock > bullets 1`] = `
+"- 첫째
+- 1\\. 번호처럼 보이는 항목
+- \\# 제목처럼"
+`;
+
+exports[`serializeBlock > callout 1`] = `
+":::callout warn 주의
+전원이 끊기면 잠금이 풀린다.
+:::"
+`;
+
+exports[`serializeBlock > callout 2`] = `
+":::callout info label="warn 이라는 단어로 시작"
+본문
+:::"
+`;
+
+exports[`serializeBlock > cards 1`] = `
+":::cards cols=2
+- kicker: 01 · 인증
+  title: 허용 신호 ≠ 실제 입실
+  body: "인증 뒤: 문을 열지 않을 수도 있다."
+  icon: shield
+  tone: ok
+- title: "yes"
+:::"
+`;
+
+exports[`serializeBlock > chain 1`] = `
+":::chain
+01 | 자격 제시 | 카드를 리더에 댄다
+A\\|B | 파이프 \\| 포함
+라벨만
+:::"
+`;
+
+exports[`serializeBlock > code 1`] = `
+"\`\`\`\`bash title="rule"
+iptables -A INPUT -p tcp --dport 22 -j DROP
+\`\`\`
+\`\`\`\`"
+`;
+
+exports[`serializeBlock > columns 1`] = `
+":::columns cols=2
+:::col
+왼쪽
+:::
+:::col
+:::pills
+- 오른쪽
+:::
+:::
+:::"
+`;
+
+exports[`serializeBlock > compare 1`] = `
+":::compare left=스피드게이트 right=맨트랩
+작동 | 통로를 연다 | 두 문 인터락
+:::"
+`;
+
+exports[`serializeBlock > html 1`] = `
+":::html
+<div class="x">
+ :::
+ # slide
+</div>
+:::"
+`;
+
+exports[`serializeBlock > image 1`] = `"![외곽·로비·핵심구역](assets/campus.png "개념도 \\"그림\\"")"`;
+
+exports[`serializeBlock > image 2`] = `
+":::image asset=campus caption="확대 가능" zoom fit=cover height=520
+:::"
+`;
+
+exports[`serializeBlock > paragraph 1`] = `"평범한 문단."`;
+
+exports[`serializeBlock > paragraph 2`] = `"1\\. 번호로 시작하는 문단"`;
+
+exports[`serializeBlock > paragraph 3`] = `"### 제목 같은 리드"`;
+
+exports[`serializeBlock > pills 1`] = `
+":::pills
+- ok: 허용
+- "중립: 콜론"
+- "01"
+:::"
+`;
+
+exports[`serializeBlock > quote 1`] = `
+"> 누구인지 확인하고, 필요한 권한만 허용한다.
+> — 3주차 마무리"
+`;
+
+exports[`serializeBlock > steps 1`] = `
+":::steps
+- title: 신청
+  body: 필요한 구역을 신청한다
+- title: 승인
+:::"
+`;
+
+exports[`serializeBlock > table 1`] = `
+"| 구역 | 대상 |
+|---|:---:|
+| 외곽 | 차량 \\| 탑승자 |
+| 로비 |  |"
+`;
+
+exports[`serializeBlock > table 2`] = `
+":::table caption="캡션 \\"따옴표\\""
+| a | b |
+|---|---|
+| 1 | 2 |
+:::"
+`;
+
+exports[`serializeBlock > takeaway 1`] = `
+":::takeaway 핵심 구분
+인증은 자격 확인, 인가는 허용 판단이다.
+:::"
+`;
+
+exports[`serializeBlock > takeaway 2`] = `
+":::takeaway
+\\- 목록처럼 보이는 문장
+:::"
+`;
+
+exports[`serializeBlock > terms 1`] = `
+":::terms
+LPR | License Plate Recognition | 차량번호 인식
+JML |  | 입사·이동·퇴사
+:::"
+`;
+
+exports[`serializeBlock > tiles 1`] = `
+":::tiles cols=3
+- label: 5주차 방화벽
+  value: 현재
+  icon: brick-wall
+  tone: primary
+- label: 6주차 IPS
+:::"
+`;
+
+exports[`serializeBlock > timeline 1`] = `
+":::timeline
+14:00 | 활성 | JIT 시작
+16:00 | 만료
+:::"
+`;
+
+exports[`serializeBlock > verdict 1`] = `
+":::verdict drop 차단
+3306은 외부에서 닿지 않는다.
+:::"
+`;
+
+exports[`serializeBlock > video 1`] = `
+":::video id=tTAISQqmxWQ start=441 label="문틈 우회 시연" caption=07:21부터
+:::"
+`;
+
+exports[`serializeBlock > widget 1`] = `
+":::widget sim sim=g_ip heading="IP 주소 · 서브넷"
+terms: <div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div><div class="tconcept">긴 "HTML"</div>
+:::"
+`;
+
+exports[`serializeMarco > writes front matter, slide headers, fields, body and notes 1`] = `
+"---
+title: 물리보안 · 출입통제 IAM
+course: 보안시스템 운영 및 활용
+week: 3
+theme: v20-violet
+refs:
+  S13:
+    title: Axis Secure Entry
+    url: "https://help.axis.com/"
+videos:
+  tTAISQqmxWQ:
+    title: Intro to Physical Security Bypass
+    start: 441
+    credit: DEFCONConference
+assets:
+  campus:
+    path: assets/campus.png
+    title: 사옥의 3선 방어 개념도
+    credit: imagegen 생성
+    alt: 외곽·로비·핵심구역
+terms:
+  LPR: License Plate Recognition 차량번호 인식
+---
+
+# slide cover
+title: 물리보안 · 출입통제 IAM
+subtitle: 출입통제의 기술과 운영
+
+# slide
+title: "카드 인식, 허용, 문 열림: 다른 단계"
+tag: 기본 원리
+group: 1부 · 인증과 하드웨어
+question: "'막음'의 뜻은?"
+refs: [S13]
+
+:::chain
+01 | 자격 제시 | 카드를 리더에 댄다
+A\\|B | 파이프 \\| 포함
+라벨만
+:::
+
+:::takeaway 핵심 구분
+인증은 자격 확인, 인가는 허용 판단이다.
+:::
+
+## note
+[대사] 카드를 리더에 댄다.
+
+# slide divider id=principle
+title: 인증과 하드웨어
+subtitle: 문 앞과 문 뒤를 함께 본다.
+no: "01"
+
+# slide hero alert
+title: 사례 연구
+"
+`;

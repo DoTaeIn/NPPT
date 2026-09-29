@@ -26,7 +26,8 @@ let hits: Hit[] = [];
 let sel = 0;
 let index: Entry[] | null = null;
 
-const INLINE = /^(A|ABBR|B|BDI|BDO|CITE|CODE|DFN|EM|I|KBD|MARK|Q|S|SAMP|SMALL|SPAN|STRONG|SUB|SUP|TIME|U|VAR)$/;
+const INLINE =
+  /^(A|ABBR|B|BDI|BDO|CITE|CODE|DFN|EM|I|KBD|MARK|Q|S|SAMP|SMALL|SPAN|STRONG|SUB|SUP|TIME|U|VAR)$/;
 const SKIP = '.slide-no,.slide-progress,.widget-placeholder,script,style,svg';
 
 /** Inline unless the tag is a block, or CSS made it one (e.g. a span inside a flex column). */
@@ -67,7 +68,11 @@ export function slideText(s: Element): string {
 function buildIndex(): Entry[] {
   return S.slides.map((s, i) => {
     const note = noteFor(S.data, s);
-    const noteText = note ? (note.cues.length ? note.cues.map((c) => c.t).join(' ') : note.raw || '') : '';
+    const noteText = note
+      ? note.cues.length
+        ? note.cues.map((c) => c.t).join(' ')
+        : note.raw || ''
+      : '';
     return { i, title: slideTitle(s, i), body: slideText(s), note: noteText.replace(/\s+/g, ' ') };
   });
 }
@@ -95,9 +100,21 @@ export function searchSlides(query: string): Hit[] {
       const s = bi >= 0 ? snippet(e.body, bi, q.length) : snippet(e.body, 0, 0);
       hit = { i: e.i, title: e.title, where: '제목', snippet: s, score: 3 };
     } else if (bi >= 0) {
-      hit = { i: e.i, title: e.title, where: '본문', snippet: snippet(e.body, bi, q.length), score: 2 };
+      hit = {
+        i: e.i,
+        title: e.title,
+        where: '본문',
+        snippet: snippet(e.body, bi, q.length),
+        score: 2,
+      };
     } else if (ni >= 0) {
-      hit = { i: e.i, title: e.title, where: '노트', snippet: snippet(e.note, ni, q.length), score: 1 };
+      hit = {
+        i: e.i,
+        title: e.title,
+        where: '노트',
+        snippet: snippet(e.note, ni, q.length),
+        score: 1,
+      };
     }
     if (hit) out.push(hit);
   }

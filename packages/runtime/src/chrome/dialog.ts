@@ -9,7 +9,13 @@ let returnFocus: HTMLElement | null = null;
 export function buildDialog(): void {
   root = h(
     'div',
-    { id: 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'dialog-title', hidden: true },
+    {
+      id: 'dialog',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': 'dialog-title',
+      hidden: true,
+    },
     `<div class="dlg-card"><header class="dlg-head"><h2 id="dialog-title"></h2>` +
       `<button type="button" class="dlg-close" title="닫기 (Esc)">${ICON.close}<span>닫기</span></button>` +
       `</header><div id="dialog-body" class="dlg-body"></div></div>`,

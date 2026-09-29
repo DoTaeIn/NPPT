@@ -9,7 +9,8 @@ export function sourcesHtml(ids: string[]): string {
   if (!ids.length) return '<p class="dlg-note">등록된 출처가 없습니다.</p>';
   const items = ids.map((id) => {
     const r = S.data.refs.find((x) => x.id === id);
-    if (!r) return `<li><b>${esc(id)}</b> · <span class="dlg-muted">참고 목록에 없는 출처</span></li>`;
+    if (!r)
+      return `<li><b>${esc(id)}</b> · <span class="dlg-muted">참고 목록에 없는 출처</span></li>`;
     const note = r.note ? `<small>${esc(r.note)}</small>` : '';
     return `<li>${linkHtml(r.url, `<b>${esc(r.id)}</b> · ${esc(r.title)}`)}${note}</li>`;
   });
@@ -36,7 +37,9 @@ export function openMediaCredits(): void {
   const list = assets.concat(videos);
   openDialog(
     '이미지·영상 출처',
-    (list.length ? `<ul class="dlg-credits">${list.join('')}</ul>` : '<p class="dlg-note">등록된 미디어가 없습니다.</p>') +
+    (list.length
+      ? `<ul class="dlg-credits">${list.join('')}</ul>`
+      : '<p class="dlg-note">등록된 미디어가 없습니다.</p>') +
       '<p class="dlg-note">이미지는 이 HTML 파일에 내장되어 있습니다. 외부 원문과 영상은 인터넷 연결이 필요합니다.</p>',
     'media',
   );
@@ -59,8 +62,17 @@ export function openImage(assetId: string, from?: Element | null): void {
     return;
   }
   const frag = document.createDocumentFragment();
-  frag.append(h('img', { class: 'dlg-image', src: img.getAttribute('src') || img.currentSrc, alt: meta.alt || img.alt || title }));
-  const credit = [meta.credit ? esc(meta.credit) : '', meta.source ? linkHtml(meta.source, '출처 원문 ↗') : '']
+  frag.append(
+    h('img', {
+      class: 'dlg-image',
+      src: img.getAttribute('src') || img.currentSrc,
+      alt: meta.alt || img.alt || title,
+    }),
+  );
+  const credit = [
+    meta.credit ? esc(meta.credit) : '',
+    meta.source ? linkHtml(meta.source, '출처 원문 ↗') : '',
+  ]
     .filter(Boolean)
     .join(' · ');
   if (credit) frag.append(h('p', { class: 'dlg-caption' }, credit));
@@ -118,4 +130,3 @@ export function initMedia(): void {
     }
   });
 }
-

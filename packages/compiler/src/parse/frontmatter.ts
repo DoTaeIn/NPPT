@@ -43,10 +43,10 @@ const str = (v: unknown): string | undefined =>
  */
 export function parseFrontMatter(text: string, startLine: number, ctx: ParseContext): void {
   const lineCounter = new LineCounter();
-  const doc = parseDocument(text, { lineCounter, prettyErrors: false });
+  const doc = parseDocument(text, { lineCounter });
   for (const err of doc.errors) {
     const pos = err.linePos?.[0];
-    report(ctx, 'error', 'format.frontmatter.yaml', `YAML 오류: ${err.message.split('\n')[0]}`, pos ? startLine + pos.line - 1 : startLine);
+    report(ctx, 'error', 'format.frontmatter.yaml', `YAML 오류: ${(err.message.split('\n')[0] ?? '').replace(/ at line \d+, column \d+:?$/, '')}`, pos ? startLine + pos.line - 1 : startLine);
   }
   if (doc.errors.length) return;
   const data: unknown = doc.toJS();

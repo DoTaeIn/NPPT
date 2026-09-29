@@ -18,7 +18,8 @@ export function decorateActive(): void {
   const n = S.slides.length;
   S.slides.forEach((s, k) => {
     if (k === S.cur) decorate(s, k, n, true);
-    else s.querySelectorAll(':scope > .slide-no, :scope > .slide-progress').forEach((e) => e.remove());
+    else
+      s.querySelectorAll(':scope > .slide-no, :scope > .slide-progress').forEach((e) => e.remove());
   });
 }
 

@@ -27,9 +27,17 @@ export function computeFit(vw: number, vh: number, notesOpen: boolean, tocOpen: 
   };
 }
 
-export function fitCanvas(): void {
+let animTimer = 0;
+
+/** Applies the fit. `animate` (panel toggles only) eases the move; resizes apply instantly. */
+export function fitCanvas(animate = false): void {
   const c = S.canvas;
   if (!c) return;
+  if (animate) {
+    c.classList.add('mc-anim');
+    window.clearTimeout(animTimer);
+    animTimer = window.setTimeout(() => c.classList.remove('mc-anim'), 260);
+  }
   const f = computeFit(window.innerWidth, window.innerHeight, S.notesOpen, S.tocOpen);
   S.scale = f.scale;
   c.style.left = `${f.left}px`;
@@ -45,7 +53,9 @@ export function fitCanvas(): void {
  */
 export function ensureStage(): void {
   let canvas = document.getElementById('canvas');
-  let slides = canvas ? Array.from(canvas.querySelectorAll<HTMLElement>(':scope > section.slide')) : [];
+  let slides = canvas
+    ? Array.from(canvas.querySelectorAll<HTMLElement>(':scope > section.slide'))
+    : [];
   if (!slides.length) slides = Array.from(document.querySelectorAll<HTMLElement>('section.slide'));
   if (!canvas) {
     const stage = h('div', { id: 'stage' });
@@ -66,7 +76,7 @@ export function ensureStage(): void {
 }
 
 export function initLayout(): void {
-  listen(window, 'resize', fitCanvas);
+  listen(window, 'resize', () => fitCanvas());
   listen(document, 'fullscreenchange', () => {
     document.body.classList.toggle('fs-active', !!document.fullscreenElement);
     fitCanvas();

@@ -253,7 +253,7 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
     d.blocks.push(...mapElement(c, ctx));
   }
   if (d.no && d.type !== 'divider') {
-    ctx.report.addDropped('section number on a non-divider slide', ctx.slideId);
+    ctx.report.addDropped(`hero numeral \`${d.no}\` (\`.div-num\`; only dividers have \`no\`)`, ctx.slideId);
     delete d.no;
   }
   return d;

@@ -17,7 +17,9 @@ describe('plugins', () => {
   it('mounts a plugin registered after init, with params and context', () => {
     const m = boot();
     const mount = vi.fn((el: HTMLElement, _params: unknown, _ctx: PluginCtx) => {
-      el.append(Object.assign(document.createElement('p'), { className: 'abac-ui', textContent: 'ABAC' }));
+      el.append(
+        Object.assign(document.createElement('p'), { className: 'abac-ui', textContent: 'ABAC' }),
+      );
     });
     m.registerPlugin('abac', { mount });
     expect(mount).toHaveBeenCalledTimes(1);

@@ -2,6 +2,8 @@
  * terms: abbreviation glossary.
  * <dl class="terms"><div class="term" id><dt>LPR</dt><dd><i class="term-en">…</i><span class="term-ko">…</span></dd></div></dl>
  * Ported from V20 `.term-strip` (week03-styles.css l.957). Budget: ≤6, abbr 8, en 40, ko 24.
+ * `.term` is also the class of inline `abbr.term` (base.css), so every rule here is scoped
+ * to `.terms > .term`.
  */
 .terms {
   display: grid;
@@ -9,7 +11,7 @@
   gap: 14px 18px;
 }
 
-.term {
+.terms > .term {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
@@ -21,7 +23,7 @@
   background: var(--bg-soft);
 }
 
-.term > dt {
+.terms > .term > dt {
   color: var(--primary-text);
   font-size: var(--fs-body);
   font-weight: var(--fw-heavy);
@@ -29,7 +31,7 @@
   letter-spacing: 0.01em;
 }
 
-.term > dd {
+.terms > .term > dd {
   display: flex;
   flex-direction: column;
   gap: 2px;

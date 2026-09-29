@@ -14,8 +14,10 @@
   ],
   "scripts": {
     "build": "node build.mjs",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests",
-    "clean": "rm -rf dist"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run && playwright test",
+    "clean": "rm -rf dist",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test"
   }
 }

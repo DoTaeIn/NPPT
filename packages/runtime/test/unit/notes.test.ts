@@ -13,10 +13,14 @@ describe('notes panel', () => {
     m.toggleNotes();
     expect(panel().classList.contains('open')).toBe(true);
     expect($('#notes-panel .panel-tag')?.textContent).toBe('발표 노트 · 02 / 05');
-    expect($('#notes-panel .notes-title')?.textContent).toBe('카드 인식, 허용, 문 열림, 사람 통과는 다른 단계다');
+    expect($('#notes-panel .notes-title')?.textContent).toBe(
+      '카드 인식, 허용, 문 열림, 사람 통과는 다른 단계다',
+    );
     expect($('#notes-panel .notes-time')?.textContent).toContain('2.5분 · 01:00 – 03:30');
     expect($('#notes-panel .notes-total')?.textContent).toBe('누적 3.5분 / 10분');
-    const labels = Array.from(document.querySelectorAll('#notes-panel .cue-k')).map((e) => e.textContent);
+    const labels = Array.from(document.querySelectorAll('#notes-panel .cue-k')).map(
+      (e) => e.textContent,
+    );
     expect(labels).toEqual(['화면', '대사', '주목', '발문', '예상질문', '예상답변', '전환']);
     const say = $('#notes-panel .cue.k-say')!;
     expect(say.dataset.cueId).toBe('p02-c001');
@@ -32,7 +36,9 @@ describe('notes panel', () => {
     const m = boot();
     m.toggleNotes();
     m.go(2);
-    const labels = Array.from(document.querySelectorAll('#notes-panel .cue-k')).map((e) => e.textContent);
+    const labels = Array.from(document.querySelectorAll('#notes-panel .cue-k')).map(
+      (e) => e.textContent,
+    );
     expect(labels).toEqual(['조작', '이동', '팁', '대기', '검증 보충', '메모']);
     m.go(4);
     expect($('#notes-panel .notes-empty')?.textContent).toContain('노트가 없습니다');

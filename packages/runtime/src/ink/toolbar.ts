@@ -63,7 +63,8 @@ function sync(): void {
   const open = INK.on || isLaserOn();
   bar.classList.toggle('open', open);
   bar.setAttribute('aria-hidden', String(!open));
-  for (const b of $$('[data-tool]', bar)) b.classList.toggle('on', INK.on && b.dataset.tool === INK.tool);
+  for (const b of $$('[data-tool]', bar))
+    b.classList.toggle('on', INK.on && b.dataset.tool === INK.tool);
   for (const b of $$('[data-color]', bar)) {
     b.classList.toggle('on', PEN_COLORS[Number(b.dataset.color)]?.c === INK.color);
   }

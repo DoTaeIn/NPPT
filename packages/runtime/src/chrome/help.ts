@@ -56,7 +56,13 @@ export function buildHelp(a: HelpActions): void {
   const hasMedia = Object.keys(d.assets).length > 0 || d.videos.length > 0;
   root = h(
     'div',
-    { id: 'help', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'help-title', hidden: true },
+    {
+      id: 'help',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': 'help-title',
+      hidden: true,
+    },
     `<div class="help-card"><header class="dlg-head"><h2 id="help-title">도움말 · 키보드 단축키</h2>` +
       `<button type="button" class="dlg-close help-close" title="닫기 (Esc)">${ICON.close}<span>닫기</span></button></header>` +
       `<div class="help-body"><div class="help-cols">${tables}</div>` +

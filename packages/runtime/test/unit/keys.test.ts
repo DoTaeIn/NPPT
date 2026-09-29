@@ -75,15 +75,28 @@ describe('keyboard map', () => {
     boot();
     press('p');
     press('m');
-    press('?');
+    press('/');
+    expect($('#search')?.hidden).toBe(false);
     press('Escape');
-    expect($('#help')?.hidden).toBe(true);
+    expect($('#search')?.hidden).toBe(true);
     expect(body().contains('toc-open')).toBe(true);
     press('Escape');
     expect(body().contains('toc-open')).toBe(false);
     expect(INK.on).toBe(true);
     press('Escape');
     expect(INK.on).toBe(false);
+  });
+
+  it('opening a modal (help) turns the pen off; Esc closes it', () => {
+    boot();
+    press('p');
+    press('?');
+    expect(INK.on).toBe(false);
+    expect($('#help')?.hidden).toBe(false);
+    press('ArrowRight');
+    expect(window.MARCO?.cur).toBe(0);
+    press('Escape');
+    expect($('#help')?.hidden).toBe(true);
   });
 
   it('ignores keys while typing in an input', () => {

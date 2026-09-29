@@ -159,7 +159,7 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
   L.push(`| Slides | ${r.slideCount} (${Object.entries(r.slidesByType).map(([k, v]) => `${k} ${v}`).join(', ')}) |`);
   L.push(`| Blocks | ${r.mappedBlocks + r.fallbackBlocks} (mapped ${r.mappedBlocks}, \`html\` fallback ${r.fallbackBlocks}) |`);
   L.push(`| Mapped | **${r.mappedPercent}%** |`);
-  L.push(`| Assets | ${r.assets.total} (${r.assets.referenced} referenced by image blocks, ${r.assets.stripped} without payload, ${r.assets.bytes} bytes) |`);
+  L.push(`| Assets | ${r.assets.total} (${r.assets.referenced} referenced by blocks, ${r.assets.stripped} without payload, ${r.assets.bytes} bytes) |`);
   L.push(`| Refs · videos · terms | ${r.refs} · ${r.videos} · ${r.terms} |`);
   const data = Object.entries(r.data).filter(([, v]) => v !== undefined);
   if (data.length) L.push(`| Data | ${data.map(([k, v]) => `${k} ${v}`).join(' · ')} |`);

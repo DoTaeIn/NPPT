@@ -52,12 +52,17 @@ function render(): void {
   const plan = typeof S.data.meta.duration === 'number' ? S.data.meta.duration : total;
   timeEl.hidden = !note?.time && !total;
   timeEl.innerHTML =
-    (note?.time ? `${ICON.clock}<b>${esc(timeText(note.time))}</b>` : `${ICON.clock}<b>시간 배분 없음</b>`) +
-    (total ? `<span class="notes-total">누적 ${+upTo.toFixed(2)}분 / ${+plan.toFixed(2)}분</span>` : '');
+    (note?.time
+      ? `${ICON.clock}<b>${esc(timeText(note.time))}</b>`
+      : `${ICON.clock}<b>시간 배분 없음</b>`) +
+    (total
+      ? `<span class="notes-total">누적 ${+upTo.toFixed(2)}분 / ${+plan.toFixed(2)}분</span>`
+      : '');
 
   let html = '';
   if (note && note.cues.length) html = note.cues.map(cueHtml).join('');
-  else if (note?.raw) html = `<div class="cue k-memo"><div class="cue-t">${inlineFmt(note.raw)}</div></div>`;
+  else if (note?.raw)
+    html = `<div class="cue k-memo"><div class="cue-t">${inlineFmt(note.raw)}</div></div>`;
   else html = '<p class="notes-empty">이 슬라이드에는 노트가 없습니다.</p>';
   const terms = slideTerms(s);
   if (terms.length) {
@@ -143,7 +148,7 @@ export function toggleNotes(force?: boolean): void {
   aside.setAttribute('aria-hidden', String(!open));
   if (open) render();
   else if (aside.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
-  fitCanvas();
+  fitCanvas(true);
   pub('ui');
 }
 

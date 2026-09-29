@@ -5,7 +5,8 @@ import { $, autoDispose, boot, loadFixture } from './helpers';
 
 autoDispose();
 
-const active = (): HTMLElement[] => Array.from(document.querySelectorAll<HTMLElement>('section.slide.active'));
+const active = (): HTMLElement[] =>
+  Array.from(document.querySelectorAll<HTMLElement>('section.slide.active'));
 
 describe('navigation', () => {
   it('shows exactly one active slide with number and progress', () => {
@@ -21,7 +22,9 @@ describe('navigation', () => {
   it('moves with next/prev/go/goId and dispatches marco:slidechange', () => {
     const m = boot();
     const seen: SlideChangeDetail[] = [];
-    document.addEventListener('marco:slidechange', (e) => seen.push((e as CustomEvent<SlideChangeDetail>).detail));
+    document.addEventListener('marco:slidechange', (e) =>
+      seen.push((e as CustomEvent<SlideChangeDetail>).detail),
+    );
     m.next();
     expect(m.cur).toBe(1);
     expect(seen).toEqual([{ index: 1, id: 's-02' }]);
