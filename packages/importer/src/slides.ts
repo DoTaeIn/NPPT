@@ -163,11 +163,8 @@ export function v20Slide(
       for (const c of childElements(parent)) {
         if (hasClass(c, 'slide-tag-bottom')) continue;
         if (hasClass(c, 'big-num')) d.no = textOf(c);
-        else if (hasClass(c, 'div-eyebrow')) {
-          if (d.footer && textOf(c) === d.footer)
-            ctx.report.addDropped('divider course · week line (same as the footer)', ctx.slideId);
-          else d.kicker = inline(ctx, c);
-        } else if (/^h[12]$/.test(tagName(c)) && !d.heading) d.heading = inline(ctx, c);
+        else if (hasClass(c, 'div-eyebrow')) d.kicker = inline(ctx, c);
+        else if (/^h[12]$/.test(tagName(c)) && !d.heading) d.heading = inline(ctx, c);
         else if (hasClass(c, 'div-desc') && !d.subtitle) d.subtitle = inline(ctx, c);
         else if (tagName(c) === 'div' && classes(c).length === 0) walk(c);
         else d.blocks.push(...mapElement(c, ctx));
@@ -259,8 +256,11 @@ function referenceIds(el: Element, ctx: MapContext): string[] {
 export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
   const cls = classes(section);
   const hero = cls.includes('hero');
+  // v9.7 `.hero` sections with the `.div-wrap` layout (big numeral, eyebrow, title, lead) are
+  // section openers: MARCO dividers (components.md §1, `no: "!"` + `alert` for the case study).
+  const divider = hero && !!section.querySelector(':scope > .div-wrap');
   const d: SlideDraft = {
-    type: hero ? 'hero' : 'content',
+    type: divider ? 'divider' : hero ? 'hero' : 'content',
     title: section.getAttribute('data-title')?.trim() ?? '',
     refs: [],
     blocks: [],
@@ -291,8 +291,12 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
       continue;
     }
     if (tagName(c) === 'svg' && hasClass(c, 'hero-art')) {
-      // Inline illustration: no asset to point `art` at, so it stays in the body verbatim.
-      d.blocks.push(...fallback(c, ctx));
+      // Inline illustration → an SVG asset shown as `art` (the theme places it like `.hero-art`).
+      const art = ctx.inlineSvg?.(c, section.getAttribute('data-title')?.trim() ?? '');
+      if (art) {
+        d.art = art;
+        ctx.report.addHeuristic('inline hero illustration → SVG asset (`art`)', 'svg.hero-art', ctx.slideId);
+      } else d.blocks.push(...fallback(c, ctx));
       continue;
     }
     if (hasClass(c, 's-head')) {
@@ -320,7 +324,7 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
       for (const h of childElements(c)) {
         if (hasClass(h, 'cover-logos'))
           ctx.report.addDropped('cover logos (theme decoration)', ctx.slideId);
-        else if (hasClass(h, 'cover-badge')) d.kicker ??= inline(ctx, h);
+        else if (hasClass(h, 'cover-badge')) d.tag ??= inline(ctx, h);
         else if (hasClass(h, 'cover-title') || tagName(h) === 'h1') d.heading = inline(ctx, h);
         else if (hasClass(h, 'cover-sub')) d.subtitle = inline(ctx, h);
         else if (hasClass(h, 'cover-meta')) d.meta = metaLines(h, ctx);
@@ -339,8 +343,7 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
         for (const h of childElements(parent)) {
           if (hasClass(h, 'div-num')) {
             const no = textOf(h);
-            if (/^\d+$/.test(no)) d.no = no;
-            else ctx.report.addDropped(`hero marker \`${no}\` (\`.div-num\`)`, ctx.slideId);
+            if (no) d.no = no;
           } else if (hasClass(h, 'div-eyebrow')) d.kicker ??= inline(ctx, h);
           else if (hasClass(h, 'div-title') || /^h[12]$/.test(tagName(h)))
             d.heading = inline(ctx, h);

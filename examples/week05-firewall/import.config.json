@@ -1,0 +1,22 @@
+{
+  "$comment": "Per-deck import config, applied by `scripts/import.ts` (packages/importer/src/config.ts). `corrections` runs the deck's own load-time patches (v9.0–v9.7) before mapping, in document order, so the source matches the deck as presented.",
+  "slides": [
+    { "at": 1, "id": "cover" },
+    { "at": 2, "id": "handoff" },
+    { "at": 3, "id": "agenda" },
+    { "at": 4, "id": "outcomes" },
+    { "at": 5, "id": "case-cisa" },
+    { "at": 6, "id": "case-facts" },
+    { "at": 7, "id": "diagnostic" }
+  ],
+  "corrections": [
+    "correctAttackFlows",
+    "v90-script-remap",
+    "correctAttackNarration",
+    "refreshN2SF",
+    "removeUrockLogo",
+    "bindLabNarration",
+    "bindNarration95",
+    "applyCorrections97"
+  ]
+}

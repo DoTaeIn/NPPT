@@ -41,6 +41,9 @@ import {
   generationTableRule,
   labelRowsRule,
   productGridRule,
+  quizCardsRule,
+  quizContainerRule,
+  quizExamRule,
   referenceFooterRule,
   stripRule,
   videoCardsRule,
@@ -62,6 +65,10 @@ export interface MapContext {
   inColumn: boolean;
   /** The deck's own stylesheet, for grid column counts and thumbnail heights. */
   css?: CssIndex;
+  /** Register an inline `<svg>` (e.g. v9.7 `.hero-art`) as an SVG asset; returns its id. */
+  inlineSvg?: (svg: Element, title: string) => string | undefined;
+  /** The deck's quiz (v9.x `window.QUIZ`): ids in order, area per id, exam default minutes. */
+  quiz?: { ids: string[]; area: Record<string, number | undefined>; minutes?: number };
 }
 
 /**
@@ -900,6 +907,9 @@ const RULES: Rule[] = [
   referenceFooterRule,
   equipmentGridRule,
   videoCardsRule,
+  quizExamRule,
+  quizCardsRule,
+  quizContainerRule,
   interactiveRule,
   labelRowsRule,
   generationTableRule,

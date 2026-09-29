@@ -92,6 +92,16 @@ export function quizFrom(value: unknown): QuizItem[] | undefined {
   return out.length ? out : undefined;
 }
 
+/** The exam's default time limit in the deck's quiz script (`#qx-min` value or `min:N`). */
+export function examMinutes(html: string): number | undefined {
+  const m =
+    /id="qx-min"[^>]*\bvalue="(\d+)"/.exec(html) ??
+    /\bvalue="(\d+)"[^>]*id="qx-min"/.exec(html) ??
+    /EX\s*=\s*\{[^}]*\bmin\s*:\s*(\d+)/.exec(html);
+  const n = m ? Number(m[1]) : NaN;
+  return Number.isFinite(n) && n >= 1 && n <= 180 ? n : undefined;
+}
+
 // ---------------------------------------------------------------------------------------------
 // config helpers
 // ---------------------------------------------------------------------------------------------
@@ -217,6 +227,21 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
     sections = Array.from(document.querySelectorAll('section.slide'));
   const legacyTitles = sections.map((s) => [s.getAttribute('data-title')?.trim() ?? '']);
 
+  // Inline hero illustrations become SVG files. The source text is taken from the HTML itself:
+  // the DOM serialiser lower-cases SVG element names (linearGradient), which a .svg file needs.
+  const heroSvgs = Array.from(document.querySelectorAll('svg.hero-art'));
+  const heroSources = [
+    ...tokenized.matchAll(/<svg\b[^>]*\bclass=["'][^"']*\bhero-art\b[^"']*["'][^>]*>[\s\S]*?<\/svg>/g),
+  ].map((m) => m[0]);
+  const svgSource = (el: Element): string => {
+    const at = heroSvgs.indexOf(el);
+    let src = heroSources.length === heroSvgs.length && at >= 0 ? (heroSources[at] ?? '') : '';
+    if (!src) src = el.outerHTML;
+    const open = src.slice(0, src.indexOf('>'));
+    if (!/\sxmlns=/.test(open)) src = src.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    return `${src}\n`;
+  };
+
   // ---- load-time corrections (opt-in per deck) ---------------------------------------------
   let corrected: CorrectionData | undefined;
   let correctionsReport: CorrectionsReport | undefined;
@@ -333,6 +358,14 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
     return id;
   };
 
+  const quizInfo: MapContext['quiz'] = lecture.quiz
+    ? {
+        ids: lecture.quiz.map((q) => q.id),
+        area: Object.fromEntries(lecture.quiz.map((q) => [q.id, q.area])),
+        minutes: examMinutes(html),
+      }
+    : undefined;
+
   // ---- slides ----------------------------------------------------------------------------
   const rulesAt = matchRules(config.slides ?? [], legacyTitles, configReport);
   const ids = sections.map((_s, i) => rulesAt[i]?.find((r) => r.id)?.id ?? slideId(i));
@@ -356,6 +389,17 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
       slideRefs: [],
       inColumn: false,
       css,
+    };
+    if (quizInfo) ctx.quiz = quizInfo;
+    ctx.inlineSvg = (svg, title) => {
+      const id = assets.addBytes(
+        `hero-${String(index + 1).padStart(2, '0')}`,
+        'image/svg+xml',
+        new TextEncoder().encode(svgSource(svg)),
+        { title: title ? `${title} · 일러스트` : '일러스트', credit: '원본 덱의 인라인 SVG' },
+      );
+      assets.markReferenced(id);
+      return id;
     };
     const draft: SlideDraft =
       family === 'v20' ? v20Slide(section, ctx, slideRefs[index]) : v97Slide(section, ctx);

@@ -202,7 +202,10 @@ export function runCorrections(
   });
   const run = (code: string): unknown =>
     vm.runInContext(code, context, { timeout: opts.timeoutMs ?? 10_000 });
-  run('var window = globalThis; var self = globalThis;');
+  // The v9.x deck engine exposes its slides as `window.DECK.slides`; the patches use it.
+  run(
+    "var window = globalThis; var self = globalThis; window.DECK = { slides: Array.from(document.querySelectorAll('section.slide')), cur: 0 };",
+  );
   for (const key of ['SIMS', 'QUIZ', 'SCRIPT'] as const) {
     if (data[key] === undefined) continue;
     context.__json = JSON.stringify(data[key]);
@@ -242,7 +245,11 @@ export function runCorrections(
     if (a.text !== b.text) report.changed.slideText++;
     if (a.attrs !== b.attrs) report.changed.attributes++;
   });
-  const audit = read('AUDIT97') as { errors?: unknown[] } | undefined;
-  if (audit && Array.isArray(audit.errors)) report.audit.push(...audit.errors.map(String));
+  // Audit logs the v9.5 / v9.7 patches keep about themselves.
+  for (const key of ['NARRATION95', 'AUDIT97']) {
+    const audit = read(key) as { errors?: unknown[] } | undefined;
+    if (audit && Array.isArray(audit.errors))
+      report.audit.push(...audit.errors.map((e) => `${key}: ${String(e)}`));
+  }
   return out;
 }

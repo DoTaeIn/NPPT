@@ -1,0 +1,14 @@
+{
+  "$comment": "Per-deck import config, applied by `scripts/import.ts` (packages/importer/src/config.ts). Regenerate the example from the legacy deck instead of editing lecture.marco.md by hand.",
+  "notes": "split",
+  "slides": [
+    { "at": 1, "id": "cover" },
+    { "at": 2, "id": "intro" },
+    { "at": 3, "id": "four-questions" },
+    { "at": 4, "id": "principle-chain" },
+    { "at": 5, "id": "part-1" },
+    { "legacyTitle": "안전과 권한", "id": "part-2" },
+    { "legacyTitle": "인증에서 현장 동작까지", "id": "closing" },
+    { "legacyTitle": "출처 및 참고자료", "id": "references" }
+  ]
+}

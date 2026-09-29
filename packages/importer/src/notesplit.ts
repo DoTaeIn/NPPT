@@ -149,7 +149,9 @@ export function splitProseNote(prose: string, blocks: Block[], slideId: string):
   if (!points.length) return undefined;
   const cues: { target?: string; text: string }[] = [];
   const lead = note.slice(0, points[0]?.at ?? 0).trim();
-  if (lead) cues.push({ text: lead });
+  // Leading text (usually the heading) is its own cue; bare symbols (▶, ↗) join the first cue.
+  if (lead && keyOf(lead).key) cues.push({ text: lead });
+  else if (points[0]) points[0].at = 0;
   points.forEach((pt, i) => {
     const text = note.slice(pt.at, points[i + 1]?.at ?? note.length).trim();
     if (text) cues.push({ target: pt.target, text });

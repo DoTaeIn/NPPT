@@ -15,6 +15,7 @@ import {
   isIconOnly,
   isInlineOnly,
   mapElement,
+  sourceText,
   textOfDirect,
   type MapContext,
 } from './blocks.js';
@@ -353,6 +354,8 @@ export function equipmentGridRule(el: Element, ctx: MapContext): Block[] | null 
     for (const p of Array.from(art.querySelectorAll(':scope > p'))) parts.push(inline(ctx, p));
     const check = art.querySelector(':scope > b, :scope > strong');
     if (check && textOf(check)) parts.push(`**${inline(ctx, check)}**`);
+    const figure = img?.closest('figure') ?? img;
+    if (figure) sourceText.set(image, textOf(figure));
     const cell: Block[] = [image];
     const text = parts.filter(Boolean).join(' ');
     if (text) cell.push({ type: 'paragraph', text });
@@ -384,13 +387,20 @@ export function videoCardsRule(el: Element, ctx: MapContext): Block[] | null {
     if (title && textOf(title)) video.caption = inline(ctx, title);
     if (!ctx.videos.has(id))
       ctx.report.warn(`Video \`${id}\` on ${ctx.slideId} is not in the deck's video list.`);
-    const meta = ['.pentest-date', '.pentest-speakers', '.pentest-range']
+    const metaEls = ['.pentest-date', '.pentest-speakers', '.pentest-range']
       .map((s) => art.querySelector(s))
-      .filter((x): x is Element => !!x && !!textOf(x))
-      .map((x) => inline(ctx, x))
-      .join(' · ');
+      .filter((x): x is Element => !!x && !!textOf(x));
+    const meta = metaEls.map((x) => inline(ctx, x)).join(' · ');
+    // V20 notes read the card top to bottom (date, heading, title, speakers, range): the video
+    // cue covers all of it, the meta line gets no cue of its own.
+    const head = [metaEls[0], h, title, ...metaEls.slice(1)].filter((x): x is Element => !!x);
+    sourceText.set(video, head.map((x) => textOf(x)).join(' '));
     const cell: Block[] = [video];
-    if (meta) cell.push({ type: 'paragraph', text: meta });
+    if (meta) {
+      const line: Block = { type: 'paragraph', text: meta };
+      sourceText.set(line, '');
+      cell.push(line);
+    }
     const lesson = art.querySelector('.pentest-lesson');
     if (lesson && textOf(lesson)) cell.push({ type: 'paragraph', text: inline(ctx, lesson) });
     cells.push(cell);
@@ -446,4 +456,52 @@ export function referenceFooterRule(el: Element, ctx: MapContext): Block[] | nul
     blocks.push(...mapElement(c, ctx));
   }
   return blocks;
+}
+
+// ---------------------------------------------------------------------------------------------
+// v9.x quiz: exam launcher `[data-exam]` and review cards `.qcard[data-q]` → `widget quiz`
+// ---------------------------------------------------------------------------------------------
+
+/** `[data-exam]` → `:::widget quiz mode=exam minutes=N` (the deck's own default time limit). */
+export function quizExamRule(el: Element, ctx: MapContext): Block[] | null {
+  if (!el.hasAttribute('data-exam')) return null;
+  const params: Record<string, unknown> = { mode: 'exam', minutes: ctx.quiz?.minutes ?? 15 };
+  ctx.report.addHeuristic('exam launcher → `widget quiz mode=exam`', selectorOf(el), ctx.slideId);
+  if (textOf(el))
+    ctx.report.addDropped(
+      'exam launcher text (the quiz widget draws its own start screen)',
+      ctx.slideId,
+    );
+  return [{ type: 'widget', name: 'quiz', params }];
+}
+
+/** A grid of `.qcard[data-q]` review cards → `:::widget quiz mode=cards` (+ `area` / `ids`). */
+export function quizCardsRule(el: Element, ctx: MapContext): Block[] | null {
+  const kids = childElements(el);
+  if (!kids.length || !kids.every((k) => hasClass(k, 'qcard') && k.hasAttribute('data-q')))
+    return null;
+  const ids = kids.map((k) => k.getAttribute('data-q') ?? '');
+  const params: Record<string, unknown> = { mode: 'cards' };
+  const all = ctx.quiz?.ids ?? [];
+  const areas = new Set(ids.map((id) => ctx.quiz?.area[id]));
+  const inArea = (a: number | undefined): string[] =>
+    all.filter((id) => ctx.quiz?.area[id] === a);
+  const [area] = [...areas];
+  if (ids.join(',') === all.join(',')) {
+    // every item: no filter
+  } else if (areas.size === 1 && area !== undefined && ids.join(',') === inArea(area).join(','))
+    params.area = area;
+  else params.ids = ids.join(',');
+  ctx.report.addHeuristic('quiz review cards → `widget quiz mode=cards`', selectorOf(el), ctx.slideId);
+  return [{ type: 'widget', name: 'quiz', params }];
+}
+
+/**
+ * A container that holds a quiz launcher next to other controls (`.diag-actions`): its children
+ * are mapped one by one, so the launcher becomes a widget and the rest keeps its own mapping.
+ */
+export function quizContainerRule(el: Element, ctx: MapContext): Block[] | null {
+  const kids = childElements(el);
+  if (!kids.some((k) => k.hasAttribute('data-exam'))) return null;
+  return kids.flatMap((k) => mapElement(k, ctx));
 }
