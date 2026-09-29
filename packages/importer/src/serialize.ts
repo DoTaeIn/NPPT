@@ -13,7 +13,7 @@ export interface SerializeOptions {
   /**
    * Front-matter keys whose data is written to a sidecar file instead of inline YAML
    * (value = path relative to the source, e.g. `{ sims: 'sims.json' }`). The caller writes the
-   * file. Proposed extension, see the importer README.
+   * file. Proposed extension of format.md §2 (the compiler does not load sidecars yet).
    */
   sidecars?: Partial<Record<'quiz' | 'sims' | 'terminals', string>>;
 }
@@ -24,12 +24,20 @@ export interface SerializeOptions {
 
 /** Escape a pipe-row / GFM table cell. */
 export function cell(text: string): string {
-  return text.replace(/\|/g, '\\|').replace(/\s*\n\s*/g, ' ').trim();
+  return text
+    .replace(/\|/g, '\\|')
+    .replace(/\s*\n\s*/g, ' ')
+    .trim();
 }
 
 /** Escape Markdown block syntax at the start of a line of text. */
 export function escapeLineStart(text: string): string {
-  if (/^(#{1,6}(\s|$)|>|[-+*](\s|$)|:::|\||```|~~~|={3,}\s*$|-{3,}\s*$|\*{3,}\s*$|_{3,}\s*$|!\[|<)/.test(text)) return `\\${text}`;
+  if (
+    /^(#{1,6}(\s|$)|>|[-+*](\s|$)|:::|\||```|~~~|={3,}\s*$|-{3,}\s*$|\*{3,}\s*$|_{3,}\s*$|!\[|<)/.test(
+      text,
+    )
+  )
+    return `\\${text}`;
   const ordered = /^(\d{1,9})([.)])(\s|$)/.exec(text);
   if (ordered) return `${ordered[1]}\\${text.slice((ordered[1] ?? '').length)}`;
   return text.replace(/^\s+/, '');
@@ -39,14 +47,21 @@ export function escapeLineStart(text: string): string {
 export function attr(key: string, value: string | number | boolean): string {
   if (value === true) return key;
   const s = String(value);
-  return /^[^\s"'=\\]+$/.test(s) ? `${key}=${s}` : `${key}="${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+  return /^[^\s"'=\\]+$/.test(s)
+    ? `${key}=${s}`
+    : `${key}="${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }
 
-/** Free-text label after a container name (`:::takeaway 핵심 구분`). */
-function label(text: string | undefined, reserved: string[] = []): string {
+/**
+ * Free-text label after a container name (`:::takeaway 핵심 구분`). Falls back to the keyed form
+ * (`label="…"`, or `title="…"` for callouts) when the bare words would be misread: a quote or
+ * `=` inside, or a first word that is one of the container's flags (`:::callout info warn …`).
+ */
+function label(text: string | undefined, key: 'label' | 'title', reserved: string[] = []): string {
   if (!text) return '';
   const first = text.split(/\s+/)[0] ?? '';
-  if (/["=]/.test(text) || reserved.includes(first) || /^:/.test(text)) return ` ${attr('label', text)}`;
+  if (/["'=\\]/.test(text) || reserved.includes(first) || /^:/.test(text))
+    return ` ${attr(key, text)}`;
   return ` ${text}`;
 }
 
@@ -82,39 +97,61 @@ export function serializeBlock(block: Block, lecture: Pick<Lecture, 'assets'>): 
     case 'bullets':
       return block.items.map((i) => `- ${escapeLineStart(i)}`).join('\n');
     case 'steps':
-      return container(
-        'steps',
-        [toYamlList(block.items.map((i) => ({ title: i.title, body: i.body })))],
-      );
+      return container('steps', [
+        toYamlList(block.items.map((i) => ({ title: i.title, body: i.body }))),
+      ]);
     case 'chain':
       return container(
         'chain',
         block.items.map((i) => {
-          const cells = i.no !== undefined ? [i.no, i.label, i.sub ?? ''] : i.sub !== undefined ? [i.label, i.sub] : [i.label];
+          const cells =
+            i.no !== undefined
+              ? [i.no, i.label, i.sub ?? '']
+              : i.sub !== undefined
+                ? [i.label, i.sub]
+                : [i.label];
           return cells.map(cell).join(' | ');
         }),
       );
     case 'cards':
       return container(`cards ${attr('cols', block.cols)}`, [
-        toYamlList(block.items.map((i) => ({ kicker: i.kicker, title: i.title, body: i.body, icon: i.icon, tone: i.tone }))),
+        toYamlList(
+          block.items.map((i) => ({
+            kicker: i.kicker,
+            title: i.title,
+            body: i.body,
+            icon: i.icon,
+            tone: i.tone,
+          })),
+        ),
       ]);
     case 'tiles':
       return container(`tiles ${attr('cols', block.cols)}`, [
-        toYamlList(block.items.map((i) => ({ label: i.label, value: i.value, icon: i.icon, tone: i.tone }))),
+        toYamlList(
+          block.items.map((i) => ({ label: i.label, value: i.value, icon: i.icon, tone: i.tone })),
+        ),
       ]);
     case 'pills':
       return container('pills', [
         toYamlList(block.items.map((i): YamlValue => (i.tone ? { [i.tone]: i.text } : i.text))),
       ]);
     case 'takeaway':
-      return container(`takeaway${label(block.label)}`, [escapeLineStart(block.text)]);
+      return container(`takeaway${label(block.label, 'label')}`, [escapeLineStart(block.text)]);
     case 'callout':
-      return container(`callout ${block.kind}${label(block.title, ['info', 'warn', 'ok', 'danger'])}`, [escapeLineStart(block.body)]);
+      return container(
+        `callout ${block.kind}${label(block.title, 'title', ['info', 'warn', 'ok', 'danger'])}`,
+        [escapeLineStart(block.body)],
+      );
     case 'verdict':
-      return container(`verdict ${block.verdict}${label(block.label, ['allow', 'drop', 'ok', 'hot', 'info'])}`, [escapeLineStart(block.text)]);
+      return container(
+        `verdict ${block.verdict}${label(block.label, 'label', ['allow', 'drop', 'ok', 'hot', 'info'])}`,
+        [escapeLineStart(block.text)],
+      );
     case 'table': {
       const lines = markdownTable(block.head, block.rows, block.align);
-      return block.caption ? container(`table ${attr('caption', block.caption)}`, lines) : lines.join('\n');
+      return block.caption
+        ? container(`table ${attr('caption', block.caption)}`, lines)
+        : lines.join('\n');
     }
     case 'compare':
       return container(
@@ -124,7 +161,9 @@ export function serializeBlock(block: Block, lecture: Pick<Lecture, 'assets'>): 
     case 'timeline':
       return container(
         'timeline',
-        block.items.map((i) => [i.at, i.title, ...(i.body !== undefined ? [i.body] : [])].map(cell).join(' | ')),
+        block.items.map((i) =>
+          [i.at, i.title, ...(i.body !== undefined ? [i.body] : [])].map(cell).join(' | '),
+        ),
       );
     case 'terms':
       return container(
@@ -136,7 +175,9 @@ export function serializeBlock(block: Block, lecture: Pick<Lecture, 'assets'>): 
       if (asset && !block.zoom && !block.fit && block.height === undefined) {
         const alt = (asset.alt ?? '').replace(/([[\]\\])/g, '\\$1');
         const path = /[\s()<>]/.test(asset.path) ? `<${asset.path}>` : asset.path;
-        const title = block.caption ? ` "${block.caption.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"` : '';
+        const title = block.caption
+          ? ` "${block.caption.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+          : '';
         return `![${alt}](${path}${title})`;
       }
       const attrs = [attr('asset', block.asset)];
@@ -160,20 +201,34 @@ export function serializeBlock(block: Block, lecture: Pick<Lecture, 'assets'>): 
     }
     case 'code': {
       const f = fence(block.code);
-      const info = [block.lang ?? '', block.title ? `title="${block.title.replace(/"/g, '\\"')}"` : ''].filter(Boolean).join(' ');
+      const info = [
+        block.lang ?? '',
+        block.title ? `title="${block.title.replace(/"/g, '\\"')}"` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
       return [`${f}${info}`, block.code, f].join('\n');
     }
     case 'columns':
       return container(
         `columns ${attr('cols', block.cols)}`,
-        block.columns.map((col) => container('col', col.length ? [col.map((b) => serializeBlock(b, lecture)).join('\n\n')] : [])),
+        block.columns.map((col) =>
+          container(
+            'col',
+            col.length ? [col.map((b) => serializeBlock(b, lecture)).join('\n\n')] : [],
+          ),
+        ),
       );
     case 'widget': {
       const attrs: string[] = [];
       const complex: Record<string, YamlValue> = {};
       for (const [k, v] of Object.entries(block.params ?? {})) {
-        const simple = (typeof v === 'string' && v.length <= 120 && !/[\n\r]/.test(v)) || typeof v === 'number' || typeof v === 'boolean';
-        if (simple && /^[A-Za-z][\w-]*$/.test(k)) attrs.push(attr(k, v as string | number | boolean));
+        const simple =
+          (typeof v === 'string' && v.length <= 120 && !/[\n\r]/.test(v)) ||
+          typeof v === 'number' ||
+          typeof v === 'boolean';
+        if (simple && /^[A-Za-z][\w-]*$/.test(k))
+          attrs.push(attr(k, v as string | number | boolean));
         else complex[k] = v as YamlValue;
       }
       const body = Object.keys(complex).length ? [toYaml(complex)] : [];
@@ -184,12 +239,18 @@ export function serializeBlock(block: Block, lecture: Pick<Lecture, 'assets'>): 
   }
 }
 
-/** Keep raw HTML from closing the container or starting a slide/note by accident. */
+/**
+ * Keep raw HTML from closing the container, opening a fence, or starting a slide/note by
+ * accident: such lines are indented by four spaces (container and fence markers only count with
+ * up to three), which HTML ignores.
+ */
 function protectHtml(html: string): string {
   return html
     .replace(/\r\n?/g, '\n')
     .split('\n')
-    .map((l) => (/^(:::|# slide|## note)/.test(l.trimStart()) ? ` ${l}` : l))
+    .map((l) =>
+      /^(:::|`{3,}|~{3,}|# slide|## note)/.test(l.trimStart()) ? `    ${l.trimStart()}` : l,
+    )
     .join('\n')
     .trim();
 }
@@ -202,7 +263,11 @@ function defaultId(index: number): string {
   return `s-${String(index + 1).padStart(2, '0')}`;
 }
 
-export function serializeSlide(slide: Slide, index: number, lecture: Pick<Lecture, 'assets'>): string {
+export function serializeSlide(
+  slide: Slide,
+  index: number,
+  lecture: Pick<Lecture, 'assets'>,
+): string {
   const head = ['# slide'];
   if (slide.type !== 'content') head.push(slide.type);
   if (slide.alert) head.push('alert');
@@ -239,7 +304,8 @@ function frontMatter(lecture: Lecture, opts: SerializeOptions): string {
   fm.theme = m.theme;
   if (m.edition && m.edition !== 'instructor') fm.edition = m.edition;
   if (m.duration !== undefined) fm.duration = m.duration;
-  const defaultFooter = m.course && m.week !== undefined ? `${m.course} · ${m.week}주차` : undefined;
+  const defaultFooter =
+    m.course && m.week !== undefined ? `${m.course} · ${m.week}주차` : undefined;
   if (m.footer && m.footer !== defaultFooter) fm.footer = m.footer;
   if (lecture.refs.length) {
     fm.refs = Object.fromEntries(
@@ -247,14 +313,24 @@ function frontMatter(lecture: Lecture, opts: SerializeOptions): string {
     );
   }
   if (lecture.videos.length) {
-    fm.videos = Object.fromEntries(lecture.videos.map((v) => [v.id, { title: v.title, start: v.start, credit: v.credit }]));
+    fm.videos = Object.fromEntries(
+      lecture.videos.map((v) => [v.id, { title: v.title, start: v.start, credit: v.credit }]),
+    );
   }
   const assets = Object.entries(lecture.assets);
   if (assets.length) {
     fm.assets = Object.fromEntries(
       assets.map(([id, a]) => [
         id,
-        { path: a.path, title: a.title, credit: a.credit, source: a.source, alt: a.alt, width: a.width, height: a.height },
+        {
+          path: a.path,
+          title: a.title,
+          credit: a.credit,
+          source: a.source,
+          alt: a.alt,
+          width: a.width,
+          height: a.height,
+        },
       ]),
     );
   }
@@ -266,7 +342,17 @@ function frontMatter(lecture: Lecture, opts: SerializeOptions): string {
   };
   data(
     'quiz',
-    lecture.quiz?.map((q) => ({ id: q.id, area: q.area, areaName: q.areaName, key: q.key, q: q.q, opts: q.opts, ans: q.ans, exp: q.exp, refs: q.refs })),
+    lecture.quiz?.map((q) => ({
+      id: q.id,
+      area: q.area,
+      areaName: q.areaName,
+      key: q.key,
+      q: q.q,
+      opts: q.opts,
+      ans: q.ans,
+      exp: q.exp,
+      refs: q.refs,
+    })),
   );
   data('sims', lecture.sims);
   data('terminals', lecture.terminals);

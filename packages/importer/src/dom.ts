@@ -39,9 +39,41 @@ export function selectorOf(el: Element): string {
 }
 
 const BLOCK_TAGS = new Set([
-  'address', 'article', 'aside', 'blockquote', 'dd', 'div', 'dl', 'dt', 'figcaption', 'figure',
-  'footer', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr', 'li', 'main', 'nav', 'ol', 'p',
-  'pre', 'section', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead', 'tr', 'ul', 'label',
+  'address',
+  'article',
+  'aside',
+  'blockquote',
+  'dd',
+  'div',
+  'dl',
+  'dt',
+  'figcaption',
+  'figure',
+  'footer',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'header',
+  'hr',
+  'li',
+  'main',
+  'nav',
+  'ol',
+  'p',
+  'pre',
+  'section',
+  'table',
+  'tbody',
+  'td',
+  'tfoot',
+  'th',
+  'thead',
+  'tr',
+  'ul',
+  'label',
 ]);
 
 export function isBlockTag(name: string): boolean {
@@ -75,14 +107,4 @@ export function textOf(node: Node): string {
   };
   walk(node);
   return out.replace(/\s+/g, ' ').trim();
-}
-
-/** True when the element (or a descendant) has visible text. */
-export function hasText(el: Element): boolean {
-  return textOf(el).length > 0;
-}
-
-/** Remove the element from its parent (linkedom supports `remove()`). */
-export function detach(el: Element): void {
-  el.remove();
 }

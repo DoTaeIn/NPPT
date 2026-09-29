@@ -3,7 +3,14 @@
  * `img[src="data:…"]` embedded directly in slides (v9.7).
  */
 import type { Asset } from '@marco/schema';
-import { decodeBase64, extensionFor, parseDataUri, sha256, type Payload, type PayloadTable } from './payloads.js';
+import {
+  decodeBase64,
+  extensionFor,
+  parseDataUri,
+  sha256,
+  type Payload,
+  type PayloadTable,
+} from './payloads.js';
 import type { ImportedAsset } from './types.js';
 
 interface AssetDraft {
@@ -49,7 +56,11 @@ export class AssetRegistry {
   }
 
   /** Register an asset whose payload is a (tokenised) data URI. Returns the id. */
-  addDataUri(id: string, uri: string, meta: { title?: string; credit?: string; source?: string; alt?: string } = {}): string | undefined {
+  addDataUri(
+    id: string,
+    uri: string,
+    meta: { title?: string; credit?: string; source?: string; alt?: string } = {},
+  ): string | undefined {
     const payload = this.payloadOf(uri);
     if (!payload) return undefined;
     const bytes = payload.stripped ? new Uint8Array() : decodeBase64(payload.base64);
@@ -66,7 +77,10 @@ export class AssetRegistry {
   /** Asset id for an `<img>`: `data-asset`, or a data URI registered on the fly. */
   fromImg(img: Element): string | undefined {
     const alt = img.getAttribute('alt')?.trim() || undefined;
-    const named = img.getAttribute('data-asset') ?? img.closest('[data-zoom]')?.getAttribute('data-zoom') ?? undefined;
+    const named =
+      img.getAttribute('data-asset') ??
+      img.closest('[data-zoom]')?.getAttribute('data-zoom') ??
+      undefined;
     if (named) {
       const draft = this.drafts.get(named);
       if (draft && alt && !draft.alt) draft.alt = alt;

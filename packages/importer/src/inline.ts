@@ -138,13 +138,15 @@ function build(nodes: Node[], opts: InlineOptions): string {
           const start = out.length;
           kids();
           const label = out.slice(start);
-          out = out.slice(0, start) + (label.trim() ? `[${label.trim()}](${linkTarget(href)})` : '');
+          out =
+            out.slice(0, start) + (label.trim() ? `[${label.trim()}](${linkTarget(href)})` : '');
         } else kids();
         return;
       }
       default: {
         const cls = n.getAttribute('class') ?? '';
-        if (/\b(verdict|pill|chip|card-rating|badge|gm)\b/.test(cls)) bump(stats, 'coloured chips flattened');
+        if (/\b(verdict|pill|chip|card-rating|badge|gm)\b/.test(cls))
+          bump(stats, 'coloured chips flattened');
         if (isBlockTag(name)) {
           out += ' ';
           kids();
@@ -190,8 +192,10 @@ function resolveEmphasis(input: string, stats: FormattingStats | undefined): str
     const close = open + 1 + inner.length;
     // Check flanking with the real delimiter width in place.
     const probe = s.slice(0, open) + delim + inner + delim + s.slice(close + 1);
-    const ok = inner.length > 0 && flankingOk(probe, open, open + delim.length + inner.length, delim.length);
-    if (!ok && inner.length > 0) bump(stats, strong ? 'bold dropped (flanking)' : 'emphasis dropped (flanking)');
+    const ok =
+      inner.length > 0 && flankingOk(probe, open, open + delim.length + inner.length, delim.length);
+    if (!ok && inner.length > 0)
+      bump(stats, strong ? 'bold dropped (flanking)' : 'emphasis dropped (flanking)');
     s = s.slice(0, open) + (ok ? delim + inner + delim : inner) + s.slice(close + 1);
   }
   return s.replace(/[-]/g, '');
@@ -199,12 +203,11 @@ function resolveEmphasis(input: string, stats: FormattingStats | undefined): str
 
 /** Inline Markdown for the given nodes (or the children of an element). */
 export function inlineOf(nodes: Node | Node[], opts: InlineOptions = {}): string {
-  const list = Array.isArray(nodes) ? nodes : isElement(nodes) ? Array.from(nodes.childNodes) : [nodes];
+  const list = Array.isArray(nodes)
+    ? nodes
+    : isElement(nodes)
+      ? Array.from(nodes.childNodes)
+      : [nodes];
   const raw = build(list, opts).replace(/\s+/g, ' ');
   return resolveEmphasis(raw, opts.stats).replace(/\s+/g, ' ').trim();
-}
-
-/** Inline Markdown for an element including only its children (alias with clearer name). */
-export function inlineChildren(el: Element, opts: InlineOptions = {}): string {
-  return inlineOf(Array.from(el.childNodes), opts);
 }

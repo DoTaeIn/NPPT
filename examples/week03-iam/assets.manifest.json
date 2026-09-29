@@ -1,0 +1,129 @@
+[
+  {
+    "id": "campus",
+    "fileName": "campus.png",
+    "mime": "image/png",
+    "bytes": 2838935,
+    "sha256": "7192bcf5896b5f401cfe2aa40b2bcb191b30ef713834d0040c0bedc60e77f00c",
+    "title": "사옥의 3선 방어 개념도",
+    "credit": "imagegen 생성 · 건물 관계를 설명하는 축약 개념도."
+  },
+  {
+    "id": "architecture",
+    "fileName": "architecture.png",
+    "mime": "image/png",
+    "bytes": 1187204,
+    "sha256": "50febcdd3597a5b227b1c101fe174d1d0695e6bcf557738ec4e6486dd6224d9a",
+    "title": "출입통제 구성요소 개념도",
+    "credit": "imagegen 생성 · 연결선은 실제 배선도가 아님."
+  },
+  {
+    "id": "iam",
+    "fileName": "iam.png",
+    "mime": "image/png",
+    "bytes": 1367877,
+    "sha256": "ee8b7a1a869729d9d7d7a3e6748291b5feb2b64235a57405d226b69171e1ba59",
+    "title": "RBAC · ABAC · JIT · SoD 개념도",
+    "credit": "imagegen 생성 · 정책 요소의 비교를 위한 그림."
+  },
+  {
+    "id": "speedgate",
+    "fileName": "speedgate.png",
+    "mime": "image/png",
+    "bytes": 142137,
+    "sha256": "6e30aad913138e8984a7edf59a6ab47868fe35f34f8c642785eb997fd853db5d",
+    "title": "Boon Edam Speedlane Compact",
+    "credit": "제품 사진 · © Boon Edam.",
+    "source": "https://www.boonedam.com/products/speed-gates/speedlane-compact"
+  },
+  {
+    "id": "circlelock",
+    "fileName": "circlelock.png",
+    "mime": "image/png",
+    "bytes": 430242,
+    "sha256": "b3f0de15575e8c267b5e4c530f46ffe9e22311f270f8315e22ced0049088a5b6",
+    "title": "Boon Edam Circlelock Solo",
+    "credit": "제품 사진 · © Boon Edam.",
+    "source": "https://www.boonedam.com/products/mantrap-security-doors-and-portals/circlelock-solo"
+  },
+  {
+    "id": "biostation-hero",
+    "fileName": "biostation-hero.png",
+    "mime": "image/png",
+    "bytes": 505456,
+    "sha256": "6bf22fb846c20d0d5580be04825c9eb53aedeb0659dbc4b7ea707bd5899faa6d",
+    "title": "Suprema BioStation 3",
+    "credit": "제품 사진 · © Suprema.",
+    "source": "https://www.supremainc.com/en/hardware/new-door-access-experience-biostation3.asp"
+  },
+  {
+    "id": "video-bypass",
+    "fileName": "video-bypass.jpg",
+    "mime": "image/jpeg",
+    "bytes": 11841,
+    "sha256": "9dc832875cb2653da3d69d1d8716670f64d93499d6078aa8b7f211b44fdb99f3",
+    "title": "Intro to Physical Security Bypass · 영상 썸네일",
+    "credit": "영상 썸네일 · DEFCONConference.",
+    "source": "https://www.youtube.com/watch?v=tTAISQqmxWQ"
+  },
+  {
+    "id": "video-assessment",
+    "fileName": "video-assessment.jpg",
+    "mime": "image/jpeg",
+    "bytes": 20570,
+    "sha256": "49aa98b3e6de5243724d0c4cf27f42cc389f1e634ebb96e37eda19845ba7c732",
+    "title": "How NOT to Perform Covert Entry Assessments · 영상 썸네일",
+    "credit": "영상 썸네일 · DEFCONConference.",
+    "source": "https://www.youtube.com/watch?v=DNP_fHTMy84"
+  },
+  {
+    "id": "video-datacenter",
+    "fileName": "video-datacenter.jpg",
+    "mime": "image/jpeg",
+    "bytes": 18596,
+    "sha256": "437f4945eb23b1d598e7d6fa9211c0f09b71f4fa094e80abdce84df734146c5a",
+    "title": "What it takes to protect and break into data centers · 영상 썸네일",
+    "credit": "영상 썸네일 · Random but Memorable.",
+    "source": "https://www.youtube.com/watch?v=wd74Pnwd-50"
+  },
+  {
+    "id": "udt",
+    "fileName": "udt.jpg",
+    "mime": "image/jpeg",
+    "bytes": 35076,
+    "sha256": "fb58ad5de7c987fbec3df3f215c17806e791f82d2b986fd3fd7146fa33038a7a",
+    "title": "Under-Door Tool · 문 하부 접근 도구",
+    "credit": "제품 사진 · SPARROWS Lock Picks",
+    "source": "https://www.sparrowslockpicks.com/products/the-stretcher-under-door-tool"
+  },
+  {
+    "id": "rex-sensor",
+    "fileName": "rex-sensor.jpg",
+    "mime": "image/jpeg",
+    "bytes": 31884,
+    "sha256": "6eedcbb3977c44d9a2f9e0ae1fb551beddae1e1330bfd321a87f609bb4c1570e",
+    "title": "Bosch DS160/DS161 · 퇴실 요청 센서",
+    "credit": "제품 사진 · SourceSecurity / Bosch DS160",
+    "source": "https://www.sourcesecurity.com/bosch-ds-160-technical-details.html"
+  },
+  {
+    "id": "latch-guard",
+    "fileName": "latch-guard.jpg",
+    "mime": "image/jpeg",
+    "bytes": 14240,
+    "sha256": "6d458c6f0c1c2a39b62c3433321fdb7be95c873947f124167c16e1d33ca42d34",
+    "title": "Ives 래치 보호판 · 제품 예시",
+    "credit": "제품 사진 · Allegion / Ives",
+    "source": "https://allegion.ca/en/products/brands/ives/lock-guards.html"
+  },
+  {
+    "id": "panic-bar",
+    "fileName": "panic-bar.png",
+    "mime": "image/png",
+    "bytes": 67376,
+    "sha256": "07f14cd1df4467c8371a1f45ce8c5f3e1a406b38c4c27ad22ea45e4f857fa9c7",
+    "title": "Von Duprin 99 · 패닉바형 피난 장치",
+    "credit": "제품 사진 · National Lock Supply / Von Duprin",
+    "source": "https://nationallocksupply.com/von-duprin-rxqel99eo-rim-exit-device-w-electric-latch-retraction-request-to-exit/"
+  }
+]

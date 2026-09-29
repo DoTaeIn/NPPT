@@ -4,11 +4,18 @@
  * otherwise double-quoted with JSON escapes (JSON strings are valid YAML double-quoted scalars).
  */
 
-export type YamlValue = string | number | boolean | null | undefined | YamlValue[] | { [key: string]: YamlValue };
+export type YamlValue =
+  string | number | boolean | null | undefined | YamlValue[] | { [key: string]: YamlValue };
 
-const RESERVED = /^(?:~|null|Null|NULL|true|True|TRUE|false|False|FALSE|yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF|y|Y|n|N|=|<<)$/;
+const RESERVED =
+  /^(?:~|null|Null|NULL|true|True|TRUE|false|False|FALSE|yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF|y|Y|n|N|=|<<)$/;
 const NUMBERISH =
   /^(?:[-+]?(?:\d[\d_]*)?\.?\d[\d_]*(?:[eE][-+]?\d+)?|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)|0x[0-9a-fA-F_]+|0o[0-7_]+|0b[01_]+|[-+]?\d[\d_]*(?::[0-5]?\d)+(?:\.\d*)?|\d{4}-\d\d?-\d\d?(?:[Tt ].*)?)$/;
+
+function needsEscape(ch: string): boolean {
+  const cp = ch.codePointAt(0) ?? 0;
+  return cp < 0x20 || cp === 0x7f || cp === 0xfeff || (cp >= 0xe000 && cp <= 0xf8ff);
+}
 
 /** True when `s` can be written as a plain scalar in block context. */
 export function isPlainSafe(s: string): boolean {
@@ -20,7 +27,7 @@ export function isPlainSafe(s: string): boolean {
   // Sexagesimal-looking values and anything else with a colon are quoted for YAML 1.1 readers.
   if (s.includes(':')) return false;
   // Control characters, BOM and private-use characters need escapes.
-  if (/[\u0000-\u001f\u007f﻿-]/.test(s)) return false;
+  if (Array.from(s).some(needsEscape)) return false;
   return true;
 }
 
@@ -44,7 +51,9 @@ function isScalar(v: YamlValue): v is string | number | boolean | null {
 }
 
 function isEmptyCollection(v: YamlValue): boolean {
-  return Array.isArray(v) ? v.length === 0 : !!v && typeof v === 'object' && Object.keys(v).length === 0;
+  return Array.isArray(v)
+    ? v.length === 0
+    : !!v && typeof v === 'object' && Object.keys(v).length === 0;
 }
 
 function entries(obj: { [key: string]: YamlValue }): [string, YamlValue][] {
@@ -77,7 +86,12 @@ function emit(value: YamlValue, indent: number, out: string[], prefix: string): 
 }
 
 /** Mapping whose first line starts with `firstPrefix` (e.g. `  - `) and the rest with `indent`. */
-function emitMapping(obj: { [key: string]: YamlValue }, indent: number, out: string[], firstPrefix: string): void {
+function emitMapping(
+  obj: { [key: string]: YamlValue },
+  indent: number,
+  out: string[],
+  firstPrefix: string,
+): void {
   const pad = ' '.repeat(indent);
   let first = true;
   for (const [k, v] of entries(obj)) {

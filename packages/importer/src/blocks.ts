@@ -4,11 +4,33 @@
  * and anything else is kept verbatim as an `html` block and recorded in the report.
  */
 import type {
-  Block, CalloutBlock, CardsBlock, ChainBlock, CompareBlock, ImageBlock, PillsBlock, StepsBlock,
-  TableBlock, TermsBlock, Tone, VerdictBlock, VideoBlock, WidgetBlock, Video,
+  Block,
+  CalloutBlock,
+  CardsBlock,
+  ChainBlock,
+  CompareBlock,
+  ImageBlock,
+  PillsBlock,
+  StepsBlock,
+  TableBlock,
+  TermsBlock,
+  Tone,
+  VerdictBlock,
+  VideoBlock,
+  WidgetBlock,
+  Video,
 } from '@marco/schema';
 import type { AssetRegistry } from './assets.js';
-import { childElements, classes, hasClass, isElement, isText, selectorOf, tagName, textOf } from './dom.js';
+import {
+  childElements,
+  classes,
+  hasClass,
+  isElement,
+  isText,
+  selectorOf,
+  tagName,
+  textOf,
+} from './dom.js';
 import { bump, inlineOf, type FormattingStats } from './inline.js';
 import { stripTokens } from './payloads.js';
 import type { ReportBuilder } from './report.js';
@@ -40,8 +62,28 @@ type Rule = (el: Element, ctx: MapContext) => Block[] | null;
 // ---------------------------------------------------------------------------------------------
 
 const INLINE_TAGS = new Set([
-  'a', 'abbr', 'b', 'br', 'cite', 'code', 'em', 'i', 'kbd', 'mark', 'q', 's', 'samp', 'small',
-  'span', 'strong', 'sub', 'sup', 'time', 'u', 'wbr', 'dfn',
+  'a',
+  'abbr',
+  'b',
+  'br',
+  'cite',
+  'code',
+  'em',
+  'i',
+  'kbd',
+  'mark',
+  'q',
+  's',
+  'samp',
+  'small',
+  'span',
+  'strong',
+  'sub',
+  'sup',
+  'time',
+  'u',
+  'wbr',
+  'dfn',
 ]);
 
 function isInlineOnly(el: Element): boolean {
@@ -92,7 +134,8 @@ function iconOf(el: Element): string | undefined {
 function flattenParts(el: Element): Element[] {
   const out: Element[] = [];
   for (const c of childElements(el)) {
-    if ((tagName(c) === 'div' && classes(c).length === 0) || hasClass(c, 'grow', 'pentest-content')) out.push(...flattenParts(c));
+    if ((tagName(c) === 'div' && classes(c).length === 0) || hasClass(c, 'grow', 'pentest-content'))
+      out.push(...flattenParts(c));
     else out.push(c);
   }
   return out;
@@ -120,7 +163,11 @@ export function htmlOf(el: Element, ctx: MapContext): string {
   return stripTokens(el.outerHTML);
 }
 
-export function fallback(el: Element, ctx: MapContext, reason: 'unmapped' | 'interactive' = 'unmapped'): Block[] {
+export function fallback(
+  el: Element,
+  ctx: MapContext,
+  reason: 'unmapped' | 'interactive' = 'unmapped',
+): Block[] {
   if (isEmpty(el) && reason === 'unmapped') {
     ctx.report.addDropped(`empty element \`${selectorOf(el)}\``, ctx.slideId);
     return [];
@@ -134,12 +181,20 @@ export function fallback(el: Element, ctx: MapContext, reason: 'unmapped' | 'int
 // ---------------------------------------------------------------------------------------------
 
 const SCAFFOLD_SKIP = new Set([
-  's-progress', 's-foot', 'slide-tag-bottom', 'zoom-badge', 'slide-no', 'slide-progress', 'cover-logos', 'flow-ar',
+  's-progress',
+  's-foot',
+  'slide-tag-bottom',
+  'zoom-badge',
+  'slide-no',
+  'slide-progress',
+  'cover-logos',
+  'flow-ar',
 ]);
 
 const skipRule: Rule = (el, ctx) => {
   const name = tagName(el);
-  if (name === 'script' || name === 'style' || name === 'template' || name === 'noscript') return [];
+  if (name === 'script' || name === 'style' || name === 'template' || name === 'noscript')
+    return [];
   if (name === 'hr' || name === 'br') return [];
   if (classes(el).some((c) => SCAFFOLD_SKIP.has(c))) return [];
   if (name === 'svg' && hasClass(el, 'hero-art')) {
@@ -161,7 +216,11 @@ const simRule: Rule = (el, ctx) => {
     if (v) params[key] = stripTokens(v);
   }
   if (el.innerHTML.trim()) params.html = htmlOf(el, ctx);
-  ctx.report.addHeuristic('network simulator → `widget sim` (Phase 3 plugin)', selectorOf(el), ctx.slideId);
+  ctx.report.addHeuristic(
+    'network simulator → `widget sim` (Phase 3 plugin)',
+    selectorOf(el),
+    ctx.slideId,
+  );
   const block: WidgetBlock = { type: 'widget', name: 'sim', params };
   return [block];
 };
@@ -208,9 +267,15 @@ function cardFrom(art: Element, ctx: MapContext): CardsBlock['items'][number] | 
   const title = inline(ctx, parts[titleIdx] as Element);
   if (!title) return null;
   const item: CardsBlock['items'][number] = { title };
-  const kicker = kickerParts.map((p) => inline(ctx, p)).filter(Boolean).join(' · ');
+  const kicker = kickerParts
+    .map((p) => inline(ctx, p))
+    .filter(Boolean)
+    .join(' · ');
   if (kicker) item.kicker = kicker;
-  const body = bodyParts.map((p) => inline(ctx, p)).filter(Boolean).join(' ');
+  const body = bodyParts
+    .map((p) => inline(ctx, p))
+    .filter(Boolean)
+    .join(' ');
   if (body) item.body = body;
   const icon = iconOf(art);
   if (icon) item.icon = icon;
@@ -280,7 +345,9 @@ const termsRule: Rule = (el, ctx) => {
     const existing = ctx.terms[item.abbr];
     if (existing === undefined) ctx.terms[item.abbr] = expansion;
     else if (existing !== expansion) {
-      ctx.report.warn(`Term \`${item.abbr}\` has two expansions; kept "${existing}", slide ${ctx.slideId} says "${expansion}".`);
+      ctx.report.warn(
+        `Term \`${item.abbr}\` has two expansions; kept "${existing}", slide ${ctx.slideId} says "${expansion}".`,
+      );
     }
   }
   return items.length ? [{ type: 'terms', items }] : null;
@@ -291,7 +358,8 @@ function rowsOf(table: Element): Element[] {
   for (const c of childElements(table)) {
     const name = tagName(c);
     if (name === 'tr') rows.push(c);
-    else if (name === 'thead' || name === 'tbody' || name === 'tfoot') rows.push(...childElements(c).filter((r) => tagName(r) === 'tr'));
+    else if (name === 'thead' || name === 'tbody' || name === 'tfoot')
+      rows.push(...childElements(c).filter((r) => tagName(r) === 'tr'));
   }
   return rows;
 }
@@ -299,8 +367,18 @@ function rowsOf(table: Element): Element[] {
 function alignOf(cell: Element): 'l' | 'c' | 'r' {
   const cls = classes(cell);
   const style = cell.getAttribute('style') ?? '';
-  if (cls.includes('c') || /text-align:\s*center/.test(style) || cell.getAttribute('align') === 'center') return 'c';
-  if (cls.includes('r') || /text-align:\s*right/.test(style) || cell.getAttribute('align') === 'right') return 'r';
+  if (
+    cls.includes('c') ||
+    /text-align:\s*center/.test(style) ||
+    cell.getAttribute('align') === 'center'
+  )
+    return 'c';
+  if (
+    cls.includes('r') ||
+    /text-align:\s*right/.test(style) ||
+    cell.getAttribute('align') === 'right'
+  )
+    return 'r';
   return 'l';
 }
 
@@ -309,20 +387,32 @@ const tableRule: Rule = (el, ctx) => {
   const rows = rowsOf(el);
   if (!rows.length) return null;
   for (const cell of Array.from(el.querySelectorAll('td, th'))) {
-    if (Number(cell.getAttribute('colspan') ?? 1) > 1 || Number(cell.getAttribute('rowspan') ?? 1) > 1) {
+    if (
+      Number(cell.getAttribute('colspan') ?? 1) > 1 ||
+      Number(cell.getAttribute('rowspan') ?? 1) > 1
+    ) {
       bump(fmt(ctx), 'tables with merged cells kept as html');
       return fallback(el, ctx);
     }
     if (cell.querySelector('table, ul, ol, img, svg')) return fallback(el, ctx);
   }
-  const cellsOf = (tr: Element): Element[] => childElements(tr).filter((c) => ['td', 'th'].includes(tagName(c)));
+  const cellsOf = (tr: Element): Element[] =>
+    childElements(tr).filter((c) => ['td', 'th'].includes(tagName(c)));
   const first = rows[0] as Element;
-  const headRow = first.parentElement && tagName(first.parentElement) === 'thead' ? first : cellsOf(first).every((c) => tagName(c) === 'th') ? first : undefined;
+  const headRow =
+    first.parentElement && tagName(first.parentElement) === 'thead'
+      ? first
+      : cellsOf(first).every((c) => tagName(c) === 'th')
+        ? first
+        : undefined;
   if (!headRow) bump(fmt(ctx), 'tables without a header row (first row promoted)');
   const headCells = cellsOf(first);
   const body = rows.slice(1);
   const width = Math.max(headCells.length, ...body.map((r) => cellsOf(r).length));
-  const pad = (a: string[]): string[] => [...a, ...Array<string>(Math.max(0, width - a.length)).fill('')];
+  const pad = (a: string[]): string[] => [
+    ...a,
+    ...Array<string>(Math.max(0, width - a.length)).fill(''),
+  ];
   const block: TableBlock = {
     type: 'table',
     head: pad(headCells.map((c) => inline(ctx, c))),
@@ -348,7 +438,9 @@ const compareRule: Rule = (el, ctx) => {
   const side = (s: Element): { head: string; cell: string } => {
     const h = s.querySelector('h2, h3');
     const kicker = s.querySelector(':scope > span');
-    const head = [kicker ? textOf(kicker) : '', h ? inline(ctx, h) : ''].filter(Boolean).join(' · ');
+    const head = [kicker ? textOf(kicker) : '', h ? inline(ctx, h) : '']
+      .filter(Boolean)
+      .join(' · ');
     const cell = inline(ctx, s, (x) => x === h || x === kicker);
     return { head, cell };
   };
@@ -372,7 +464,11 @@ function calloutKind(el: Element): CalloutBlock['kind'] {
 
 const calloutRule: Rule = (el, ctx) => {
   const name = tagName(el);
-  if (!(hasClass(el, 'notice', 'help-card', 'callout', 'why') || (name === 'div' && hasClass(el, 'key')))) return null;
+  if (!(
+    hasClass(el, 'notice', 'help-card', 'callout', 'why') ||
+    (name === 'div' && hasClass(el, 'key'))
+  ))
+    return null;
   if (el.querySelector('table, ul, ol, img, figure')) return null;
   const titleEl = el.querySelector(':scope > .callout-title, :scope > h3, :scope > h4');
   const body = inline(ctx, el, titleEl ? (x) => x === titleEl : undefined);
@@ -393,7 +489,13 @@ const cardRule: Rule = (el, ctx) => {
   if (el.querySelector('table, ul, ol, img, figure, svg, .row, .card, button')) return null;
   const titleEl = el.querySelector(':scope > .k, :scope > h3, :scope > h4');
   const body = inline(ctx, el, titleEl ? (x) => x === titleEl : undefined);
-  const kind = hasClass(el, 'warn') ? 'warn' : hasClass(el, 'ok') ? 'ok' : hasClass(el, 'err', 'red') ? 'danger' : 'info';
+  const kind = hasClass(el, 'warn')
+    ? 'warn'
+    : hasClass(el, 'ok')
+      ? 'ok'
+      : hasClass(el, 'err', 'red')
+        ? 'danger'
+        : 'info';
   const block: CalloutBlock = { type: 'callout', kind, body };
   if (titleEl && textOf(titleEl)) block.title = inline(ctx, titleEl);
   if (!body) return null;
@@ -408,7 +510,8 @@ function imageBlock(img: Element, ctx: MapContext, scope: Element): ImageBlock |
   const block: ImageBlock = { type: 'image', asset };
   const caption = scope.querySelector('figcaption, .media-caption');
   if (caption && textOf(caption)) block.caption = inline(ctx, caption);
-  if (scope.querySelector('.image-open, [data-zoom]') || hasClass(scope, 'image-open')) block.zoom = true;
+  if (scope.querySelector('.image-open, [data-zoom]') || hasClass(scope, 'image-open'))
+    block.zoom = true;
   return block;
 }
 
@@ -417,10 +520,13 @@ const figureRule: Rule = (el, ctx) => {
   if (name === 'figure') {
     const imgs = el.querySelectorAll('img');
     if (imgs.length !== 1) return null;
-    const other = childElements(el).filter((c) => !['figcaption', 'img', 'button', 'a', 'picture'].includes(tagName(c)));
+    const other = childElements(el).filter(
+      (c) => !['figcaption', 'img', 'button', 'a', 'picture'].includes(tagName(c)),
+    );
     if (other.length) return null;
     const block = imageBlock(imgs[0] as Element, ctx, el);
-    if (block && classes(el).some((c) => c !== 'v-figure')) bump(fmt(ctx), 'figure layout variants dropped');
+    if (block && classes(el).some((c) => c !== 'v-figure'))
+      bump(fmt(ctx), 'figure layout variants dropped');
     return block ? [block] : null;
   }
   if (name === 'img') {
@@ -437,7 +543,10 @@ const figureRule: Rule = (el, ctx) => {
 };
 
 function youtubeId(src: string): { id: string; start?: number } | undefined {
-  const m = /(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([\w-]{6,})(?:.*?[?&](?:start|t)=(\d+))?/.exec(src);
+  const m =
+    /(?:youtube(?:-nocookie)?\.com\/(?:embed\/|watch\?v=)|youtu\.be\/)([\w-]{6,})(?:.*?[?&](?:start|t)=(\d+))?/.exec(
+      src,
+    );
   if (!m?.[1]) return undefined;
   return m[2] ? { id: m[1], start: Number(m[2]) } : { id: m[1] };
 }
@@ -446,7 +555,9 @@ const videoRule: Rule = (el, ctx) => {
   if (!hasClass(el, 'video-reference', 'video-frame')) return null;
   const trigger = el.querySelector('[data-video]') ?? (el.hasAttribute('data-video') ? el : null);
   let id = trigger?.getAttribute('data-video') ?? undefined;
-  let start = trigger?.getAttribute('data-start') ? Number(trigger.getAttribute('data-start')) : undefined;
+  let start = trigger?.getAttribute('data-start')
+    ? Number(trigger.getAttribute('data-start'))
+    : undefined;
   if (!id) {
     const yt = youtubeId(el.querySelector('iframe')?.getAttribute('src') ?? '');
     if (yt) {
@@ -459,11 +570,15 @@ const videoRule: Rule = (el, ctx) => {
   if (start !== undefined && Number.isFinite(start)) block.start = start;
   const caption = el.querySelector('.media-caption');
   if (trigger && trigger !== el) {
-    const label = textOf(trigger).replace(/^[▶►]\s*/, '').replace(/^영상\s*·\s*/, '').trim();
+    const label = textOf(trigger)
+      .replace(/^[▶►]\s*/, '')
+      .replace(/^영상\s*·\s*/, '')
+      .trim();
     if (label) block.label = label;
   }
   if (caption && textOf(caption)) block.caption = inline(ctx, caption);
-  if (!ctx.videos.has(id)) ctx.report.warn(`Video \`${id}\` on ${ctx.slideId} is not in the deck's video list.`);
+  if (!ctx.videos.has(id))
+    ctx.report.warn(`Video \`${id}\` on ${ctx.slideId} is not in the deck's video list.`);
   return [block];
 };
 
@@ -481,7 +596,8 @@ const pillsRule: Rule = (el, ctx) => {
     const items = kids.map((k) => pillItem(k, ctx)).filter((i) => i.text);
     return items.length ? [{ type: 'pills', items }] : null;
   }
-  if (hasClass(el, 'pill', 'chip') && isInlineOnly(el)) return [{ type: 'pills', items: [pillItem(el, ctx)] }];
+  if (hasClass(el, 'pill', 'chip') && isInlineOnly(el))
+    return [{ type: 'pills', items: [pillItem(el, ctx)] }];
   if (kids.length && kids.every((k) => hasClass(k, 'pill', 'chip')) && !textOfDirect(el)) {
     return [{ type: 'pills', items: kids.map((k) => pillItem(k, ctx)) }];
   }
@@ -496,11 +612,20 @@ function textOfDirect(el: Element): string {
     .trim();
 }
 
-const VERDICTS: Record<string, VerdictBlock['verdict']> = { allow: 'allow', drop: 'drop', ok: 'ok', hot: 'hot', info: 'info', part: 'hot' };
+const VERDICTS: Record<string, VerdictBlock['verdict']> = {
+  allow: 'allow',
+  drop: 'drop',
+  ok: 'ok',
+  hot: 'hot',
+  info: 'info',
+  part: 'hot',
+};
 
 const verdictRule: Rule = (el, ctx) => {
   if (!hasClass(el, 'verdict')) return null;
-  const kind = classes(el).map((c) => VERDICTS[c]).find(Boolean);
+  const kind = classes(el)
+    .map((c) => VERDICTS[c])
+    .find(Boolean);
   if (!kind) return null;
   if (hasClass(el, 'part')) bump(fmt(ctx), 'verdict `.part` mapped to `hot`');
   return [{ type: 'verdict', verdict: kind, text: inline(ctx, el) }];
@@ -510,17 +635,24 @@ function stepItems(items: Element[], ctx: MapContext): StepsBlock['items'] | nul
   const out: StepsBlock['items'] = [];
   for (const li of items) {
     const parts = flattenParts(li).filter((p) => !hasClass(p, 'n') && !isIconOnly(p));
-    const titleEl = parts.find((p) => hasClass(p, 't') || ['b', 'strong', 'h3', 'h4'].includes(tagName(p)));
+    const titleEl = parts.find(
+      (p) => hasClass(p, 't') || ['b', 'strong', 'h3', 'h4'].includes(tagName(p)),
+    );
     if (!titleEl) {
       const title = inline(ctx, li, (x) => hasClass(x, 'n'));
       if (!title) continue;
       out.push({ title });
       continue;
     }
-    const rest = parts.filter((p) => p !== titleEl).map((p) => inline(ctx, p)).filter(Boolean);
+    const rest = parts
+      .filter((p) => p !== titleEl)
+      .map((p) => inline(ctx, p))
+      .filter(Boolean);
     const direct = textOfDirect(li);
     const item: StepsBlock['items'][number] = { title: inline(ctx, titleEl) };
-    const body = [direct ? inline(ctx, Array.from(li.childNodes).filter(isText)) : '', ...rest].filter(Boolean).join(' · ');
+    const body = [direct ? inline(ctx, Array.from(li.childNodes).filter(isText)) : '', ...rest]
+      .filter(Boolean)
+      .join(' · ');
     if (body) item.body = body;
     out.push(item);
   }
@@ -529,12 +661,18 @@ function stepItems(items: Element[], ctx: MapContext): StepsBlock['items'] | nul
 
 const stepsRule: Rule = (el, ctx) => {
   const agenda = hasClass(el, 'agenda');
-  if (!(agenda || (tagName(el) === 'ul' && hasClass(el, 'nlist')) || hasClass(el, 'sv-steps') || (tagName(el) === 'ol' && hasClass(el, 'steps')))) {
+  if (!(
+    agenda ||
+    (tagName(el) === 'ul' && hasClass(el, 'nlist')) ||
+    hasClass(el, 'sv-steps') ||
+    (tagName(el) === 'ol' && hasClass(el, 'steps'))
+  )) {
     return null;
   }
   const items = stepItems(childElements(el), ctx);
   if (!items) return null;
-  if (tagName(el) === 'ul' || agenda) ctx.report.addHeuristic('numbered list → steps', selectorOf(el), ctx.slideId);
+  if (tagName(el) === 'ul' || agenda)
+    ctx.report.addHeuristic('numbered list → steps', selectorOf(el), ctx.slideId);
   return [{ type: 'steps', items }];
 };
 
@@ -559,7 +697,8 @@ const tagRule: Rule = (el, ctx) => {
     const text = inline(ctx, el);
     if (!text) return [];
     const lead = hasClass(el, 'v-lead', 'lead', 's-sub');
-    if (hasClass(el, 'fine')) bump(fmt(ctx), 'fine-print paragraphs (`p.fine`) as plain paragraphs');
+    if (hasClass(el, 'fine'))
+      bump(fmt(ctx), 'fine-print paragraphs (`p.fine`) as plain paragraphs');
     return [lead ? { type: 'paragraph', text, lead: true } : { type: 'paragraph', text }];
   }
   if (/^h[1-6]$/.test(name)) {
@@ -650,7 +789,9 @@ const columnsRule: Rule = (el, ctx) => {
   if (kids.some((k) => hasClass(k, 'pill', 'chip') || INLINE_TAGS.has(tagName(k)))) return null;
   const inner: MapContext = { ...ctx, inColumn: true };
   const columns = kids.map((k) => {
-    const wrapper = (tagName(k) === 'div' && classes(k).every((c) => WRAPPER_CLASSES.has(c))) || hasClass(k, 'col');
+    const wrapper =
+      (tagName(k) === 'div' && classes(k).every((c) => WRAPPER_CLASSES.has(c))) ||
+      hasClass(k, 'col');
     return wrapper ? mapChildren(k, inner) : mapElement(k, inner);
   });
   if (columns.every((c) => c.length === 0)) return null;
@@ -737,7 +878,11 @@ export function mapChildren(parent: Element, ctx: MapContext): Block[] {
   for (const node of Array.from(parent.childNodes)) {
     if (isElement(node)) blocks.push(...mapElement(node, ctx));
     else if (isText(node) && node.data.trim()) {
-      ctx.report.addHeuristic('loose text → paragraph', `${selectorOf(parent)} > #text`, ctx.slideId);
+      ctx.report.addHeuristic(
+        'loose text → paragraph',
+        `${selectorOf(parent)} > #text`,
+        ctx.slideId,
+      );
       blocks.push({ type: 'paragraph', text: inline(ctx, node) });
     }
   }

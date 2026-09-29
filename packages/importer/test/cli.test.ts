@@ -14,9 +14,19 @@ describe('runImport', () => {
     writeFileSync(input, fixture('v20-deck.html'));
     const out = join(dir, 'out');
     const { files, result } = await runImport(input, out);
-    expect(files.sort()).toEqual(['IMPORT-REPORT.md', 'assets.manifest.json', 'assets/pix.png', 'lecture.marco.md']);
-    expect(readFileSync(join(out, 'assets/pix.png')).equals(Buffer.from(PNG_1X1, 'base64'))).toBe(true);
-    const manifest = JSON.parse(readFileSync(join(out, 'assets.manifest.json'), 'utf8')) as Record<string, unknown>[];
+    expect(files.sort()).toEqual([
+      'IMPORT-REPORT.md',
+      'assets.manifest.json',
+      'assets/pix.png',
+      'lecture.marco.md',
+    ]);
+    expect(readFileSync(join(out, 'assets/pix.png')).equals(Buffer.from(PNG_1X1, 'base64'))).toBe(
+      true,
+    );
+    const manifest = JSON.parse(readFileSync(join(out, 'assets.manifest.json'), 'utf8')) as Record<
+      string,
+      unknown
+    >[];
     expect(manifest).toEqual([
       {
         id: 'pix',
@@ -30,7 +40,14 @@ describe('runImport', () => {
       },
     ]);
     const report = readFileSync(join(out, 'IMPORT-REPORT.md'), 'utf8');
-    for (const heading of ['## Summary', '## Blocks by type', '## Unmapped markup', '## Validation', '## Notes']) expect(report).toContain(heading);
+    for (const heading of [
+      '## Summary',
+      '## Blocks by type',
+      '## Unmapped markup',
+      '## Validation',
+      '## Notes',
+    ])
+      expect(report).toContain(heading);
     expect(report).toContain('| `div.mystery-widget` | unmapped | 2 | s-03 |');
     expect(readFileSync(join(out, 'lecture.marco.md'), 'utf8')).toBe(result.source);
   });

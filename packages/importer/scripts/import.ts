@@ -8,6 +8,12 @@ import { existsSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { runImport } from '../src/index.js';
 
+// Piping into `head` closes stdout early; that is not an import failure.
+process.stdout.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EPIPE') process.exit(0);
+  throw err;
+});
+
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((a) => a.startsWith('--')));
 const [input, outDir] = args.filter((a) => !a.startsWith('--'));

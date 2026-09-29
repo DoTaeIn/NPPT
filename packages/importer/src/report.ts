@@ -3,10 +3,22 @@
  */
 import { CANONICAL_MARKERS, isKnownMarker } from '@marco/schema';
 import type { Block, BlockType, Lecture, ValidationError } from '@marco/schema';
-import type { DroppedEntry, HeuristicEntry, ImportReport, LegacyFamily, NoteStats, UnmappedEntry } from './types.js';
+import type {
+  DroppedEntry,
+  HeuristicEntry,
+  ImportReport,
+  LegacyFamily,
+  NoteStats,
+  UnmappedEntry,
+} from './types.js';
 import type { FormattingStats } from './inline.js';
 
-function addTo<T extends { count: number; slides: string[] }>(map: Map<string, T>, key: string, make: () => T, slide: string): void {
+function addTo<T extends { count: number; slides: string[] }>(
+  map: Map<string, T>,
+  key: string,
+  make: () => T,
+  slide: string,
+): void {
   let entry = map.get(key);
   if (!entry) {
     entry = make();
@@ -25,11 +37,21 @@ export class ReportBuilder {
   readonly warnings: string[] = [];
 
   addUnmapped(selector: string, reason: UnmappedEntry['reason'], slide: string): void {
-    addTo(this.unmapped, `${reason}|${selector}`, () => ({ selector, reason, count: 0, slides: [] }), slide);
+    addTo(
+      this.unmapped,
+      `${reason}|${selector}`,
+      () => ({ selector, reason, count: 0, slides: [] }),
+      slide,
+    );
   }
 
   addHeuristic(rule: string, selector: string, slide: string): void {
-    addTo(this.heuristics, `${rule}|${selector}`, () => ({ rule, selector, count: 0, slides: [] }), slide);
+    addTo(
+      this.heuristics,
+      `${rule}|${selector}`,
+      () => ({ rule, selector, count: 0, slides: [] }),
+      slide,
+    );
   }
 
   addDropped(what: string, slide: string): void {
@@ -68,8 +90,15 @@ export function countBlocks(lecture: Lecture): {
 
 export function noteStats(lecture: Lecture): NoteStats {
   const stats: NoteStats = {
-    slidesWithNotes: 0, cues: 0, byKind: {}, markers: {}, unknownMarkers: {},
-    explicitCueIds: 0, timedSlides: 0, totalMinutes: 0, chars: 0,
+    slidesWithNotes: 0,
+    cues: 0,
+    byKind: {},
+    markers: {},
+    unknownMarkers: {},
+    explicitCueIds: 0,
+    timedSlides: 0,
+    totalMinutes: 0,
+    chars: 0,
   };
   for (const slide of lecture.slides) {
     const note = slide.note;
@@ -86,7 +115,8 @@ export function noteStats(lecture: Lecture): NoteStats {
       if (cue.id) stats.explicitCueIds++;
       const marker = cue.marker ?? CANONICAL_MARKERS[cue.k];
       stats.markers[marker] = (stats.markers[marker] ?? 0) + 1;
-      if (!isKnownMarker(marker)) stats.unknownMarkers[marker] = (stats.unknownMarkers[marker] ?? 0) + 1;
+      if (!isKnownMarker(marker))
+        stats.unknownMarkers[marker] = (stats.unknownMarkers[marker] ?? 0) + 1;
     }
     if (note.time) stats.markers['시간'] = (stats.markers['시간'] ?? 0) + 1;
   }
@@ -102,7 +132,10 @@ export function finishReport(
   b: ReportBuilder,
   lecture: Lecture,
   family: LegacyFamily,
-  extra: Pick<ImportReport, 'assets' | 'data'> & { sourceName?: string; validation: ValidationError[] },
+  extra: Pick<ImportReport, 'assets' | 'data'> & {
+    sourceName?: string;
+    validation: ValidationError[];
+  },
 ): ImportReport {
   const counts = countBlocks(lecture);
   const total = counts.mapped + counts.fallback;
@@ -119,7 +152,9 @@ export function finishReport(
     unmapped: sorted([...b.unmapped.values()]),
     heuristics: sorted([...b.heuristics.values()]),
     dropped: sorted([...b.dropped.values()]),
-    formatting: Object.fromEntries(Object.entries(b.formatting).sort(([x], [y]) => x.localeCompare(y))),
+    formatting: Object.fromEntries(
+      Object.entries(b.formatting).sort(([x], [y]) => x.localeCompare(y)),
+    ),
     titleMismatches: b.titleMismatches,
     validation: extra.validation,
     notes: noteStats(lecture),
@@ -143,7 +178,9 @@ function cell(s: string): string {
 }
 
 function slideList(slides: string[]): string {
-  return slides.length > 12 ? `${slides.slice(0, 12).join(', ')} … (+${slides.length - 12})` : slides.join(', ');
+  return slides.length > 12
+    ? `${slides.slice(0, 12).join(', ')} … (+${slides.length - 12})`
+    : slides.join(', ');
 }
 
 export function renderReport(r: ImportReport, extraSections: string[] = []): string {
@@ -156,10 +193,18 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
   L.push('| | |', '|---|---|');
   if (r.sourceName) L.push(`| Source | \`${cell(r.sourceName)}\` |`);
   L.push(`| Family | ${familyName} |`);
-  L.push(`| Slides | ${r.slideCount} (${Object.entries(r.slidesByType).map(([k, v]) => `${k} ${v}`).join(', ')}) |`);
-  L.push(`| Blocks | ${r.mappedBlocks + r.fallbackBlocks} (mapped ${r.mappedBlocks}, \`html\` fallback ${r.fallbackBlocks}) |`);
+  L.push(
+    `| Slides | ${r.slideCount} (${Object.entries(r.slidesByType)
+      .map(([k, v]) => `${k} ${v}`)
+      .join(', ')}) |`,
+  );
+  L.push(
+    `| Blocks | ${r.mappedBlocks + r.fallbackBlocks} (mapped ${r.mappedBlocks}, \`html\` fallback ${r.fallbackBlocks}) |`,
+  );
   L.push(`| Mapped | **${r.mappedPercent}%** |`);
-  L.push(`| Assets | ${r.assets.total} (${r.assets.referenced} referenced by blocks, ${r.assets.stripped} without payload, ${r.assets.bytes} bytes) |`);
+  L.push(
+    `| Assets | ${r.assets.total} (${r.assets.referenced} referenced by blocks, ${r.assets.stripped} without payload, ${r.assets.bytes} bytes) |`,
+  );
   L.push(`| Refs · videos · terms | ${r.refs} · ${r.videos} · ${r.terms} |`);
   const data = Object.entries(r.data).filter(([, v]) => v !== undefined);
   if (data.length) L.push(`| Data | ${data.map(([k, v]) => `${k} ${v}`).join(' · ')} |`);
@@ -167,24 +212,33 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
 
   L.push('## Blocks by type', '');
   L.push('| Block | Count |', '|---|---:|');
-  for (const [k, v] of Object.entries(r.blocksByType).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))) L.push(`| ${k} | ${v} |`);
+  for (const [k, v] of Object.entries(r.blocksByType).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)))
+    L.push(`| ${k} | ${v} |`);
   L.push('');
 
   L.push('## Unmapped markup (kept as `html` blocks)', '');
   if (!r.unmapped.length) L.push('None.', '');
   else {
-    L.push('`interactive` = script-driven controls that need a Phase 3 widget; `unmapped` = no component yet.', '');
+    L.push(
+      '`interactive` = script-driven controls that need a Phase 3 widget; `unmapped` = no component yet.',
+      '',
+    );
     L.push('| Element | Reason | Count | Slides |', '|---|---|---:|---|');
-    for (const u of r.unmapped) L.push(`| \`${cell(u.selector)}\` | ${u.reason} | ${u.count} | ${slideList(u.slides)} |`);
+    for (const u of r.unmapped)
+      L.push(`| \`${cell(u.selector)}\` | ${u.reason} | ${u.count} | ${slideList(u.slides)} |`);
     L.push('');
   }
 
   L.push('## Heuristic mappings', '');
   if (!r.heuristics.length) L.push('None.', '');
   else {
-    L.push('Mapped by a structural rule rather than an explicit components.md §4 entry; review these.', '');
+    L.push(
+      'Mapped by a structural rule rather than an explicit components.md §4 entry; review these.',
+      '',
+    );
     L.push('| Rule | Element | Count | Slides |', '|---|---|---:|---|');
-    for (const h of r.heuristics) L.push(`| ${cell(h.rule)} | \`${cell(h.selector)}\` | ${h.count} | ${slideList(h.slides)} |`);
+    for (const h of r.heuristics)
+      L.push(`| ${cell(h.rule)} | \`${cell(h.selector)}\` | ${h.count} | ${slideList(h.slides)} |`);
     L.push('');
   }
 
@@ -207,11 +261,16 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
   }
 
   L.push('## Title vs. on-slide heading', '');
-  if (!r.titleMismatches.length) L.push('`data-title` matches the visible heading on every slide.', '');
+  if (!r.titleMismatches.length)
+    L.push('`data-title` matches the visible heading on every slide.', '');
   else {
-    L.push('`title` comes from `data-title` (TOC label); the visible heading differs and is kept as `subtitle`.', '');
+    L.push(
+      '`title` comes from `data-title` (TOC label); the visible heading differs and is kept as `subtitle`.',
+      '',
+    );
     L.push('| Slide | title (`data-title`) | heading |', '|---|---|---|');
-    for (const t of r.titleMismatches) L.push(`| ${t.slide} | ${cell(t.title)} | ${cell(t.heading)} |`);
+    for (const t of r.titleMismatches)
+      L.push(`| ${t.slide} | ${cell(t.title)} | ${cell(t.heading)} |`);
     L.push('');
   }
 
@@ -227,14 +286,51 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
   L.push('## Notes', '');
   L.push('| | |', '|---|---|');
   L.push(`| Slides with notes | ${n.slidesWithNotes} / ${r.slideCount} |`);
-  L.push(`| Cues | ${n.cues} (${Object.entries(n.byKind).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0)).map(([k, v]) => `${k} ${v}`).join(', ')}) |`);
+  L.push(
+    `| Cues | ${n.cues} (${Object.entries(n.byKind)
+      .sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))
+      .map(([k, v]) => `${k} ${v}`)
+      .join(', ')}) |`,
+  );
   L.push(`| Explicit cue ids | ${n.explicitCueIds} |`);
   L.push(`| Slides with \`[시간]\` | ${n.timedSlides} (total ${n.totalMinutes} min) |`);
   L.push(`| Characters | ${n.chars} |`);
   const markers = Object.entries(n.markers).sort((a, b) => b[1] - a[1]);
-  if (markers.length) L.push(`| Markers as authored (\`[메모]\` includes unmarked text) | ${markers.map(([k, v]) => `\`[${k}]\` ${v}`).join(', ')} |`);
+  if (markers.length)
+    L.push(
+      `| Markers as authored (\`[메모]\` includes unmarked text) | ${markers.map(([k, v]) => `\`[${k}]\` ${v}`).join(', ')} |`,
+    );
   const unknown = Object.entries(n.unknownMarkers);
-  L.push(`| Unknown markers | ${unknown.length ? unknown.map(([k, v]) => `\`[${k}]\` ${v}`).join(', ') : 'none'} |`, '');
+  L.push(
+    `| Unknown markers | ${unknown.length ? unknown.map(([k, v]) => `\`[${k}]\` ${v}`).join(', ') : 'none'} |`,
+    '',
+  );
+
+  if (Object.values(r.data).some((v) => v !== undefined)) {
+    L.push('## Plugin data', '');
+    L.push('| Deck data | Imported as | Status |', '|---|---|---|');
+    if (r.data.quiz !== undefined) {
+      L.push(
+        `| \`window.QUIZ\` | \`lecture.quiz\` (${r.data.quiz} × QuizItem) → front matter \`quiz:\` list | complete; the quiz/exam plugin is Phase 3 |`,
+      );
+    }
+    if (r.data.sims !== undefined) {
+      L.push(
+        `| \`window.SIMS\` | \`lecture.sims\` (${r.data.sims} entries, passed through) → sidecar \`sims.json\`, front matter \`sims: sims.json\` | base literal only; runtime patches not applied; schema TBD (PLAN.md §12) |`,
+      );
+    }
+    if (r.data.terminals !== undefined) {
+      L.push(
+        `| \`window.TERMS\` | \`lecture.terminals\` (${r.data.terminals} entries) | ${r.data.terminals ? 'passed through' : 'empty in this deck (the terminal plugin is defined but unused)'} |`,
+      );
+    }
+    if (r.data.script !== undefined) {
+      L.push(
+        `| \`window.SCRIPT\` | not imported (${r.data.script} slides of cues) | \`data-note\` is the source of truth; its \`{q, i}\` focus selectors need mapping to block ids |`,
+      );
+    }
+    L.push('');
+  }
 
   if (r.warnings.length) {
     L.push('## Warnings', '');
@@ -242,5 +338,9 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
     L.push('');
   }
   for (const s of extraSections) L.push(s.trimEnd(), '');
-  return L.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd() + '\n';
+  return (
+    L.join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trimEnd() + '\n'
+  );
 }

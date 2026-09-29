@@ -32,7 +32,9 @@ const inline = (ctx: MapContext, el: Element | Node[], skip?: (e: Element) => bo
 function footerText(el: Element): string {
   const clone = el.cloneNode(true) as Element;
   for (const b of Array.from(clone.querySelectorAll('button, .no, .slide-no'))) b.remove();
-  return textOf(clone).replace(/^[·\s]+/, '').trim();
+  return textOf(clone)
+    .replace(/^[·\s]+/, '')
+    .trim();
 }
 
 /** Ref ids in a "참고 출처 S04 · S30 ↗" button. */
@@ -44,7 +46,11 @@ export function refIdsFromButton(text: string): string[] {
 // V20 (week 3)
 // ---------------------------------------------------------------------------------------------
 
-export function v20Slide(section: Element, ctx: MapContext, slideRefs: string[] | undefined): SlideDraft {
+export function v20Slide(
+  section: Element,
+  ctx: MapContext,
+  slideRefs: string[] | undefined,
+): SlideDraft {
   const cls = classes(section);
   const type: SlideType = cls.includes('cover')
     ? 'cover'
@@ -53,7 +59,12 @@ export function v20Slide(section: Element, ctx: MapContext, slideRefs: string[] 
       : cls.includes('quote-slide')
         ? 'quote'
         : 'content';
-  const d: SlideDraft = { type, title: section.getAttribute('data-title')?.trim() ?? '', refs: [], blocks: [] };
+  const d: SlideDraft = {
+    type,
+    title: section.getAttribute('data-title')?.trim() ?? '',
+    refs: [],
+    blocks: [],
+  };
   const tag = section.getAttribute('data-tag')?.trim();
   if (tag) d.tag = tag;
 
@@ -67,7 +78,8 @@ export function v20Slide(section: Element, ctx: MapContext, slideRefs: string[] 
 
   const dropCourseLine = (el: Element): void => {
     const text = textOf(el);
-    if (d.footer && text === d.footer) ctx.report.addDropped('course · week line (same as the footer)', ctx.slideId);
+    if (d.footer && text === d.footer)
+      ctx.report.addDropped('course · week line (same as the footer)', ctx.slideId);
     else d.blocks.push({ type: 'paragraph', text: inline(ctx, el) });
   };
 
@@ -92,8 +104,10 @@ export function v20Slide(section: Element, ctx: MapContext, slideRefs: string[] 
         for (const c of childElements(child)) {
           if (hasClass(c, 'cover-eyebrow')) dropCourseLine(c);
           else if (hasClass(c, 'cover-tagline')) d.subtitle = inline(ctx, c);
-          else if (tagName(c) === 'h1') d.blocks.push({ type: 'paragraph', text: inline(ctx, c), lead: true });
-          else if (hasClass(c, 'cover-meta')) d.blocks.push({ type: 'paragraph', text: inline(ctx, c) });
+          else if (tagName(c) === 'h1')
+            d.blocks.push({ type: 'paragraph', text: inline(ctx, c), lead: true });
+          else if (hasClass(c, 'cover-meta'))
+            d.blocks.push({ type: 'paragraph', text: inline(ctx, c) });
           else d.blocks.push(...mapElement(c, ctx));
         }
         continue;
@@ -111,6 +125,8 @@ export function v20Slide(section: Element, ctx: MapContext, slideRefs: string[] 
         if (hasClass(c, 'big-num')) d.no = textOf(c);
         else if (hasClass(c, 'div-eyebrow')) dropCourseLine(c);
         else if (/^h[12]$/.test(tagName(c))) d.subtitle = inline(ctx, c);
+        else if (hasClass(c, 'div-desc'))
+          d.blocks.push({ type: 'paragraph', text: inline(ctx, c) });
         else if (tagName(c) === 'div' && classes(c).length === 0) walk(c);
         else d.blocks.push(...mapElement(c, ctx));
       }
@@ -134,7 +150,11 @@ export function v20Slide(section: Element, ctx: MapContext, slideRefs: string[] 
       else d.blocks.push(...mapElement(c, ctx));
     }
     if (quote) {
-      if (tocLabel) ctx.report.addDropped(`TOC label of a quote slide (\`${tocLabel}\`; the quote is the title)`, ctx.slideId);
+      if (tocLabel)
+        ctx.report.addDropped(
+          `TOC label of a quote slide (\`${tocLabel}\`; the quote is the title)`,
+          ctx.slideId,
+        );
       d.title = quote;
     }
     return d;
@@ -220,12 +240,15 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
     }
     if (hasClass(c, 'cover-wrap')) {
       for (const h of childElements(c)) {
-        if (hasClass(h, 'cover-logos')) ctx.report.addDropped('cover logos (theme decoration)', ctx.slideId);
+        if (hasClass(h, 'cover-logos'))
+          ctx.report.addDropped('cover logos (theme decoration)', ctx.slideId);
         else if (hasClass(h, 'cover-badge')) d.tag ??= textOf(h);
         else if (hasClass(h, 'cover-title') || tagName(h) === 'h1') d.heading = inline(ctx, h);
         else if (hasClass(h, 'cover-sub')) d.subtitle = inline(ctx, h);
         else if (hasClass(h, 'cover-meta')) {
-          const parts = childElements(h).map((s) => inline(ctx, s)).filter(Boolean);
+          const parts = childElements(h)
+            .map((s) => inline(ctx, s))
+            .filter(Boolean);
           d.blocks.push({ type: 'paragraph', text: parts.join(' · ') || inline(ctx, h) });
         } else if (hasClass(h, 'cover-q')) {
           if (!d.question) d.question = inline(ctx, h, (x) => tagName(x) === 'span');
@@ -241,9 +264,12 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
             if (/^\d+$/.test(no)) d.no = no;
             else ctx.report.addDropped(`hero marker \`${no}\` (\`.div-num\`)`, ctx.slideId);
           } else if (hasClass(h, 'div-eyebrow')) d.tag ??= textOf(h);
-          else if (hasClass(h, 'div-title') || /^h[12]$/.test(tagName(h))) d.heading = inline(ctx, h);
-          else if (hasClass(h, 'grow') || (tagName(h) === 'div' && classes(h).length === 0)) walk(h);
-          else if (hasClass(h, 'div-desc', 'quote-src')) d.blocks.push({ type: 'paragraph', text: inline(ctx, h) });
+          else if (hasClass(h, 'div-title') || /^h[12]$/.test(tagName(h)))
+            d.heading = inline(ctx, h);
+          else if (hasClass(h, 'grow') || (tagName(h) === 'div' && classes(h).length === 0))
+            walk(h);
+          else if (hasClass(h, 'div-desc', 'quote-src'))
+            d.blocks.push({ type: 'paragraph', text: inline(ctx, h) });
           else d.blocks.push(...mapElement(h, ctx));
         }
       };
@@ -253,7 +279,10 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
     d.blocks.push(...mapElement(c, ctx));
   }
   if (d.no && d.type !== 'divider') {
-    ctx.report.addDropped(`hero numeral \`${d.no}\` (\`.div-num\`; only dividers have \`no\`)`, ctx.slideId);
+    ctx.report.addDropped(
+      `hero numeral \`${d.no}\` (\`.div-num\`; only dividers have \`no\`)`,
+      ctx.slideId,
+    );
     delete d.no;
   }
   return d;
@@ -264,9 +293,9 @@ export function plainText(md: string): string {
   const kept: string[] = [];
   return md
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\\([\\`*_<[~])/g, (_m, c: string) => `\u0000${kept.push(c) - 1}\u0000`)
+    .replace(/\\([\\`*_<[~])/g, (_m, c: string) => `\uE010${kept.push(c) - 1}\uE011`)
     .replace(/\*\*|\*|`/g, '')
-    .replace(/\u0000(\d+)\u0000/g, (_m, i: string) => kept[Number(i)] ?? '')
+    .replace(/\uE010(\d+)\uE011/g, (_m, i: string) => kept[Number(i)] ?? '')
     .trim();
 }
 

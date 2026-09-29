@@ -35,7 +35,13 @@ export interface RunImportResult {
 
 export function manifestOf(result: ImportResult): ManifestEntry[] {
   return result.assets.map((a) => {
-    const entry: ManifestEntry = { id: a.id, fileName: a.fileName, mime: a.mime, bytes: a.bytes.length, sha256: sha256(a.bytes) };
+    const entry: ManifestEntry = {
+      id: a.id,
+      fileName: a.fileName,
+      mime: a.mime,
+      bytes: a.bytes.length,
+      sha256: sha256(a.bytes),
+    };
     if (a.title) entry.title = a.title;
     if (a.credit) entry.credit = a.credit;
     if (a.source) entry.source = a.source;
@@ -43,7 +49,11 @@ export function manifestOf(result: ImportResult): ManifestEntry[] {
   });
 }
 
-export async function runImport(inputHtml: string, outDir: string, opts: RunImportOptions = {}): Promise<RunImportResult> {
+export async function runImport(
+  inputHtml: string,
+  outDir: string,
+  opts: RunImportOptions = {},
+): Promise<RunImportResult> {
   const html = await readFile(inputHtml, 'utf8');
   const importOpts: ImportOptions = { sourceName: basename(inputHtml) };
   if (opts.family) importOpts.family = opts.family;
@@ -62,7 +72,8 @@ export async function runImport(inputHtml: string, outDir: string, opts: RunImpo
     await write(`${assetDir}/${asset.fileName}`, asset.bytes);
   }
   if (opts.writeSource !== false) await write(opts.sourceFile ?? 'lecture.marco.md', result.source);
-  for (const [rel, value] of Object.entries(result.sidecars)) await write(rel, `${JSON.stringify(value, null, 2)}\n`);
+  for (const [rel, value] of Object.entries(result.sidecars))
+    await write(rel, `${JSON.stringify(value, null, 2)}\n`);
   await write('assets.manifest.json', `${JSON.stringify(manifestOf(result), null, 2)}\n`);
   await write('IMPORT-REPORT.md', renderReport(result.report));
   return { result, files };

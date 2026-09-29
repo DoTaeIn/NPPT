@@ -45,11 +45,6 @@ export function stripTokens(text: string): string {
   return text.replace(TOKEN, (_m, mime: string) => `data:${mime};base64,<STRIPPED>`);
 }
 
-export function hasToken(text: string): boolean {
-  TOKEN.lastIndex = 0;
-  return TOKEN.test(text);
-}
-
 export function decodeBase64(b64: string): Uint8Array {
   return new Uint8Array(Buffer.from(b64, 'base64'));
 }

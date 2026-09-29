@@ -16,7 +16,8 @@ import { finishSlide, v20Slide, v97Slide, type SlideDraft } from './slides.js';
 import type { ImportOptions, ImportResult, LegacyFamily } from './types.js';
 
 export function detectFamily(html: string): LegacyFamily {
-  if (/class="[^"]*\bv20-slide\b/.test(html) || /class='[^']*\bv20-slide\b/.test(html)) return 'v20';
+  if (/class="[^"]*\bv20-slide\b/.test(html) || /class='[^']*\bv20-slide\b/.test(html))
+    return 'v20';
   if (/<section[^>]*\bdata-group=/.test(html)) return 'v97';
   if (/id="lecture-data"/.test(html)) return 'v20';
   return 'v97';
@@ -74,7 +75,8 @@ export function quizFrom(value: unknown): QuizItem[] | undefined {
 }
 
 export function importLegacyDeck(html: string, opts: ImportOptions = {}): ImportResult {
-  const family: LegacyFamily = !opts.family || opts.family === 'auto' ? detectFamily(html) : opts.family;
+  const family: LegacyFamily =
+    !opts.family || opts.family === 'auto' ? detectFamily(html) : opts.family;
   const payloads = new PayloadTable();
   const tokenized = payloads.tokenize(html);
   const { document } = parseHTML(tokenized);
@@ -99,7 +101,8 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
           if (a.title) meta.title = a.title;
           if (a.credit) meta.credit = a.credit;
           if (a.source) meta.source = a.source;
-          if (!a.data || !assets.addDataUri(id, a.data, meta)) report.warn(`Asset \`${id}\` in #lecture-data has no data URI.`);
+          if (!a.data || !assets.addDataUri(id, a.data, meta))
+            report.warn(`Asset \`${id}\` in #lecture-data has no data URI.`);
         }
         for (const r of d.refs ?? []) {
           const ref: Ref = { id: r.id, title: r.title ?? r.id };
@@ -112,7 +115,9 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
           if (typeof v.start === 'number') video.start = v.start;
           if (v.author) video.credit = v.author;
           videos.set(v.id, video);
-          const dropped = Object.keys(v).filter((k) => !['id', 'title', 'start', 'author'].includes(k));
+          const dropped = Object.keys(v).filter(
+            (k) => !['id', 'title', 'start', 'author'].includes(k),
+          );
           if (dropped.length) {
             report.warn(
               `Video \`${v.id}\`: fields without an IR home were not imported (${dropped.join(', ')}); the slide's html block still shows them.`,
@@ -137,7 +142,9 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
       lecture.sims = sims.value as Record<string, unknown>;
       data.sims = Object.keys(lecture.sims).length;
       if (/correctAttackFlows|window\.SIMS\.\w+\s*=|B\.s_\w+\.flows/.test(html)) {
-        report.warn('window.SIMS is patched at runtime by later scripts (v9.3 fact corrections); only the base literal was imported.');
+        report.warn(
+          'window.SIMS is patched at runtime by later scripts (v9.3 fact corrections); only the base literal was imported.',
+        );
       }
     }
     const terminals = extractWindowData(html, 'TERMS');
@@ -156,7 +163,9 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
 
   const refByUrl = new Map<string, string>();
   const addRef = (url: string, title: string): string => {
-    const known = refs.find((r) => r.url === url) ?? (refByUrl.has(url) ? refs.find((r) => r.id === refByUrl.get(url)) : undefined);
+    const known =
+      refs.find((r) => r.url === url) ??
+      (refByUrl.has(url) ? refs.find((r) => r.id === refByUrl.get(url)) : undefined);
     if (known) return known.id;
     const id = `R${String(refs.length + 1).padStart(2, '0')}`;
     const ref: Ref = { id, title: title || url };
@@ -167,8 +176,11 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
   };
 
   // ---- slides ----------------------------------------------------------------------------
-  const sections = Array.from(document.querySelectorAll(family === 'v20' ? 'section.slide.v20-slide' : 'section.slide'));
-  if (family === 'v20' && !sections.length) sections.push(...Array.from(document.querySelectorAll('section.slide')));
+  const sections = Array.from(
+    document.querySelectorAll(family === 'v20' ? 'section.slide.v20-slide' : 'section.slide'),
+  );
+  if (family === 'v20' && !sections.length)
+    sections.push(...Array.from(document.querySelectorAll('section.slide')));
   const slides: Slide[] = [];
   const footers = new Map<string, number>();
   // V20 TOC: a divider opens a group ("1부 · 인증과 하드웨어") that runs until the next divider;
@@ -187,10 +199,12 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
       slideRefs: [],
       inColumn: false,
     };
-    const draft: SlideDraft = family === 'v20' ? v20Slide(section, ctx, slideRefs[index]) : v97Slide(section, ctx);
+    const draft: SlideDraft =
+      family === 'v20' ? v20Slide(section, ctx, slideRefs[index]) : v97Slide(section, ctx);
     draft.refs.push(...ctx.slideRefs);
     if (family === 'v20') {
-      if (draft.type === 'divider') v20Group = [draft.groupLabel, draft.title].filter(Boolean).join(' · ');
+      if (draft.type === 'divider')
+        v20Group = [draft.groupLabel, draft.title].filter(Boolean).join(' · ');
       else if (draft.type === 'quote' || draft.type === 'cover') v20Group = undefined;
       if (v20Group && !draft.group) draft.group = v20Group;
     }
@@ -199,18 +213,32 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
     if (!slide.title) report.warn(`${id} has no title (no data-title and no heading).`);
     const noteText = section.getAttribute('data-note') ?? '';
     const note = family === 'v20' ? noteFromV20(noteText) : noteFromV97(noteText);
-    if (note) slide.note = note;
+    if (note) {
+      slide.note = note;
+      const hazard = (note.raw ?? '')
+        .split('\n')
+        .find((l) => /^( {0,3}(`{3,}|~{3,})|# slide\b|## note\s*$)/.test(l));
+      if (hazard)
+        report.warn(
+          `${id}: note line \`${hazard.slice(0, 40)}\` can be misread as a fence or slide/note header in the source.`,
+        );
+    }
     slides.push(slide);
   });
 
   for (const s of slides) {
-    for (const r of s.refs ?? []) if (!refs.some((x) => x.id === r)) report.warn(`${s.id} cites \`${r}\`, which is not in the reference list.`);
+    for (const r of s.refs ?? [])
+      if (!refs.some((x) => x.id === r))
+        report.warn(`${s.id} cites \`${r}\`, which is not in the reference list.`);
   }
 
   // ---- meta ------------------------------------------------------------------------------
   const footer = [...footers.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
   const meta: LectureMeta = {
-    title: slides[0]?.title || textOf(document.querySelector('title') ?? document.createElement('title')) || 'Untitled',
+    title:
+      slides[0]?.title ||
+      textOf(document.querySelector('title') ?? document.createElement('title')) ||
+      'Untitled',
     lang: document.documentElement?.getAttribute('lang') === 'en' ? 'en' : 'ko',
     theme: family === 'v20' ? 'v20-violet' : 'cau-navy',
     edition: 'instructor',
