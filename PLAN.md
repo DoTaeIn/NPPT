@@ -454,3 +454,26 @@ Defaults are chosen so work can start; change any of them and the plan adjusts.
 8. Importer spike: parse all 40 Week 3 sections into MARCO source automatically; list unmapped markup.
 9. Prompt kit v0.1: system prompt, component cheat-sheet, `outline` and `slides` tool definitions; run one outline → slides trial and record token usage.
 10. Done: `LICENSE`, `NOTICE` and the README licence section (§15). Remaining: put the Attribution in the runtime help overlay once the runtime exists.
+
+---
+
+## Status (2026-09-29)
+
+Implemented on branch `claude/hopeful-cerf-wfhhnv`; all packages build, typecheck, lint and pass
+583 unit tests plus 23 Playwright tests. Milestones M1–M3 from §12 are met in substance:
+
+| Area | State |
+|---|---|
+| `@marco/schema` | JSON Schema, validator, normalizer, note parser/serializer (with the real decks' marker aliases), linter incl. budgets, density heuristic, ragged tables, TODO markers |
+| `@marco/design-system` | Tokens, v20-violet and cau-navy themes, 21 block components, cover/hero/divider parity with the originals, lecture + A4 handout print CSS, subsettable fonts, gallery with overflow tests |
+| `@marco/runtime` | 64 KB zero-dependency engine: canvas scaling, nav, TOC, notes, search, ink/laser, dialogs, help with the MARCO attribution, print modes, editions, plugin API; first plugin: quiz (cards + timed exam) |
+| `@marco/compiler` | Full `.marco.md` grammar → IR → single-file HTML with inlined runtime/CSS, subset fonts, optimised images, sidecar data, bundle selection by widgets |
+| `@marco/importer` | V20 and v9.7 decks → source, reproducible via `import.config.json`; coverage 92% (week 3) and 98% (week 5) |
+| `@marco/ai` | Korean pasteable prompt kit (~10k chars), cheat-sheet generated from budgets, vendor-neutral pipeline with manual and OpenAI-compatible providers |
+| `marco` CLI | `new`, `build`, `lint`, `watch`, `import`, `ai …`, `pdf` |
+| Examples | `examples/week03-iam` (10.3 MB original → 2.3 MB), `examples/week05-firewall` (5.4 MB → 2.0 MB); both build with zero errors, remaining warnings are content budgets |
+
+Open items carried into Phase 3–4: the interactive widgets still imported as `html` blocks (ABAC,
+JIT, lock power, sims, deep-dive, solutions page), `cards` with images / `columns cols=4`, video
+posters, grouped references, a CJK-friendly emphasis rule for Markdown, ink persistence, the Studio
+app, and a first trial run of the prompt kit with a real model to record token use.
