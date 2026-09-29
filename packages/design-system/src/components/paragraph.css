@@ -1,0 +1,17 @@
+/*
+ * paragraph: body text, or a lead line (`### text` in the source).
+ * <p class="s-p">…</p> · <p class="s-p lead">…</p>
+ * From V20 `.s-body p` and `.v-lead` (week03-styles.css l.137, l.945). Budget: 220; lead 90.
+ */
+.s-p {
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+}
+
+.s-p.lead {
+  color: var(--muted);
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-medium);
+  line-height: 1.55;
+}

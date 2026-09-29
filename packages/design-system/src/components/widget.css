@@ -1,0 +1,30 @@
+/*
+ * widget: mount point for a runtime plugin (Phase 3).
+ * <div class="widget" data-widget="abac" data-params='{"key":"value"}'></div>
+ * Takes the remaining body height; shows a placeholder until a plugin fills it.
+ */
+.widget {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 240px;
+}
+
+:is(.s-body, .col) > .widget {
+  flex-shrink: 1;
+}
+
+.widget:empty {
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+}
+
+.widget:empty::before {
+  content: '위젯 · ' attr(data-widget);
+}

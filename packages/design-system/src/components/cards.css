@@ -1,0 +1,93 @@
+/*
+ * cards: kicker/title/body card grid, 2-4 columns.
+ * <div class="v-cards cols-2"><article class="v-card tone-ok" id>[<i class="icon">]
+ *   <span class="v-kicker">…</span><h3>…</h3><p>…</p></article></div>
+ * Ported from V20 `.v-cards`/`.v-card` (week03-styles.css l.945); tones follow v9.7
+ * `.card.ok/.warn/.err`. Budget: cols 2/3/4 → ≤4/6/8 items; kicker 16; title 24; body 90/60/40.
+ */
+.v-cards {
+  display: grid;
+  gap: var(--gap-md);
+}
+
+.v-cards.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.v-cards.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.v-cards.cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.v-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 26px 28px;
+  border: 1px solid var(--card-line);
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.v-card:is(.tone-neutral, .tone-primary, .tone-ok, .tone-warn, .tone-danger, .tone-info) {
+  border-color: var(--tone-line);
+  background: var(--tone-soft);
+  box-shadow: none;
+}
+
+/* v9.7 `.card .icon-tile` */
+.v-card > .icon {
+  width: 56px;
+  height: 56px;
+  margin-bottom: 16px;
+  padding: 13px;
+  border-radius: 16px;
+  background: var(--tone-soft, var(--primary-soft));
+  color: var(--tone-text, var(--primary-text));
+}
+
+.v-card:is(.tone-neutral, .tone-primary, .tone-ok, .tone-warn, .tone-danger, .tone-info) > .icon {
+  background: var(--tone);
+  color: var(--tone-on);
+}
+
+.v-kicker {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--tone-text, var(--primary-text));
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+  letter-spacing: 0.02em;
+}
+
+.v-card h3 {
+  color: var(--title);
+  font-size: var(--fs-card);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+
+.v-card p {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+}
+
+/* Denser grids trade padding for text room. */
+.v-cards.cols-4 > .v-card {
+  padding: 22px 22px 24px;
+}
+
+.v-cards.cols-4 > .v-card > .icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  padding: 11px;
+}

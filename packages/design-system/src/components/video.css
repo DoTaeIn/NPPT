@@ -1,0 +1,47 @@
+/*
+ * video: a reference to a YouTube video (the runtime opens it in a dialog or a new window).
+ * <div class="video-reference"><button class="video-open" data-video="ID" data-start="120">
+ *   <i class="icon" data-icon="play"></i> 영상 · label</button><p class="media-caption">caption</p></div>
+ * From V20 `.video-poster` + `.play-button` (week03-styles.css l.947). Budget: label 40, caption 60.
+ */
+.video-reference {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 240px;
+  padding: 36px 40px;
+  border-radius: var(--radius);
+  background: var(--video-bg);
+  text-align: center;
+}
+
+.video-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 100%;
+  padding: 20px 34px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3);
+  color: var(--primary-on);
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.video-open > .icon {
+  width: 30px;
+  height: 30px;
+}
+
+.video-reference .media-caption {
+  color: var(--on-navy-muted);
+  font-size: var(--fs-caption);
+  line-height: 1.45;
+}

@@ -1,0 +1,282 @@
+/*
+ * Print modes (runtime.md §5). The runtime adds the body class, injects @page through
+ * <style id="page-size">, calls print() and removes the class afterwards. Rules are keyed
+ * on the body class, not on @media print, so a page can preview a mode on screen.
+ * Ported from V20's print layer (week03-styles.css l.470-541).
+ */
+
+/* ============ Both modes: no chrome, no ink, exact colours ============ */
+:is(body.print-lecture, body.handout-mode)
+  :is(#nav-dock, #toc-sidebar, #notes-panel, #search, #pen-toolbar, #pen-canvas, #laser-canvas, #dialog, #help) {
+  display: none !important;
+}
+
+html:has(> body:is(.print-lecture, .handout-mode)),
+body:is(.print-lecture, .handout-mode) {
+  height: auto;
+  overflow: visible;
+  background: #fff;
+}
+
+body:is(.print-lecture, .handout-mode) {
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+/* ============ Lecture: every slide, one per 1920×1080 page ============ */
+/* @page { size: 1920px 1080px; margin: 0 } comes from the runtime. */
+body.print-lecture #stage {
+  position: static !important;
+  display: block !important;
+  overflow: visible !important;
+  background: none !important;
+}
+
+body.print-lecture #canvas {
+  position: static !important;
+  width: var(--canvas-w) !important;
+  height: auto !important;
+  overflow: visible !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+body.print-lecture section.slide {
+  position: relative !important;
+  inset: auto !important;
+  display: block !important;
+  opacity: 1 !important;
+  transform: none !important;
+  transition: none !important;
+  break-after: page;
+  break-inside: avoid;
+}
+
+body.print-lecture section.slide:last-of-type {
+  break-after: auto;
+}
+
+body.print-lecture :is(.slide-no, .slide-progress) {
+  display: none !important;
+}
+
+body.print-lecture abbr.term {
+  border-bottom: 0;
+}
+
+/* ============ Handout: A4 portrait, slide thumbnail + full notes ============ */
+/*
+ * Structure the runtime builds (see components.md §5):
+ * <div id="handout">
+ *   <article class="ho-page" data-slide="s-04">
+ *     <header class="ho-head"><span class="ho-no">04</span><h2 class="ho-title">…</h2><span class="ho-tag">…</span></header>
+ *     <div class="ho-shot"><section class="slide …">…a clone, ids removed…</section></div>
+ *     <div class="ho-note">
+ *       <p class="ho-time">2.5분 · 10:00 – 12:30</p>
+ *       <ol class="ho-cues"><li class="ho-cue" data-kind="SAY"><b class="ho-marker">대사</b><div class="ho-text">…</div></li></ol>
+ *     </div>
+ *   </article>
+ *   <section class="ho-terms"><h2>용어</h2><dl><div><dt>LPR</dt><dd>…</dd></div></dl></section>
+ * </div>
+ * @page { size: A4 portrait; margin: 0 } comes from the runtime.
+ */
+#handout {
+  display: none;
+}
+
+body.handout-mode #stage {
+  display: none !important;
+}
+
+body.handout-mode #handout {
+  /* Thumbnail: 688px = A4 width (793.7px) minus 2 × 14mm; 688 / 1920 = 0.358333. */
+  --ho-w: 688px;
+  --ho-scale: 0.358333;
+  display: block;
+  width: 210mm;
+  margin: 0 auto;
+  color: var(--text);
+  font-family: var(--font-sans);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+#handout .ho-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5mm;
+  width: 210mm;
+  padding: 12mm 0 10mm;
+  break-after: page;
+}
+
+#handout .ho-page > * {
+  width: var(--ho-w);
+}
+
+#handout .ho-head {
+  display: flex;
+  align-items: baseline;
+  gap: 4mm;
+  padding-bottom: 2.5mm;
+  border-bottom: 2px solid var(--primary);
+}
+
+#handout .ho-no {
+  flex: none;
+  color: var(--primary-text);
+  font-family: var(--font-num);
+  font-size: 10pt;
+  font-weight: var(--fw-bold);
+}
+
+#handout .ho-title {
+  flex: 1;
+  margin: 0;
+  color: var(--title);
+  font-size: 14pt;
+  font-weight: var(--fw-bold);
+  line-height: 1.35;
+}
+
+#handout .ho-tag {
+  flex: none;
+  color: var(--muted);
+  font-size: 9pt;
+}
+
+#handout .ho-shot {
+  position: relative;
+  height: calc(var(--ho-w) * 9 / 16);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 3mm;
+  background: var(--bg);
+  break-inside: avoid;
+}
+
+#handout .ho-shot > .slide {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  display: block !important;
+  transform: scale(var(--ho-scale));
+  transform-origin: 0 0;
+}
+
+#handout .ho-shot :is(.slide-no, .slide-progress) {
+  display: none;
+}
+
+/* Notes: an 11pt reading column; marker labels sit in a narrow left gutter. */
+#handout .ho-note {
+  font-size: 11pt;
+  line-height: 1.6;
+}
+
+#handout .ho-time {
+  margin: 0 0 2mm;
+  color: var(--muted);
+  font-size: 9.5pt;
+  font-weight: var(--fw-semibold);
+}
+
+#handout .ho-cues {
+  display: flex;
+  flex-direction: column;
+  gap: 1.8mm;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#handout .ho-cue {
+  display: grid;
+  grid-template-columns: 17mm minmax(0, 1fr);
+  column-gap: 3mm;
+  break-inside: avoid;
+}
+
+#handout .ho-marker {
+  align-self: start;
+  margin-top: 0.5mm;
+  padding: 0.3mm 1mm;
+  border-radius: 1mm;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-size: 8.5pt;
+  font-weight: var(--fw-bold);
+  line-height: 1.5;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#handout .ho-cue:is([data-kind='ASK'], [data-kind='SQ']) .ho-marker {
+  background: var(--warn-soft);
+  color: var(--warn-text);
+}
+
+#handout .ho-cue:is([data-kind='SA'], [data-kind='TIP'], [data-kind='VERIFY']) .ho-marker {
+  background: var(--ok-soft);
+  color: var(--ok-text);
+}
+
+#handout .ho-cue:is([data-kind='DO'], [data-kind='LOOK'], [data-kind='HOP'], [data-kind='SCREEN'], [data-kind='NEXT'], [data-kind='WAIT'], [data-kind='MEMO']) .ho-marker {
+  background: var(--neutral-soft);
+  color: var(--neutral-text);
+}
+
+#handout .ho-text {
+  min-width: 0;
+}
+
+/* Student edition: no notes, ruled space for the student's own. */
+#handout .ho-note:empty {
+  min-height: 110mm;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(9mm - 1px),
+    var(--border) calc(9mm - 1px),
+    var(--border) 9mm
+  );
+}
+
+/* Terms list on its own page at the end. */
+#handout .ho-terms {
+  width: var(--ho-w);
+  margin: 0 auto;
+  padding: 12mm 0;
+  break-before: page;
+  font-size: 10.5pt;
+  line-height: 1.5;
+}
+
+#handout .ho-terms h2 {
+  margin: 0 0 4mm;
+  padding-bottom: 2.5mm;
+  border-bottom: 2px solid var(--primary);
+  color: var(--title);
+  font-size: 14pt;
+}
+
+#handout .ho-terms dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1.5mm 4mm;
+  margin: 0;
+}
+
+#handout .ho-terms dl > div {
+  display: contents;
+}
+
+#handout .ho-terms dt {
+  color: var(--primary-text);
+  font-weight: var(--fw-bold);
+}
+
+#handout .ho-terms dd {
+  margin: 0;
+}

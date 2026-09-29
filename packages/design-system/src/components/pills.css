@@ -1,0 +1,24 @@
+/*
+ * pills: row of short tags, optionally toned.
+ * <div class="pills"><span class="pill tone-ok">…</span></div>
+ * From v9.7 `.pill` (+ .ok/.err/.warn/.navy/.gray). Budget: ≤8, text 16.
+ */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 18px;
+  border: 1px solid var(--tone-line, var(--primary-line));
+  border-radius: var(--radius-pill);
+  background: var(--tone-soft, var(--primary-soft));
+  color: var(--tone-text, var(--primary-text));
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  line-height: 1.35;
+}

@@ -1,0 +1,66 @@
+/*
+ * tiles: a row of icon tiles with a label and an optional value, one per column.
+ * <div class="tiles cols-4"><div class="tile tone-primary" id><i class="icon" data-icon></i>
+ *   <b class="tile-label">…</b><span class="tile-value">…</span></div></div>
+ * From v9.7 `.tile`/`.icon-tile` and V20 `.stat`. Budget: items = cols (2-5), label 14, value 12.
+ */
+.tiles {
+  display: grid;
+  gap: var(--gap-md);
+}
+
+.tiles.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tiles.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tiles.cols-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tiles.cols-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 26px 26px 28px;
+  border: 1px solid var(--card-line);
+  border-top: 5px solid var(--tone, var(--primary));
+  border-radius: var(--radius);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.tile > .icon {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--tone-soft, var(--primary-soft));
+  color: var(--tone-text, var(--primary-text));
+}
+
+.tile-label {
+  color: var(--title);
+  font-size: var(--fs-card);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-tight);
+}
+
+.tile-value {
+  color: var(--tone-text, var(--primary-text));
+  font-family: var(--font-num);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+  font-variant-numeric: tabular-nums;
+}

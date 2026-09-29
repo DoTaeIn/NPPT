@@ -1,1 +1,35 @@
-/* MARCO design system entry (to be authored) */
+/*
+ * MARCO design system entry. Bundled by build.mjs into:
+ *   dist/marco.css          fonts inlined as data URLs
+ *   dist/marco.nofonts.css  without fonts.css (the compiler subsets and inlines fonts itself)
+ * Order: fonts, shared tokens, themes, base scaffold, slide types, blocks, print modes.
+ * Contract: docs/spec/components.md (class names, skeletons, §3 tokens).
+ */
+@import './fonts.css';
+@import './tokens.css';
+@import './themes/v20-violet.css';
+@import './themes/cau-navy.css';
+@import './base.css';
+@import './slides.css';
+@import './components/chain.css';
+@import './components/cards.css';
+@import './components/takeaway.css';
+@import './components/table.css';
+@import './components/compare.css';
+@import './components/callout.css';
+@import './components/steps.css';
+@import './components/bullets.css';
+@import './components/columns.css';
+@import './components/image.css';
+@import './components/video.css';
+@import './components/quote.css';
+@import './components/code.css';
+@import './components/pills.css';
+@import './components/verdict.css';
+@import './components/timeline.css';
+@import './components/tiles.css';
+@import './components/terms.css';
+@import './components/paragraph.css';
+@import './components/widget.css';
+@import './components/html.css';
+@import './print.css';

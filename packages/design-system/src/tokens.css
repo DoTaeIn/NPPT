@@ -1,0 +1,68 @@
+/*
+ * MARCO shared tokens: canvas, type scale, spacing and shape.
+ * Contract: docs/spec/components.md §3. Both themes share these values; colours and
+ * font roles that differ per theme live in themes/*.css.
+ * All sizes are logical canvas px (1920×1080); the runtime scales the whole canvas,
+ * so font sizes never change with the viewport and line breaks stay stable.
+ */
+:root {
+  /* Canvas */
+  --canvas-w: 1920px;
+  --canvas-h: 1080px;
+
+  /* Type scale (components.md §3) */
+  --fs-display: 92px; /* cover-title */
+  --fs-headline: 56px; /* hero-title, divider-title, big quote */
+  --fs-section: 42px; /* section-title */
+  --fs-lead: 30px; /* s-sub, lead paragraph, divider-lead */
+  --fs-card: 30px; /* v-card h3, tile-label */
+  --fs-body: 26px; /* body text, cells, list items */
+  --fs-caption: 22px; /* kicker, captions, eyebrow, footer */
+  --fs-micro: 18px; /* slide-no, pills; nothing on a slide is smaller */
+  --fs-table: 24px; /* v-table, code */
+
+  /* Line heights */
+  --lh-tight: 1.15;
+  --lh-title: 1.25;
+  --lh-snug: 1.35;
+  --lh-body: 1.55;
+
+  /* Weights. Pretendard ships 400/500/600/700; the 700 file also answers 800/900. */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-heavy: 800;
+
+  /* Tracking */
+  --tracking-tight: -0.02em;
+  --tracking-display: -0.035em;
+
+  /* Families. Pretendard (Korean + Inter-derived Latin) first; the fallbacks are the
+     system Korean faces both reference decks listed. --font-num is set per theme. */
+  --font-sans:
+    'Pretendard', 'Pretendard Variable', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic',
+    'Noto Sans CJK KR', system-ui, sans-serif;
+  --font-num: var(--font-sans);
+  --font-mono:
+    'JetBrains Mono', 'D2Coding', 'Cascadia Mono', Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+
+  /* Spacing (components.md §3) */
+  --slide-pad: 96px 112px;
+  --slide-pad-y: 96px;
+  --slide-pad-x: 112px;
+  --gap: 28px; /* s-body and col gap */
+  --gap-lg: 40px;
+  --gap-md: 22px;
+  --gap-sm: 14px;
+  --gap-xs: 8px;
+  --foot-inset: 34px; /* footer and slide-no distance from the slide bottom edge */
+
+  /* Shape */
+  --radius: 20px; /* cards, callouts, figures */
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+  --bar: 6px; /* accent bars on callouts, takeaways, terms */
+}

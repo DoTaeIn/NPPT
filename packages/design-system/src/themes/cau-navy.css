@@ -1,0 +1,266 @@
+/*
+ * Theme: cau-navy (week 5 · 방화벽 운영 및 실무, v9.7 deck, UROCK-based CAU navy).
+ * Palette from reference/decks/week05-styles.css :root (l.15-37, the --u-* tokens) and the
+ * v9.7 component rules (.card, table.u, .callout, .pill, .verdict, .s-q, .hero, .slide.dark).
+ */
+html[data-theme='cau-navy'] {
+  /* ---- v9.7 palette (verbatim names and values) ---- */
+  --u-primary: #628cf5;
+  --u-navy: #201d30;
+  --u-blue-01: #f9fbff;
+  --u-blue-02: #eff4fe;
+  --u-blue-03: #cedbfc;
+  --u-blue-04: #b7cafa;
+  --u-blue-06: #81a3f7;
+  --u-blue-08: #597fdf;
+  --u-blue-09: #4663ae;
+  --u-blue-10: #364d87;
+  --u-blue-12: #1c2846;
+  --u-sec-01: #93b0f8;
+  --u-sec-02: #6de7ef;
+  --u-sec-03: #11bcc7;
+  --u-gray-01: #dddddd;
+  --u-gray-02: #b7b9ba;
+  --u-gray-03: #959799;
+  --u-gray-04: #64686b;
+  --u-gray-05: #464a4e;
+  --u-gray-06: #181d22;
+  --u-gray-08: #111518;
+  --u-bg-00: #ffffff;
+  --u-bg-01: #f9f9f9;
+  --u-bg-02: #e6e6e6;
+  --u-bg-03: #f7f9fe;
+  --u-bg-04: #e6edff;
+  --u-bg-05: #f9fafb;
+  --u-text: #1a1a1a;
+  --u-text-2: #464a4e;
+  --u-text-3: #64686b;
+  --u-brand-text: #4663ae;
+  --u-ok: #04939b;
+  --u-ok-fill: #32d8e3;
+  --u-ok-soft: #dffafb;
+  --u-ok-line: #aef2f6; /* v9.7 used this literal for .card.ok / .verdict.allow borders */
+  --u-err: #ee4c54;
+  --u-err-fill: #ff8484;
+  --u-err-soft: #ffeaea;
+  --u-err-line: #ffb9b9;
+  --u-warn: #b16d00;
+  --u-warn-fill: #ffc60a;
+  --u-warn-soft: #fff4ce;
+  --u-warn-line: #ffe27f;
+  --u-purple: #342f9b;
+  --u-purple-2: #8246af;
+  --u-purple-soft: #e9e3fa;
+  --u-line-00: #f5f5f5;
+  --u-line-01: #ededed;
+  --u-line-02: #e9ebf8;
+  --u-line-03: #93b0f8;
+  --u-sh-02: 0 0 1px 0 rgba(0, 0, 0, 0.02), 0 2px 2px 0 rgba(0, 0, 0, 0.012),
+    0 4px 3px 0 rgba(0, 0, 0, 0.012);
+  --u-sh-03: 0 1px 2px 0 rgba(0, 0, 0, 0.02), 0 4px 4px 0 rgba(0, 0, 0, 0.02),
+    0 10px 6px 0 rgba(0, 0, 0, 0.012);
+  --u-sh-04: 0 2px 2px 0 rgba(15, 15, 15, 0.012), 0 3px 5px 0 rgba(15, 15, 15, 0.012),
+    0 7px 10px 0 rgba(15, 15, 15, 0.02), 0 24px 32px 0 rgba(15, 15, 15, 0.031);
+
+  /* ---- Contract roles (components.md §3) ---- */
+  --primary: var(--u-primary);
+  --navy: var(--u-navy);
+  --text: var(--u-text);
+  --text-strong: var(--u-gray-08);
+  --muted: var(--u-text-3);
+  --faint: var(--u-gray-03);
+  --border: var(--u-line-01);
+  --border-soft: var(--u-line-00);
+  --bg: var(--u-bg-00);
+  --bg-card: var(--u-bg-00);
+  --bg-soft: var(--u-bg-05);
+  --shadow-sm: var(--u-sh-02);
+  --shadow-md: var(--u-sh-03);
+  --shadow-lg: var(--u-sh-04);
+  --title: var(--u-text);
+  --link: var(--u-brand-text);
+  --stage-bg: #e9ebf0; /* v9.7 html,body background */
+  --font-num: 'SpoqaHanSans', var(--font-sans); /* v9.7 --f-num */
+  --body-justify: flex-start; /* v9.7 anchored the body under the title */
+
+  /* ---- Tones: accent · text on light · soft fill · line · text on accent ---- */
+  --primary-text: var(--u-brand-text);
+  --primary-soft: var(--u-bg-04);
+  --primary-line: var(--u-blue-03);
+  --primary-on: #fff;
+  --neutral: var(--u-navy);
+  --neutral-text: var(--u-text-2);
+  --neutral-soft: var(--u-bg-05);
+  --neutral-line: var(--u-line-01);
+  --neutral-on: #fff;
+  --ok: var(--u-ok);
+  --ok-text: var(--u-ok);
+  --ok-soft: var(--u-ok-soft);
+  --ok-line: var(--u-ok-line);
+  --ok-on: #fff;
+  --warn: var(--u-warn-fill);
+  --warn-text: var(--u-warn);
+  --warn-soft: var(--u-warn-soft);
+  --warn-line: var(--u-warn-line);
+  --warn-on: var(--u-text);
+  --danger: var(--u-err);
+  --danger-text: var(--u-err);
+  --danger-soft: var(--u-err-soft);
+  --danger-line: var(--u-err-line);
+  --danger-on: #fff;
+  --info: var(--u-blue-08);
+  --info-text: var(--u-blue-10);
+  --info-soft: var(--u-bg-03);
+  --info-line: var(--u-line-02);
+  --info-on: #fff;
+
+  /* ---- Scaffold ---- */
+  --eyebrow: var(--u-brand-text); /* .s-eyebrow */
+  --eyebrow-rule: none;
+  --eyebrow-rule-display: none;
+  --eyebrow-case: none;
+  --eyebrow-tracking: 0.5px;
+  --eyebrow-weight: var(--fw-semibold);
+  --progress: var(--u-primary); /* .s-progress */
+  --q-bg: var(--u-bg-03); /* .s-q */
+  --q-line: var(--u-line-02);
+  --q-accent: var(--u-brand-text);
+  --term-underline: var(--u-line-03);
+  --on-navy: #fff;
+  --on-navy-muted: var(--u-gray-01);
+  --on-navy-faint: var(--u-gray-02);
+  --on-navy-accent: var(--u-sec-01);
+  --on-navy-rule: rgba(255, 255, 255, 0.16);
+
+  /* ---- Blocks ---- */
+  --card-bg: #fff; /* .card */
+  --card-line: var(--u-line-01);
+  --card-shadow: var(--u-sh-02);
+  --chain-bg: #fff; /* .flow .st */
+  --chain-line: var(--u-line-01);
+  --chain-shadow: var(--u-sh-02);
+  --chain-text: var(--u-text);
+  --chain-no: var(--u-primary);
+  --chain-sub: var(--u-text-2);
+  --chain-arrow: var(--u-gray-02);
+  --takeaway-bg: var(--u-bg-03); /* .callout (single line) */
+  --takeaway-line: var(--u-line-02);
+  --takeaway-accent: var(--u-primary);
+  --takeaway-label: var(--u-brand-text);
+  --takeaway-text: var(--u-text);
+  --table-line: var(--u-line-01); /* table.u */
+  --table-rule: var(--u-line-01);
+  --table-head-bg: var(--u-navy);
+  --table-head-text: #fff;
+  --table-text: var(--u-text);
+  --table-key: var(--u-text);
+  --table-stripe: var(--u-bg-05);
+  --compare-a: var(--u-primary);
+  --compare-a-soft: var(--u-bg-03);
+  --compare-a-line: var(--u-line-02);
+  --compare-b: var(--u-navy);
+  --compare-b-soft: var(--u-bg-05);
+  --compare-b-line: var(--u-line-01);
+  --code-bg: var(--u-gray-06);
+  --code-text: #e8edf6;
+  --code-muted: var(--u-sec-01);
+  --code-rule: rgba(255, 255, 255, 0.12);
+  --chip-bg: var(--u-bg-05); /* code */
+  --chip-text: var(--u-blue-10);
+  --chip-line: var(--u-line-01);
+  --video-bg: linear-gradient(135deg, var(--u-navy) 0%, var(--u-blue-12) 100%);
+
+  /* ---- Slides (v9.7 .slide.dark cover/divider, .hero) ---- */
+  --cover-bg: var(--u-navy);
+  --cover-glow: none;
+  --cover-dots: rgba(147, 176, 248, 0.16);
+  --cover-accent: var(--u-sec-01);
+  --divider-bg: var(--u-navy);
+  --divider-glow: none;
+  --divider-no-fill: linear-gradient(var(--u-primary), var(--u-primary));
+  --divider-accent: var(--u-sec-01);
+  --quote-slide-bg: linear-gradient(115deg, #fff 0%, #fff 38%, var(--u-bg-03) 62%, var(--u-bg-04) 100%);
+  --quote-mark: var(--u-primary);
+
+  /* ---- Logo hooks (v9.7 --logo-navy/--logo-white and --logo-cau/--logo-cau-white) ----
+     The design system ships no logos. A deck sets e.g.
+       html { --logo-left: url(data:…); --logo-left-w: 86px; --logo-right: url(data:…); --logo-right-w: 86px; }
+     and optionally white variants for the dark cover/divider. Widths default to 0 so
+     nothing is reserved when a deck has no logos. */
+  --logo-left: none;
+  --logo-right: none;
+  --logo-left-inverse: var(--logo-left);
+  --logo-right-inverse: var(--logo-right);
+  --logo-left-w: 0px;
+  --logo-right-w: 0px;
+  --logo-h: 24px;
+  --cover-logo-scale: 2.6; /* v9.7: 86×22 in the footer, 236×60 on the cover */
+}
+
+/* v9.7 .cover-badge: the cover kicker is a pill instead of a ruled line. */
+html[data-theme='cau-navy'] .cover-kicker {
+  align-self: flex-start;
+  padding: 10px 22px;
+  border: 1px solid var(--u-primary);
+  border-radius: var(--radius-pill);
+  background: rgba(98, 140, 245, 0.16);
+  font-size: var(--fs-caption);
+  letter-spacing: 0.5px;
+}
+
+html[data-theme='cau-navy'] .cover-kicker::before {
+  display: none;
+}
+
+/* v9.7 .s-foot .brand: course logo before the footer text, university logo after it
+   (.brand::before / i.logo). White variants on the dark slides. */
+html[data-theme='cau-navy'] .slide-tag-bottom::before,
+html[data-theme='cau-navy'] .slide-tag-bottom::after {
+  content: '';
+  display: inline-block;
+  height: var(--logo-h);
+  vertical-align: middle;
+  background: no-repeat center / contain;
+  opacity: 0.85;
+}
+
+html[data-theme='cau-navy'] .slide-tag-bottom::before {
+  width: var(--logo-left-w);
+  margin-right: calc(var(--logo-left-w) * 0.14);
+  background-image: var(--logo-left);
+}
+
+html[data-theme='cau-navy'] .slide-tag-bottom::after {
+  width: var(--logo-right-w);
+  margin-left: calc(var(--logo-right-w) * 0.14);
+  background-image: var(--logo-right);
+}
+
+html[data-theme='cau-navy'] :is(.cover, .divider) .slide-tag-bottom::before {
+  background-image: var(--logo-left-inverse);
+  opacity: 0.6;
+}
+
+html[data-theme='cau-navy'] :is(.cover, .divider) .slide-tag-bottom::after {
+  background-image: var(--logo-right-inverse);
+  opacity: 0.6;
+}
+
+/* v9.7 .cover-logos: both logos side by side above the cover text, separated by a rule. */
+html[data-theme='cau-navy'] .cover-brand::before,
+html[data-theme='cau-navy'] .cover-brand::after {
+  content: '';
+  display: block;
+  height: calc(var(--logo-h) * var(--cover-logo-scale));
+  background: no-repeat left center / contain;
+}
+
+html[data-theme='cau-navy'] .cover-brand::before {
+  width: calc(var(--logo-left-w) * var(--cover-logo-scale));
+  background-image: var(--logo-left-inverse);
+}
+
+html[data-theme='cau-navy'] .cover-brand::after {
+  width: calc(var(--logo-right-w) * var(--cover-logo-scale));
+  background-image: var(--logo-right-inverse);
+}

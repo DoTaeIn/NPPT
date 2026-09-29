@@ -1,0 +1,12 @@
+{
+  "singleQuote": true,
+  "printWidth": 100,
+  "trailingComma": "all",
+  "semi": true,
+  "overrides": [
+    {
+      "files": ["*.marco.md"],
+      "options": { "requirePragma": true }
+    }
+  ]
+}

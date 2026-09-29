@@ -1,0 +1,72 @@
+/*
+ * timeline: horizontal sequence of dated events.
+ * <ol class="timeline"><li id><time>시점</time><b>제목</b><span>설명</span></li></ol>
+ * Replaces V20 `.jit-track` (week03-styles.css l.947). Budget: ≤6, at 12, title 20, body 50.
+ */
+.timeline {
+  --dot: 22px;
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: var(--gap-md);
+}
+
+.timeline > li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding-top: calc(var(--dot) + 20px);
+}
+
+/* Dot */
+.timeline > li::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: var(--dot);
+  height: var(--dot);
+  border: 5px solid var(--primary);
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+/* Rail to the next dot */
+.timeline > li::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--dot) / 2 - 2px);
+  right: calc(var(--gap-md) * -1);
+  left: var(--dot);
+  height: 4px;
+  border-radius: 2px;
+  background: var(--primary-line);
+}
+
+.timeline > li:last-child::after {
+  right: 0;
+  background: linear-gradient(90deg, var(--primary-line), transparent);
+}
+
+.timeline time {
+  color: var(--primary-text);
+  font-family: var(--font-num);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+}
+
+.timeline b {
+  color: var(--title);
+  font-size: var(--fs-body);
+  line-height: var(--lh-snug);
+}
+
+.timeline span {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.5;
+}

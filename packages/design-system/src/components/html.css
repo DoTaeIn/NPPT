@@ -1,0 +1,23 @@
+/*
+ * html: author HTML emitted verbatim (`:::html`). Only sensible defaults for plain
+ * elements are restored here; the author's own classes carry the design.
+ */
+[data-block='html'] {
+  min-width: 0;
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+[data-block='html'] :where(ul) {
+  padding-left: 1.2em;
+  list-style: disc;
+}
+
+[data-block='html'] :where(ol) {
+  padding-left: 1.4em;
+  list-style: decimal;
+}
+
+[data-block='html'] :where(p + p) {
+  margin-top: 0.6em;
+}

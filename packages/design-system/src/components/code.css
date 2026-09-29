@@ -1,0 +1,44 @@
+/*
+ * code: code block with an optional title bar. Inline `code` chips are in base.css.
+ * <figure class="code"><figcaption>title</figcaption><pre><code class="language-bash">…</code></pre></figure>
+ * From V20 `pre` (week03-styles.css l.263). Budget: ≤12 lines, 80 columns.
+ * Long lines wrap rather than scroll, so nothing is hidden on a projected slide.
+ */
+.code {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--code-bg);
+  box-shadow: inset 0 0 0 1px var(--code-rule);
+  color: var(--code-text);
+}
+
+.code > figcaption {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--code-rule);
+  color: var(--code-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+
+.code > pre {
+  padding: 20px 26px 22px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-table);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  tab-size: 4;
+}
+
+.code > pre > code,
+.code code[class*='language-'] {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}

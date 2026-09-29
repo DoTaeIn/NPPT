@@ -1,0 +1,82 @@
+/*
+ * callout: titled note box, kind = info | warn | ok | danger.
+ * <aside class="callout callout-warn"><b class="callout-title">제목</b><p>…</p></aside>
+ * From v9.7 `.callout` (week05-styles.css) and V20 `.notice`/`.help-card`.
+ * Budget: title 20, body 160.
+ */
+.callout {
+  --c: var(--info);
+  --c-text: var(--info-text);
+  --c-soft: var(--info-soft);
+  --c-line: var(--info-line);
+  --c-on: var(--info-on);
+  --c-glyph: 'i';
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 6px 18px;
+  padding: 20px 28px 22px 22px;
+  border: 1px solid var(--c-line);
+  border-left: var(--bar) solid var(--c);
+  border-radius: var(--radius-md);
+  background: var(--c-soft);
+  font-size: var(--fs-body);
+  line-height: 1.55;
+}
+
+.callout-warn {
+  --c: var(--warn);
+  --c-text: var(--warn-text);
+  --c-soft: var(--warn-soft);
+  --c-line: var(--warn-line);
+  --c-on: var(--warn-on);
+  --c-glyph: '!';
+}
+
+.callout-ok {
+  --c: var(--ok);
+  --c-text: var(--ok-text);
+  --c-soft: var(--ok-soft);
+  --c-line: var(--ok-line);
+  --c-on: var(--ok-on);
+  --c-glyph: '✓';
+}
+
+.callout-danger {
+  --c: var(--danger);
+  --c-text: var(--danger-text);
+  --c-soft: var(--danger-soft);
+  --c-line: var(--danger-line);
+  --c-on: var(--danger-on);
+  --c-glyph: '×';
+}
+
+.callout-info {
+  --c-glyph: 'i';
+}
+
+.callout::before {
+  content: var(--c-glyph);
+  display: grid;
+  grid-row: 1 / span 2;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--c);
+  color: var(--c-on);
+  font-size: 22px;
+  font-weight: var(--fw-heavy);
+  line-height: 1;
+}
+
+.callout-title {
+  grid-column: 2;
+  color: var(--c-text);
+  font-weight: var(--fw-bold);
+}
+
+.callout > p {
+  grid-column: 2;
+  color: var(--text);
+}

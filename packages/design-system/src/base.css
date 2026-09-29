@@ -1,0 +1,400 @@
+/*
+ * Base: reset, stage/canvas, the slide scaffold (components.md §1 "content"), footer,
+ * inline elements and tone classes. The runtime owns its UI chrome CSS (#nav-dock,
+ * #toc-sidebar, #notes-panel, …); nothing here styles those ids.
+ */
+
+/* ============ Reset ============ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--stage-bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* A deck is a fixed stage; pages without #stage (gallery, handout) scroll normally. */
+body:has(> #stage) {
+  overflow: hidden;
+}
+
+/* Zero-specificity reset for slide content so every component rule wins over it. */
+.slide :where(h1, h2, h3, h4, h5, h6, p, ol, ul, li, dl, dt, dd, figure, figcaption, blockquote, pre, table, caption) {
+  margin: 0;
+  padding: 0;
+}
+
+.slide :where(ol, ul) {
+  list-style: none;
+}
+
+.slide :where(h1, h2, h3, h4, h5, h6) {
+  font-size: inherit;
+  font-weight: var(--fw-bold);
+}
+
+.slide :where(b, strong) {
+  font-weight: var(--fw-bold);
+}
+
+/* Korean has no true italic; emphasis is colour + weight (V20 `.cover em`). */
+.slide :where(em) {
+  font-style: normal;
+  font-weight: var(--fw-semibold);
+  color: var(--primary-text);
+}
+
+.slide :where(a) {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.slide :where(img, svg, video, canvas) {
+  max-width: 100%;
+}
+
+.slide :where(button) {
+  font: inherit;
+  color: inherit;
+}
+
+/* ============ Stage and canvas ============ */
+/* The runtime sets #canvas left/top/transform (scale) inline; see runtime.md §2. */
+#stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--stage-bg);
+}
+
+#canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--canvas-w);
+  height: var(--canvas-h);
+  overflow: hidden;
+  transform-origin: 0 0;
+  background: var(--bg);
+}
+
+/* ============ Slide ============ */
+section.slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  width: var(--canvas-w);
+  height: var(--canvas-h);
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-body);
+  letter-spacing: -0.01em;
+  /* Korean breaks between words (both decks); a word longer than its box still breaks. */
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+section.slide.active {
+  display: block;
+}
+
+/* V20 `.slide-wrapper` + `.slide` padding, now a single padded flex column. */
+.slide-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: var(--slide-pad);
+}
+
+/* ============ Head: eyebrow · title · sub · question ============ */
+.s-head {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 36px;
+}
+
+/* V20 `.eyebrow` (rule + uppercase) / v9.7 `.s-eyebrow` (plain), switched by theme tokens. */
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  color: var(--eyebrow);
+  font-size: var(--fs-caption);
+  font-weight: var(--eyebrow-weight);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--eyebrow-tracking);
+  text-transform: var(--eyebrow-case);
+}
+
+.eyebrow::before {
+  content: '';
+  display: var(--eyebrow-rule-display);
+  flex: none;
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--eyebrow-rule);
+}
+
+.section-title {
+  color: var(--title);
+  font-size: var(--fs-section);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-title);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+
+.s-sub {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: var(--fs-lead);
+  line-height: 1.45;
+}
+
+/* v9.7 `.s-q .q-tag .q-text` guiding-question strip, placed under the title. */
+.s-q {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-top: 20px;
+  padding: 12px 24px;
+  border: 1px solid var(--q-line);
+  border-radius: 12px;
+  background: var(--q-bg);
+  font-size: var(--fs-caption);
+  line-height: 1.45;
+}
+
+.q-tag {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  color: var(--q-accent);
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+}
+
+.q-tag::before {
+  content: '?';
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--q-accent);
+  color: var(--bg);
+  font-size: 17px;
+  line-height: 1;
+  align-self: center;
+}
+
+.q-text {
+  min-width: 0;
+  color: var(--text);
+  font-weight: var(--fw-semibold);
+}
+
+/* ============ Body ============ */
+.s-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: var(--body-justify, flex-start);
+  gap: var(--gap);
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Blocks keep their natural height (V20 `.v20-slide .s-body>*`); figures and widgets opt in to shrink/grow. */
+.s-body > *,
+.col > * {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* layout=wide: the body bleeds halfway into the side padding (1808px instead of 1696px). */
+.s-body.layout-wide {
+  margin-inline: calc(var(--slide-pad-x) / -2);
+}
+
+/* ============ Footer, slide number, progress ============ */
+/* V20 `.slide-tag-bottom` + `.source-link` (week03-styles.css l.78, l.943, l.957). */
+.slide-tag-bottom {
+  position: absolute;
+  right: var(--slide-pad-x);
+  bottom: var(--foot-inset);
+  z-index: 2;
+  max-width: 1400px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--link);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+/* Appended by the runtime to the active slide (runtime.md §2). */
+.slide-no {
+  position: absolute;
+  left: var(--slide-pad-x);
+  bottom: var(--foot-inset);
+  z-index: 2;
+  color: var(--muted);
+  font-family: var(--font-num);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  letter-spacing: 1.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.slide-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  height: 5px;
+  background: var(--progress);
+  transition: width 0.35s ease;
+}
+
+/* ============ Inline elements ============ */
+/* Abbreviation with a native tooltip (runtime.md §6); V20 `.abbr`. */
+abbr.term {
+  border-bottom: 2px dotted var(--term-underline);
+  text-decoration: none;
+  cursor: help;
+}
+
+/* Inline `code` chip (v9.7 `code`, V20 `td code`); code blocks reset it in code.css. */
+.slide :not(pre) > code {
+  padding: 0.06em 0.36em;
+  border: 1px solid var(--chip-line);
+  border-radius: 6px;
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  font-weight: var(--fw-medium);
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Lucide icon inlined by the compiler: <i class="icon" data-icon="…"><svg …></i>. */
+.icon {
+  display: inline-block;
+  flex: none;
+  width: 1em;
+  height: 1em;
+  font-style: normal;
+  line-height: 0;
+  vertical-align: -0.14em;
+}
+
+.icon > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.icon:empty {
+  display: none;
+}
+
+/* ============ Tones ============ */
+/* A tone class sets --tone-* for the element; each block decides how to use them
+   (fill, border, text). Blocks fall back to their own default when no tone is set. */
+.tone-neutral {
+  --tone: var(--neutral);
+  --tone-text: var(--neutral-text);
+  --tone-soft: var(--neutral-soft);
+  --tone-line: var(--neutral-line);
+  --tone-on: var(--neutral-on);
+}
+
+.tone-primary {
+  --tone: var(--primary);
+  --tone-text: var(--primary-text);
+  --tone-soft: var(--primary-soft);
+  --tone-line: var(--primary-line);
+  --tone-on: var(--primary-on);
+}
+
+.tone-ok {
+  --tone: var(--ok);
+  --tone-text: var(--ok-text);
+  --tone-soft: var(--ok-soft);
+  --tone-line: var(--ok-line);
+  --tone-on: var(--ok-on);
+}
+
+.tone-warn {
+  --tone: var(--warn);
+  --tone-text: var(--warn-text);
+  --tone-soft: var(--warn-soft);
+  --tone-line: var(--warn-line);
+  --tone-on: var(--warn-on);
+}
+
+.tone-danger {
+  --tone: var(--danger);
+  --tone-text: var(--danger-text);
+  --tone-soft: var(--danger-soft);
+  --tone-line: var(--danger-line);
+  --tone-on: var(--danger-on);
+}
+
+.tone-info {
+  --tone: var(--info);
+  --tone-text: var(--info-text);
+  --tone-soft: var(--info-soft);
+  --tone-line: var(--info-line);
+  --tone-on: var(--info-on);
+}

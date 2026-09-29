@@ -1,0 +1,329 @@
+/*
+ * Slide scaffolds other than "content": cover, divider, quote, hero (+ alert),
+ * references and raw (components.md §1).
+ */
+
+/* ============ Shared: dark slides (cover, divider) ============ */
+/* V20 `.cover`/`.divider` gradients (week03-styles.css l.81-121); v9.7 `.slide.dark` (flat navy). */
+.slide:is(.cover, .divider) {
+  color: var(--on-navy);
+}
+
+.slide:is(.cover, .divider)::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.slide:is(.cover, .divider) :is(.slide-tag-bottom, .slide-no) {
+  color: var(--on-navy-faint);
+}
+
+.slide:is(.cover, .divider) .source-link {
+  color: var(--on-navy-muted);
+}
+
+.slide:is(.cover, .divider) :where(em) {
+  color: var(--on-navy-accent);
+}
+
+/* ============ Cover ============ */
+.slide.cover {
+  background: var(--cover-bg);
+}
+
+.slide.cover::before {
+  background: var(--cover-glow);
+}
+
+/* V20 `.cover .net-bg` dot field on the right half. */
+.slide.cover::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 100%;
+  background-image: radial-gradient(circle at 1px 1px, var(--cover-dots) 1px, transparent 0);
+  background-size: 22px 22px;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(ellipse at 70% 50%, #000 0%, transparent 65%);
+  mask-image: radial-gradient(ellipse at 70% 50%, #000 0%, transparent 65%);
+}
+
+.cover .slide-wrapper {
+  justify-content: center;
+  padding: var(--slide-pad-y) 150px;
+}
+
+.cover-kicker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+  color: var(--cover-accent);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  letter-spacing: 0.12em;
+}
+
+.cover-kicker::before {
+  content: '';
+  flex: none;
+  width: 40px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.cover-title {
+  max-width: 1500px;
+  color: var(--on-navy);
+  font-size: var(--fs-display);
+  font-weight: var(--fw-heavy);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
+}
+
+.cover-sub {
+  max-width: 1300px;
+  margin-top: 32px;
+  color: var(--on-navy-muted);
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+}
+
+.cover-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 48px;
+  max-width: 1200px;
+  margin-top: 64px;
+  padding-top: 28px;
+  border-top: 1px solid var(--on-navy-rule);
+  color: var(--on-navy-faint);
+  font-size: var(--fs-body);
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+}
+
+/* Logos come from the theme (cau-navy: --logo-left/--logo-right); empty otherwise. */
+.cover-brand {
+  position: absolute;
+  top: 80px;
+  left: 150px;
+  display: flex;
+  align-items: center;
+  gap: 36px;
+}
+
+/* ============ Divider ============ */
+.slide.divider {
+  background: var(--divider-bg);
+}
+
+.slide.divider::before {
+  background: var(--divider-glow);
+}
+
+/* Number on the left, title and lead on the right (V20 `.div-content`, v9.7 `.div-wrap`). */
+.divider .slide-wrapper {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 1fr auto auto 1fr;
+  column-gap: 80px;
+  padding: var(--slide-pad-y) 160px;
+}
+
+.divider-no {
+  grid-row: 1 / -1;
+  align-self: center;
+  background: var(--divider-no-fill);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: var(--font-num);
+  font-size: 240px;
+  font-weight: var(--fw-heavy);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.divider-title {
+  grid-column: 2;
+  grid-row: 2;
+  color: var(--on-navy);
+  font-size: var(--fs-headline);
+  font-weight: var(--fw-heavy);
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.divider-lead {
+  grid-column: 2;
+  grid-row: 3;
+  max-width: 1100px;
+  margin-top: 24px;
+  color: var(--on-navy-muted);
+  font-size: var(--fs-lead);
+  line-height: 1.6;
+}
+
+.divider-lead :where(b, strong) {
+  color: var(--divider-accent);
+}
+
+/* ============ Quote slide ============ */
+/* V20 final `.v20-slide.quote-slide` (light, left-aligned) with the big quote block. */
+.slide.quote-slide {
+  background: var(--quote-slide-bg);
+}
+
+.quote-slide .slide-wrapper {
+  justify-content: center;
+  padding-inline: 190px;
+}
+
+.quote-slide .eyebrow {
+  margin-bottom: 40px;
+}
+
+/* ============ Hero (+ alert) ============ */
+/* v9.7 `.hero`: light diagonal wash, a 14px accent bar on the left edge, underlined title. */
+.slide.hero {
+  --hero-accent: var(--primary);
+  --hero-accent-2: var(--primary-text);
+  --hero-tint: var(--primary-soft);
+  background: linear-gradient(
+    115deg,
+    var(--bg) 0%,
+    var(--bg) 38%,
+    var(--bg-soft) 62%,
+    var(--hero-tint) 100%
+  );
+}
+
+.slide.hero.alert {
+  --hero-accent: var(--danger);
+  --hero-accent-2: var(--danger-text);
+  --hero-tint: var(--danger-soft);
+}
+
+.slide.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 14px;
+  background: linear-gradient(180deg, var(--hero-accent), var(--hero-accent-2));
+}
+
+.hero .slide-wrapper {
+  justify-content: center;
+}
+
+.hero .s-head {
+  max-width: 1480px;
+  margin-bottom: 44px;
+}
+
+.hero .eyebrow {
+  color: var(--hero-accent-2);
+}
+
+.hero-title {
+  color: var(--title);
+  font-size: var(--fs-headline);
+  font-weight: var(--fw-heavy);
+  line-height: 1.22;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.hero-title::after {
+  content: '';
+  display: block;
+  width: 120px;
+  height: 8px;
+  margin-top: 26px;
+  border-radius: 4px;
+  background: var(--hero-accent);
+}
+
+.hero .s-sub {
+  margin-top: 26px;
+  color: var(--text);
+}
+
+.hero .s-q {
+  align-self: flex-start;
+  margin-top: 30px;
+  padding: 16px 26px;
+  border-color: var(--q-line);
+  background: var(--bg);
+  box-shadow: var(--shadow-md);
+}
+
+.hero.alert .s-q {
+  --q-accent: var(--danger-text);
+}
+
+.hero .s-body {
+  flex: 0 1 auto;
+}
+
+/* ============ References ============ */
+/* Flat, two-column list of refs (V20 `.final-references` list items). */
+.reference-list {
+  columns: 2;
+  column-gap: 56px;
+  font-size: var(--fs-caption);
+  line-height: 1.4;
+}
+
+.reference-list > li {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  column-gap: 14px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border-soft);
+  break-inside: avoid;
+}
+
+.r-no {
+  grid-row: span 2;
+  align-self: start;
+  margin-top: 2px;
+  padding: 1px 0;
+  border-radius: 8px;
+  background: var(--primary-soft);
+  color: var(--primary-text);
+  font-family: var(--font-num);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-bold);
+  text-align: center;
+}
+
+.slide .r-title {
+  color: var(--title);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+}
+
+.r-snippet {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: var(--fs-micro);
+  line-height: 1.4;
+}
+
+/* ============ Raw ============ */
+/* Author HTML verbatim (it brings its own .slide-wrapper); only the scaffold applies. */
+.slide.raw {
+  background: var(--bg);
+}

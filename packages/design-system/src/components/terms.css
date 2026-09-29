@@ -1,0 +1,51 @@
+/*
+ * terms: abbreviation glossary.
+ * <dl class="terms"><div class="term" id><dt>LPR</dt><dd><i class="term-en">…</i><span class="term-ko">…</span></dd></div></dl>
+ * Ported from V20 `.term-strip` (week03-styles.css l.957). Budget: ≤6, abbr 8, en 40, ko 24.
+ */
+.terms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 500px), 1fr));
+  gap: 14px 18px;
+}
+
+.term {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 20px;
+  min-width: 0;
+  padding: 14px 22px;
+  border-left: var(--bar) solid var(--primary-line);
+  border-radius: 0 12px 12px 0;
+  background: var(--bg-soft);
+}
+
+.term > dt {
+  color: var(--primary-text);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-heavy);
+  line-height: var(--lh-snug);
+  letter-spacing: 0.01em;
+}
+
+.term > dd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.term-en {
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.term-ko {
+  color: var(--text);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  line-height: 1.35;
+}

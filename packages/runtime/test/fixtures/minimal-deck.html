@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ko" data-theme="v20-violet" data-edition="instructor">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3주차 · 물리보안·출입통제 IAM</title>
+<!--
+  Built with MARCO Engine v0.1.0 (https://github.com/DoTaeIn/NPPT)
+  Powered by MARCO — Created by DoTaeIn, Original project: https://github.com/DoTaeIn/Marco
+  Engine: MARCO Engine License 1.0. Lecture content © its author. Third-party notices: see NOTICE in the engine repository.
+-->
+<style>
+/* Minimal stand-in for the design system (dist/marco.css) so the fixture has a visible 1920×1080 layout. */
+:root{--primary:#6B4BFF;--accent-blue:#3E9CF5;--navy:#1A1B4D;--text:#1C1C2E;--muted:#566176;--border:#E8E5F5;--bg-card:#F7F5FD}
+body{margin:0;font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;color:var(--text)}
+.slide{display:flex;flex-direction:column;background:#fff}
+.slide-wrapper{flex:1;display:flex;flex-direction:column;gap:28px;padding:96px 112px}
+.eyebrow{font-size:22px;font-weight:700;letter-spacing:2px;color:var(--primary)}
+.section-title{margin:0;font-size:42px;line-height:1.3;color:var(--navy)}
+.s-sub{margin:0;font-size:30px;color:var(--muted)}
+.s-body{display:flex;flex-direction:column;gap:28px;font-size:26px}
+.decision-chain{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.decision-chain article{display:flex;flex-direction:column;gap:6px;padding:20px 24px;border:1px solid var(--border);border-radius:20px;background:var(--bg-card)}
+.decision-chain span{font-weight:800;color:var(--primary)}
+.decision-chain small{font-size:22px;color:var(--muted)}
+.v-cards{display:grid;gap:24px}
+.v-cards.cols-2{grid-template-columns:1fr 1fr}
+.v-card{padding:24px 28px;border:1px solid var(--border);border-radius:20px}
+.v-card h3{margin:6px 0;font-size:30px;color:var(--navy)}
+.v-card p{margin:0}
+.v-kicker{font-size:22px;font-weight:700;color:var(--primary)}
+abbr.term{text-decoration:underline dotted}
+.figure{display:flex;flex-direction:column;gap:12px;margin:0}
+.figure img{width:auto;max-width:100%;height:var(--h,360px);border-radius:20px;image-rendering:pixelated}
+.figure figcaption,.media-caption{margin:0;font-size:22px;color:var(--muted)}
+.source-link,.image-open,.video-open{padding:4px 14px;border:1px solid var(--border);border-radius:999px;background:#fff;color:var(--primary);font:inherit;cursor:pointer}
+.slide-tag-bottom{position:absolute;right:112px;bottom:34px;font-size:22px;color:var(--muted)}
+.cover .slide-wrapper{justify-content:center;background:linear-gradient(135deg,#FBFAFF,#EFEAFF)}
+.cover-kicker{font-size:26px;font-weight:700;color:var(--primary)}
+.cover-title{margin:0;font-size:92px;color:var(--navy)}
+.cover-sub{margin:0;font-size:30px;color:var(--muted)}
+.cover-meta{display:flex;gap:24px;font-size:22px;color:var(--muted)}
+.divider .slide-wrapper{justify-content:center;background:var(--navy);color:#fff}
+.divider-no{font-size:120px;font-weight:800;color:var(--accent-blue)}
+.divider-title{margin:0;font-size:56px}
+.divider-lead{margin:0;font-size:30px;opacity:.8}
+.reference-list{display:flex;flex-direction:column;gap:14px;margin:0;padding:0;list-style:none;font-size:24px}
+.reference-list li{display:flex;align-items:baseline;gap:16px}
+.r-no{font-weight:800;color:var(--primary)}
+.r-snippet{font-size:20px;color:var(--muted)}
+</style>
+</head>
+<body>
+  <div id="stage"><div id="canvas">
+    <section class="slide cover" id="s-01" data-type="cover" data-title="물리보안 · 출입통제 IAM" data-group="표지 · 도입">
+      <div class="slide-wrapper">
+        <div class="cover-kicker">보안시스템 운영 및 활용 · 3주차</div>
+        <h1 class="cover-title">물리보안 · 출입통제 IAM</h1>
+        <p class="cover-sub">출입통제의 기술과 운영을 함께 다룬다</p>
+        <div class="cover-meta"><span>2026-09-29</span><span>홍길동</span></div>
+        <div class="cover-brand"></div>
+      </div>
+    </section>
+    <section class="slide" id="s-02" data-type="content" data-title="카드 인식, 허용, 문 열림, 사람 통과는 다른 단계다" data-tag="기본 원리" data-group="1부 · 기본 원리">
+      <div class="slide-wrapper">
+        <header class="s-head">
+          <div class="eyebrow">기본 원리</div>
+          <h2 class="section-title">카드 인식, 허용, 문 열림, 사람 통과는 다른 단계다</h2>
+          <p class="s-sub">출입 한 번에도 판단 지점이 네 곳 있다</p>
+        </header>
+        <div class="s-body">
+          <div class="decision-chain" id="s-02-b1" data-block="chain">
+            <article id="s-02-b1-i1"><span>01</span><b>카드 인식</b><small>리더가 식별자를 읽는다</small></article>
+            <article id="s-02-b1-i2"><span>02</span><b>허용 판단</b><small>정책이 시간과 구역을 본다</small></article>
+            <article id="s-02-b1-i3"><span>03</span><b>문 열림</b><small>잠금장치가 풀린다</small></article>
+            <article id="s-02-b1-i4"><span>04</span><b>사람 통과</b><small>한 사람만 지나갔는가</small></article>
+          </div>
+          <div class="v-cards cols-2" id="s-02-b2" data-block="cards">
+            <article class="v-card tone-primary" id="s-02-b2-i1"><span class="v-kicker">인증</span><h3>누구인가</h3><p><abbr class="term" title="Physical Access Control System 물리 출입통제 시스템">PACS</abbr>가 카드와 사람을 연결한다.</p></article>
+            <article class="v-card tone-ok" id="s-02-b2-i2"><span class="v-kicker">인가</span><h3>들어가도 되는가</h3><p><abbr class="term" title="Role-Based Access Control 역할 기반 접근통제">RBAC</abbr> 정책이 시간과 구역을 판단한다.</p></article>
+          </div>
+        </div>
+      </div>
+      <footer class="slide-tag-bottom">
+        <button class="source-link" data-source="s-02">참고 출처 S04 S13 ↗</button> · 보안시스템 운영 및 활용 · 3주차
+      </footer>
+    </section>
+    <section class="slide" id="s-03" data-type="content" data-title="사옥의 3선 방어 개념도" data-tag="현장 구성" data-group="1부 · 기본 원리">
+      <div class="slide-wrapper">
+        <header class="s-head">
+          <div class="eyebrow">현장 구성</div>
+          <h2 class="section-title">사옥의 3선 방어 개념도</h2>
+        </header>
+        <div class="s-body">
+          <figure class="figure fit-contain" data-asset="campus" id="s-03-b1" data-block="image" style="--h:360px"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAJCAIAAAC0SDtlAAABMElEQVR42m3LO6uoIAAA4PPLAkEQOgRCGISBIhhCS1NLU0uLk4uTf9MHPvC23/Pt38/x2xXuknRBO+N92/t69OXs89Xx3aenj29HukPTge2D6z/Hb1O4SdIEbYy3bW/r0ZazzVfDd5ueNr4N6QZNA7YNrn2hKlwlqYJWxuu21/Woy1nnq+K7Tk8d34p0haYCWwdXv1AULpIUQQvjpf9nfAvSBZoCbBlc+UJWOEuSBc2M579CRjpDk4HNg8tfSAonSZKgifH0V0hIJ2gSsGlw6QtR4ShJFDQyHrc9rkdczjhfEd9xeuL4RqQjNBHYOLj4haBwkCQIGhgP2x7WIyxnmK+A7zA9YXwD0gGaAGwYXPiCV9hL4gX1jPtt9+vhl9PPl8e3nx4/vh5pD40H1g/O/wMVLxL82CHwXQAAAABJRU5ErkJggg==" alt="사옥 외곽, 로비, 핵심구역의 3선 방어 개념도" width="16" height="9"><figcaption>외곽 · 로비 · 핵심구역 <button class="image-open" data-asset="campus">이미지 확대 ↗</button></figcaption></figure>
+          <div class="video-reference" id="s-03-b2" data-block="video"><button class="video-open" data-video="tTAISQqmxWQ" data-start="441"><i class="icon" data-icon="play"></i> 영상 · 문틈·손잡이 우회 시연</button><p class="media-caption">DEF CON 33 · 07:21부터</p></div>
+          <div class="widget" id="s-03-b3" data-block="widget" data-widget="abac" data-params='{"conditions":4}'></div>
+        </div>
+      </div>
+      <footer class="slide-tag-bottom">
+        <button class="source-link" data-source="s-03">참고 출처 S30 ↗</button> · 보안시스템 운영 및 활용 · 3주차
+      </footer>
+    </section>
+    <section class="slide divider" id="s-04" data-type="divider" data-title="인증과 하드웨어" data-group="2부 · 운영">
+      <div class="slide-wrapper">
+        <div class="divider-no">02</div>
+        <h2 class="divider-title">인증과 하드웨어</h2>
+        <p class="divider-lead">문 앞과 문 뒤를 함께 본다.</p>
+      </div>
+    </section>
+    <section class="slide references" id="s-05" data-type="references" data-title="참고 자료 · 공식 문서와 미디어" data-group="2부 · 운영">
+      <div class="slide-wrapper">
+        <header class="s-head"><div class="eyebrow">참고 자료</div><h2 class="section-title">참고 자료 · 공식 문서와 미디어</h2></header>
+        <ol class="reference-list">
+          <li id="s-05-r1"><span class="r-no">S04</span><a class="r-title" href="https://csrc.nist.gov/pubs/sp/800/116/r1/final" target="_blank" rel="noopener noreferrer">NIST PACS · PIV</a><span class="r-snippet">PIV 기반 물리 출입통제 지침</span></li>
+          <li id="s-05-r2"><span class="r-no">S13</span><a class="r-title" href="https://help.axis.com/en-us/axis-camera-station-secure-entry" target="_blank" rel="noopener noreferrer">Axis Secure Entry</a><span class="r-snippet">출입통제 제품 문서</span></li>
+          <li id="s-05-r3"><span class="r-no">S30</span><a class="r-title" href="https://csrc.nist.gov/pubs/sp/800/162/upd2/final" target="_blank" rel="noopener noreferrer">NIST ABAC</a><span class="r-snippet">속성 기반 접근통제 지침</span></li>
+        </ol>
+      </div>
+      <footer class="slide-tag-bottom">보안시스템 운영 및 활용 · 3주차</footer>
+    </section>
+  </div></div>
+  <script id="lecture-data" type="application/json">{
+    "ir": "0.1",
+    "engine": { "name": "MARCO Engine", "version": "0.1.0" },
+    "meta": { "title": "물리보안 · 출입통제 IAM", "course": "보안시스템 운영 및 활용", "week": 3, "date": "2026-09-29", "presenter": "홍길동", "lang": "ko", "theme": "v20-violet", "edition": "instructor", "duration": 10 },
+    "refs": [
+      { "id": "S04", "title": "NIST PACS · PIV", "url": "https://csrc.nist.gov/pubs/sp/800/116/r1/final", "kind": "standard" },
+      { "id": "S13", "title": "Axis Secure Entry", "url": "https://help.axis.com/en-us/axis-camera-station-secure-entry", "kind": "vendor" },
+      { "id": "S30", "title": "NIST ABAC", "url": "https://csrc.nist.gov/pubs/sp/800/162/upd2/final", "kind": "standard", "note": "SP 800-162" }
+    ],
+    "videos": [{ "id": "tTAISQqmxWQ", "title": "Intro to Physical Security Bypass", "start": 441, "credit": "DEFCONConference · DEF CON 33" }],
+    "assets": { "campus": { "title": "사옥의 3선 방어 개념도", "credit": "생성 개념도 · 실제 시공 도면이 아님", "source": "https://example.org/campus", "alt": "사옥 외곽, 로비, 핵심구역의 3선 방어 개념도" } },
+    "slideRefs": { "s-02": ["S04", "S13"], "s-03": ["S30"] },
+    "terms": {
+      "PACS": "Physical Access Control System 물리 출입통제 시스템",
+      "RBAC": "Role-Based Access Control 역할 기반 접근통제",
+      "ABAC": "Attribute-Based Access Control 속성 기반 접근통제"
+    },
+    "notes": {
+      "s-01": { "time": { "minutes": 1, "from": "00:00", "to": "01:00" }, "cues": [
+        { "k": "SCREEN", "t": "표지. 과목명과 주차, 오늘의 주제." },
+        { "k": "SAY", "t": "오늘은 출입통제를 기술과 운영 두 측면에서 봅니다.", "id": "p01-c001" }
+      ] },
+      "s-02": { "time": { "minutes": 2.5, "from": "01:00", "to": "03:30" }, "cues": [
+        { "k": "SCREEN", "t": "위 네 단계 체인, 아래 인증·인가 카드 두 장." },
+        { "k": "SAY", "t": "카드를 댔다고 문이 열리는 것은 아닙니다. **네 단계**를 나눠 봅시다.", "id": "p02-c001" },
+        { "k": "LOOK", "t": "체인의 01부터 04까지 차례로 짚는다.", "id": "p02-c002", "focus": { "targets": ["s-02-b1"] } },
+        { "k": "ASK", "t": "이 네 단계 중 정책이 개입하는 단계는 어디일까요?", "id": "p02-c003", "wait": "10초" },
+        { "k": "SQ", "t": "카드 인식과 허용은 같은 것 아닌가요?", "id": "p02-c004" },
+        { "k": "SA", "t": "인식은 식별자 읽기, 허용은 정책 판단입니다.", "id": "p02-c005" },
+        { "k": "NEXT", "t": "다음 슬라이드에서 현장 배치를 본다.", "id": "p02-c006" }
+      ] },
+      "s-03": { "time": { "minutes": 3, "from": "03:30", "to": "06:30" }, "cues": [
+        { "k": "DO", "t": "이미지 확대 버튼을 눌러 개념도를 크게 띄운다.", "id": "p03-c001" },
+        { "k": "HOP", "t": "영상 버튼으로 이동", "id": "p03-c002", "focus": { "targets": ["s-03-b2"] } },
+        { "k": "TIP", "t": "영상은 인터넷 연결이 필요하다. 수업 전에 미리 확인한다.", "id": "p03-c003" },
+        { "k": "WAIT", "t": "영상 재생 5분", "id": "p03-c004" },
+        { "k": "VERIFY", "t": "개념도는 실제 시공 도면이 아니다.", "marker": "검증 보충", "id": "p03-c005" },
+        { "k": "MEMO", "t": "ABAC 위젯은 Phase 3 플러그인으로 연결된다.", "id": "p03-c006" }
+      ] },
+      "s-04": { "time": { "minutes": 0.5 }, "cues": [{ "k": "NEXT", "t": "2부로 넘어간다." }] }
+    }
+  }</script>
+  <script src="../../dist/marco-runtime.js"></script>
+</body>
+</html>

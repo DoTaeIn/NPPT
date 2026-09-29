@@ -1,0 +1,62 @@
+/*
+ * compare: two-sided comparison with a row label column.
+ * <div class="compare"><div class="compare-head"><span class="compare-label"></span><h3>left</h3><h3>right</h3></div>
+ *   <div class="compare-row" id><span class="compare-label">항목</span>
+ *   <div class="compare-cell left">…</div><div class="compare-cell right">…</div></div>…</div>
+ * Replaces V20 `.compare-layout .compare-side.a/.b` (week03-styles.css l.675); rows share
+ * one column grid via subgrid so labels and cells align. Budget: ≤6 rows, label 10, cell 60.
+ */
+.compare {
+  display: grid;
+  grid-template-columns: fit-content(280px) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px 14px;
+}
+
+.compare-head,
+.compare-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+}
+
+.compare-head > h3 {
+  padding: 12px 22px;
+  border-radius: 12px;
+  background: var(--compare-a);
+  color: #fff;
+  font-size: var(--fs-card);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight);
+}
+
+.compare-head > h3:last-child {
+  background: var(--compare-b);
+}
+
+.compare-label {
+  display: flex;
+  align-items: center;
+  padding-right: 8px;
+  color: var(--title);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-snug);
+}
+
+.compare-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 22px;
+  border: 1px solid var(--compare-a-line);
+  border-radius: 12px;
+  background: var(--compare-a-soft);
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+}
+
+.compare-cell.right {
+  border-color: var(--compare-b-line);
+  background: var(--compare-b-soft);
+}

@@ -15,12 +15,14 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "prompts"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "build": "tsc -p tsconfig.json && tsx scripts/build-kit.ts",
+    "kit": "tsx scripts/build-kit.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.dev.json",
+    "test": "vitest run",
     "clean": "rm -rf dist"
   },
   "dependencies": {

@@ -1,0 +1,148 @@
+/*
+ * Theme: v20-violet (week 3 · 물리보안·출입통제 IAM, V20 deck).
+ * Palette from reference/decks/week03-styles.css :root (l.2-37) and the V20 component
+ * layer (l.943-960). Applied for html[data-theme="v20-violet"] and when no data-theme is set.
+ */
+html:not([data-theme]),
+html[data-theme='v20-violet'] {
+  /* ---- V20 palette (verbatim names and values) ---- */
+  --primary: #6b4bff;
+  --primary-dark: #5f45d9;
+  --primary-light: #b8a8ff;
+  --primary-soft: #ede9fe;
+  --accent-blue: #3e9cf5;
+  --accent-blue-dark: #1b8ae6;
+  --accent-cyan: #1fb6ff;
+  --red: #ef1c5c;
+  --red-dark: #d11a50;
+  --navy: #1a1b4d;
+  --navy-dark: #0e0f2e;
+  --navy-deep: #080920;
+  --bg-light: #f7f5fd;
+  --bg-soft: #fbfaff;
+  --bg-card: #f7f5fd;
+  --text: #1c1c2e;
+  --text-strong: #0e0f2e;
+  --muted: #566176;
+  --muted-light: #9a9aae;
+  --border: #e8e5f5;
+  --border-soft: #f0eefa;
+  --shadow-sm: 0 2px 8px rgba(26, 27, 77, 0.05);
+  --shadow-md: 0 4px 14px rgba(26, 27, 77, 0.07);
+  --shadow-lg: 0 10px 30px rgba(26, 27, 77, 0.1);
+
+  /* ---- Roles ---- */
+  --bg: #fff;
+  --title: var(--navy);
+  --faint: var(--muted-light);
+  --link: var(--primary-dark);
+  --stage-bg: var(--navy-dark);
+  --font-num: var(--font-sans); /* V20 set numbers in Inter; Pretendard's Latin is Inter-derived */
+  --body-justify: safe center; /* V20 centred the body block between title and footer */
+
+  /* ---- Tones: accent · text on light · soft fill · line · text on accent ---- */
+  --primary-text: var(--primary-dark);
+  --primary-line: #ddd6fe;
+  --primary-on: #fff;
+  --neutral: var(--navy);
+  --neutral-text: #475569;
+  --neutral-soft: #f8fafc;
+  --neutral-line: #e2e8f0;
+  --neutral-on: #fff;
+  --ok: #16a34a;
+  --ok-text: #166534;
+  --ok-soft: #ecfdf5;
+  --ok-line: #bbf7d0;
+  --ok-on: #fff;
+  --warn: #f59e0b;
+  --warn-text: #92400e;
+  --warn-soft: #fff8e8;
+  --warn-line: #fde68a;
+  --warn-on: var(--navy);
+  --danger: var(--red);
+  --danger-text: #be123c;
+  --danger-soft: #fff1f4;
+  --danger-line: #ffd3df;
+  --danger-on: #fff;
+  --info: var(--accent-blue);
+  --info-text: #1d4ed8;
+  --info-soft: #eff6ff;
+  --info-line: #bfdbfe;
+  --info-on: #fff;
+
+  /* ---- Scaffold ---- */
+  --eyebrow: var(--primary);
+  --eyebrow-rule: linear-gradient(90deg, var(--primary), var(--accent-blue));
+  --eyebrow-rule-display: inline-block;
+  --eyebrow-case: uppercase;
+  --eyebrow-tracking: 2px;
+  --eyebrow-weight: var(--fw-bold);
+  --progress: linear-gradient(90deg, var(--primary) 0%, var(--accent-blue) 100%);
+  --q-bg: var(--bg-soft);
+  --q-line: var(--border);
+  --q-accent: var(--primary);
+  --term-underline: var(--primary-light);
+  --on-navy: #fff;
+  --on-navy-muted: rgba(255, 255, 255, 0.74);
+  --on-navy-faint: rgba(255, 255, 255, 0.5);
+  --on-navy-accent: var(--primary-light);
+  --on-navy-rule: rgba(255, 255, 255, 0.18);
+
+  /* ---- Blocks ---- */
+  --card-bg: var(--bg-card); /* .v-card */
+  --card-line: var(--border);
+  --card-shadow: none;
+  --chain-bg: var(--navy); /* .decision-chain article */
+  --chain-line: var(--navy);
+  --chain-shadow: none;
+  --chain-text: #fff;
+  --chain-no: var(--primary-light);
+  --chain-sub: #d6dcf2;
+  --chain-arrow: var(--primary);
+  --takeaway-bg: #f6f3ff; /* .takeaway */
+  --takeaway-line: #dcd5fc;
+  --takeaway-accent: var(--primary);
+  --takeaway-label: var(--primary-dark);
+  --takeaway-text: #334155;
+  --table-line: var(--border); /* .v-table */
+  --table-rule: #eeeaf7;
+  --table-head-bg: #eee9ff;
+  --table-head-text: #423377;
+  --table-text: #445067;
+  --table-key: var(--navy);
+  --table-stripe: #fcfbff;
+  --compare-a: var(--primary); /* .compare-layout .compare-side.a */
+  --compare-a-soft: #f0edff;
+  --compare-a-line: #ddd6fe;
+  --compare-b: #c2410c; /* .compare-side.b */
+  --compare-b-soft: #fff7ed;
+  --compare-b-line: #fed7aa;
+  --code-bg: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%); /* pre */
+  --code-text: #e5e1f5;
+  --code-muted: var(--primary-light);
+  --code-rule: rgba(107, 75, 255, 0.28);
+  --chip-bg: var(--primary-soft); /* td code */
+  --chip-text: var(--primary-dark);
+  --chip-line: transparent;
+  --video-bg: linear-gradient(135deg, #12142c 0%, var(--navy) 100%); /* .video-poster */
+
+  /* ---- Slides ---- */
+  --cover-bg: linear-gradient(135deg, #1a1b4d 0%, #262466 30%, #3d2d80 60%, #1a1b4d 100%);
+  --cover-glow:
+    radial-gradient(circle at 78% 65%, rgba(107, 75, 255, 0.4) 0%, transparent 38%),
+    radial-gradient(circle at 50% 45%, rgba(62, 156, 245, 0.22) 0%, transparent 42%);
+  --cover-dots: rgba(255, 255, 255, 0.22);
+  --cover-accent: var(--primary-light);
+  --divider-bg: linear-gradient(135deg, #1a1b4d 0%, #3d2d80 70%, #1a1b4d 100%);
+  --divider-glow:
+    radial-gradient(circle at 80% 30%, rgba(62, 156, 245, 0.3) 0%, transparent 42%),
+    radial-gradient(circle at 20% 70%, rgba(107, 75, 255, 0.35) 0%, transparent 48%);
+  --divider-no-fill: linear-gradient(
+    180deg,
+    rgba(184, 168, 255, 0.75) 0%,
+    rgba(107, 75, 255, 0.18) 100%
+  );
+  --divider-accent: #f5c242; /* .div-desc b */
+  --quote-slide-bg: var(--bg-soft);
+  --quote-mark: var(--primary-light);
+}

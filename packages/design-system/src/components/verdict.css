@@ -1,0 +1,93 @@
+/*
+ * verdict: decision chip + explanation. allow 허용 · drop 차단 · ok 정상 · hot 주의 · info 참고.
+ * <div class="verdict verdict-allow"><b>허용</b><span>…</span></div>
+ * From v9.7 `.verdict.allow/.drop/.pass/.info` (week05-styles.css). Budget: label 8, text 80.
+ * Solid chips for decisions (allow, drop, hot); soft chips for states (ok, info).
+ */
+.verdict {
+  --v: var(--info);
+  --v-text: var(--info-text);
+  --v-soft: var(--info-soft);
+  --v-line: var(--info-line);
+  --v-on: var(--info-on);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 14px 24px 14px 14px;
+  border: 1px solid var(--v-line);
+  border-radius: var(--radius-md);
+  background: var(--v-soft);
+}
+
+.verdict-allow,
+.verdict-ok {
+  --v: var(--ok);
+  --v-text: var(--ok-text);
+  --v-soft: var(--ok-soft);
+  --v-line: var(--ok-line);
+  --v-on: var(--ok-on);
+}
+
+.verdict-drop {
+  --v: var(--danger);
+  --v-text: var(--danger-text);
+  --v-soft: var(--danger-soft);
+  --v-line: var(--danger-line);
+  --v-on: var(--danger-on);
+}
+
+.verdict-hot {
+  --v: var(--warn);
+  --v-text: var(--warn-text);
+  --v-soft: var(--warn-soft);
+  --v-line: var(--warn-line);
+  --v-on: var(--warn-on);
+}
+
+.verdict > b {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border: 1px solid var(--v);
+  border-radius: 10px;
+  background: var(--v);
+  color: var(--v-on);
+  font-size: var(--fs-caption);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+.verdict:is(.verdict-ok, .verdict-info) > b {
+  background: var(--bg);
+  color: var(--v-text);
+}
+
+.verdict > b::before {
+  font-weight: var(--fw-heavy);
+}
+
+.verdict-allow > b::before,
+.verdict-ok > b::before {
+  content: '✓';
+}
+
+.verdict-drop > b::before {
+  content: '×';
+}
+
+.verdict-hot > b::before {
+  content: '!';
+}
+
+.verdict-info > b::before {
+  content: 'i';
+}
+
+.verdict > span {
+  min-width: 0;
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: 1.45;
+}

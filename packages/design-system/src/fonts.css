@@ -1,0 +1,69 @@
+/*!
+ * Fonts: Pretendard 1.309 (c) 2021-2023 Kil Hyung-jin, github.com/orioncactus/pretendard;
+ * Spoqa Han Sans Neo 1.100 (c) 2020 Spoqa, github.com/spoqa/spoqa-han-sans.
+ * Both licensed under the SIL Open Font License 1.1: https://openfontlicense.org
+ */
+
+/*
+ * Embedded faces, extracted unmodified from the v9.7 deck
+ * (reference/decks/week05-firewall-v9.7.html). The 700 face also answers 800/900,
+ * as in v9.7, so heavy headings never fall back to synthetic bold.
+ * SpoqaHanSans is a Latin/numeral subset used for numbers (--font-num in cau-navy);
+ * Korean text in that stack falls through to Pretendard.
+ * dist/marco.css inlines these as data URLs; dist/marco.nofonts.css omits this file.
+ */
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/Pretendard-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/Pretendard-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('./fonts/Pretendard-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url('./fonts/Pretendard-Bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'SpoqaHanSans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/SpoqaHanSans-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'SpoqaHanSans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('./fonts/SpoqaHanSans-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'SpoqaHanSans';
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src: url('./fonts/SpoqaHanSans-Bold.woff2') format('woff2');
+}

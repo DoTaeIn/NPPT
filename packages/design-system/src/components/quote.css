@@ -1,0 +1,72 @@
+/*
+ * quote: pull quote; `.big` on the quote slide.
+ * <blockquote class="quote"><p>…</p><cite>…</cite></blockquote>
+ * From V20 `.qt-mark`/`.quote-slide h2` (week03-styles.css l.307-322). Budget: text 120, cite 40.
+ */
+.quote {
+  position: relative;
+  padding-left: 72px;
+}
+
+.quote::before {
+  content: '“';
+  position: absolute;
+  top: -8px;
+  left: 0;
+  color: var(--quote-mark, var(--primary-light, var(--primary)));
+  font-size: 96px;
+  font-weight: var(--fw-heavy);
+  line-height: 1;
+}
+
+.quote > p {
+  color: var(--title);
+  font-size: var(--fs-lead);
+  font-weight: var(--fw-semibold);
+  line-height: 1.5;
+  letter-spacing: var(--tracking-tight);
+}
+
+.quote > cite {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-style: normal;
+  line-height: 1.4;
+}
+
+.quote > cite::before {
+  content: '';
+  flex: none;
+  width: 32px;
+  height: 2px;
+  background: currentColor;
+}
+
+.quote.big {
+  padding-left: 0;
+}
+
+.quote.big::before {
+  position: static;
+  display: block;
+  height: 72px;
+  font-size: 180px;
+  line-height: 0.9;
+}
+
+.quote.big > p {
+  font-size: var(--fs-headline);
+  font-weight: var(--fw-bold);
+  line-height: 1.32;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.quote.big > cite {
+  margin-top: 36px;
+  font-size: var(--fs-body);
+}

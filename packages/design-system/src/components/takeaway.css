@@ -1,0 +1,28 @@
+/*
+ * takeaway: one-line conclusion bar.
+ * <div class="takeaway"><b>라벨</b><span>…</span></div>
+ * Ported from V20 `.takeaway` (week03-styles.css l.945). Budget: label 8, text 70.
+ */
+.takeaway {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 22px 28px;
+  border: 1px solid var(--takeaway-line);
+  border-left: var(--bar) solid var(--takeaway-accent);
+  border-radius: 12px;
+  background: var(--takeaway-bg);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.takeaway > b {
+  flex: none;
+  max-width: 300px;
+  color: var(--takeaway-label);
+}
+
+.takeaway > span {
+  min-width: 0;
+  color: var(--takeaway-text);
+}

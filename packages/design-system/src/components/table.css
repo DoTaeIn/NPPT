@@ -1,0 +1,81 @@
+/*
+ * table: data table with optional caption and per-cell alignment (.c centre, .r right).
+ * <table class="v-table"><caption>…</caption><thead><tr><th class="c">…</th></tr></thead>
+ *   <tbody><tr><td>…</td></tr></tbody></table>
+ * Ported from V20 `.v-table` (week03-styles.css l.945) and v9.7 `table.u`.
+ * Budget: ≤6 cols, ≤8 rows, cell 40 (see design notes for the density limit).
+ */
+.v-table {
+  width: 100%;
+  border: 1px solid var(--table-line);
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 16px;
+  background: var(--bg);
+  font-size: var(--fs-table);
+  line-height: 1.45;
+}
+
+.v-table caption {
+  padding-bottom: 12px;
+  caption-side: top;
+  color: var(--muted);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  text-align: left;
+}
+
+.v-table th {
+  padding: 16px 22px;
+  background: var(--table-head-bg);
+  color: var(--table-head-text);
+  font-weight: var(--fw-bold);
+  text-align: left;
+  vertical-align: bottom;
+}
+
+.v-table td {
+  padding: 15px 22px;
+  border-top: 1px solid var(--table-rule);
+  color: var(--table-text);
+  vertical-align: middle;
+}
+
+.v-table tbody tr:nth-child(even) > td {
+  background: var(--table-stripe);
+}
+
+.v-table td:first-child {
+  color: var(--table-key);
+  font-weight: var(--fw-semibold);
+}
+
+/* Rounded corners without clipping the caption (V20 used overflow:hidden on the table). */
+.v-table tr:first-child > th:first-child {
+  border-top-left-radius: 15px;
+}
+
+.v-table tr:first-child > th:last-child {
+  border-top-right-radius: 15px;
+}
+
+.v-table tr:last-child > td:first-child {
+  border-bottom-left-radius: 15px;
+}
+
+.v-table tr:last-child > td:last-child {
+  border-bottom-right-radius: 15px;
+}
+
+.v-table :is(th, td).c {
+  text-align: center;
+}
+
+.v-table :is(th, td).r {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.v-table code {
+  font-size: 0.9em;
+}
