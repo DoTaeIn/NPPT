@@ -19,5 +19,8 @@ export const BUDGETS = {
   tiles: { maxItems: { 2: 2, 3: 3, 4: 4, 5: 5 }, label: 14, value: 12 },
   terms: { maxItems: 6, abbr: 8, en: 40, ko: 24 },
   paragraph: { text: 220, lead: 90 },
+  image: { caption: 60 },
+  video: { label: 40, caption: 60 },
+  code: { maxLines: 12, maxCols: 80 },
   note: { cuesPerSlide: 30, cueText: 600 },
 } as const;

@@ -5,6 +5,7 @@
   "description": "MARCO Lecture IR: JSON Schema, TypeScript types, validator and linter",
   "license": "SEE LICENSE IN ../../LICENSE",
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -12,15 +13,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./lecture.schema.json": "./lecture.schema.json",
     "./package.json": "./package.json"
   },
   "files": [
-    "dist"
+    "dist",
+    "lecture.schema.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "test": "vitest run --passWithNoTests",
+    "schema:emit": "tsc -p tsconfig.json && node scripts/emit-schema.mjs",
     "clean": "rm -rf dist"
   },
   "dependencies": {

@@ -24,6 +24,8 @@ export interface LectureMeta {
   version?: string;
   /** Footer tag on every slide. Default: `${course} · ${week}주차`. */
   footer?: string;
+  /** Planned lecture length in minutes (front matter `duration`); lint compares it with the sum of `[시간]`. */
+  duration?: number;
 }
 
 export interface Ref {
@@ -76,12 +78,20 @@ export interface Cue {
   focus?: { targets: string[] };
   /** Trailing wait hint, e.g. "10초" from `[발문] … | 10초`. */
   wait?: string;
+  /**
+   * Marker text as authored when it is not the canonical marker for `k`: an alias such as
+   * "검증 보충", "학생 질문" or "홉", or an unknown marker kept as MEMO (lint `note.marker.unknown`).
+   * Absent for canonical markers and for text before the first marker.
+   */
+  marker?: string;
 }
 
 export interface NoteTime {
   minutes: number;
   from?: string; // "10:00"
   to?: string; // "12:30"
+  /** Trailing remark after the range, e.g. "끝나면 휴식 10분" in `[시간] 4분 · 64:30 – 68:30 · 끝나면 휴식 10분`. */
+  remark?: string;
 }
 
 export interface SlideNote {
@@ -113,6 +123,12 @@ export interface Slide {
   note?: SlideNote;
   /** type === 'raw' only: hand-written slide HTML. */
   html?: string;
+  /** type === 'divider' only: section number shown large, e.g. "01". */
+  no?: string;
+  /** type === 'quote' only: attribution under the quote (the quote itself is `title`). */
+  cite?: string;
+  /** type === 'references' only: ref ids to list (default: all of `Lecture.refs`). */
+  only?: string[];
 }
 
 // ----------------------------------------------------------------------------
@@ -290,8 +306,7 @@ export interface ValidationError {
   message: string;
 }
 export type ValidationResult =
-  | { ok: true; lecture: Lecture }
-  | { ok: false; errors: ValidationError[] };
+  { ok: true; lecture: Lecture } | { ok: false; errors: ValidationError[] };
 
 export interface LintIssue {
   level: 'error' | 'warn' | 'info';

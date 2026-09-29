@@ -1,0 +1,21 @@
+{
+  "ir": "0.1",
+  "meta": {
+    "title": "최소 예제",
+    "lang": "ko",
+    "theme": "v20-violet",
+    "edition": "instructor"
+  },
+  "refs": [],
+  "videos": [],
+  "assets": {},
+  "terms": {},
+  "slides": [
+    {
+      "id": "s-01",
+      "type": "cover",
+      "title": "최소 예제",
+      "blocks": []
+    }
+  ]
+}

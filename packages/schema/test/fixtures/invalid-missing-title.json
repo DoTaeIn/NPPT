@@ -1,0 +1,26 @@
+{
+  "ir": "0.1",
+  "meta": {
+    "title": "잘못된 예제",
+    "lang": "ko",
+    "theme": "v20-violet",
+    "edition": "instructor"
+  },
+  "refs": [],
+  "videos": [],
+  "assets": {},
+  "terms": {},
+  "slides": [
+    {
+      "id": "s-01",
+      "type": "content",
+      "tag": "기본 원리",
+      "blocks": [
+        {
+          "type": "takeaway",
+          "text": "제목이 없는 슬라이드"
+        }
+      ]
+    }
+  ]
+}

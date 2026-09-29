@@ -1,0 +1,1135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:marco:lecture-ir:0.1",
+  "title": "MARCO Lecture IR 0.1",
+  "type": "object",
+  "description": "MARCO Lecture IR: the canonical JSON form of a lecture deck.",
+  "properties": {
+    "ir": {
+      "type": "string",
+      "const": "0.1",
+      "description": "IR version."
+    },
+    "meta": {
+      "$ref": "#/$defs/LectureMeta"
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Ref"
+      }
+    },
+    "videos": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Video"
+      }
+    },
+    "assets": {
+      "type": "object",
+      "description": "Asset id → image.",
+      "additionalProperties": {
+        "$ref": "#/$defs/Asset"
+      }
+    },
+    "terms": {
+      "type": "object",
+      "description": "Abbreviation → expansion, e.g. LPR → \"License Plate Recognition 차량번호 인식\".",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "slides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Slide"
+      },
+      "minItems": 1
+    },
+    "quiz": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/QuizItem"
+      }
+    },
+    "sims": {
+      "type": "object",
+      "description": "Network simulator data (Phase 3, free-form)."
+    },
+    "terminals": {
+      "type": "object",
+      "description": "Virtual terminal data (Phase 3, free-form)."
+    }
+  },
+  "required": ["ir", "meta", "refs", "videos", "assets", "terms", "slides"],
+  "additionalProperties": false,
+  "$defs": {
+    "LectureMeta": {
+      "type": "object",
+      "description": "Deck metadata (front matter).",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "course": {
+          "type": "string"
+        },
+        "week": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "date": {
+          "type": "string"
+        },
+        "presenter": {
+          "type": "string"
+        },
+        "lang": {
+          "type": "string",
+          "enum": ["ko", "en"]
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["v20-violet", "cau-navy"]
+        },
+        "edition": {
+          "type": "string",
+          "enum": ["student", "instructor"]
+        },
+        "version": {
+          "type": "string"
+        },
+        "footer": {
+          "type": "string",
+          "description": "Footer tag; default \"${course} · ${week}주차\"."
+        },
+        "duration": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Planned lecture length in minutes."
+        }
+      },
+      "required": ["title", "lang", "theme", "edition"],
+      "additionalProperties": false
+    },
+    "Ref": {
+      "type": "object",
+      "description": "A cited source.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "description": "e.g. \"S13\"."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["standard", "law", "paper", "vendor", "article", "video", "other"]
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "title"],
+      "additionalProperties": false
+    },
+    "Video": {
+      "type": "object",
+      "description": "A YouTube video.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "YouTube id."
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Start time in seconds."
+        },
+        "credit": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "title"],
+      "additionalProperties": false
+    },
+    "Asset": {
+      "type": "object",
+      "description": "An image file.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Relative to the source file, e.g. \"assets/campus.png\"."
+        },
+        "title": {
+          "type": "string"
+        },
+        "credit": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the original."
+        },
+        "alt": {
+          "type": "string"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": ["path"],
+      "additionalProperties": false
+    },
+    "Tone": {
+      "type": "string",
+      "enum": ["neutral", "primary", "ok", "warn", "danger", "info"]
+    },
+    "CueKind": {
+      "type": "string",
+      "enum": [
+        "SAY",
+        "DO",
+        "LOOK",
+        "ASK",
+        "HOP",
+        "SQ",
+        "SA",
+        "NEXT",
+        "TIP",
+        "WAIT",
+        "SCREEN",
+        "VERIFY",
+        "MEMO"
+      ],
+      "description": "SAY [대사], DO [조작], LOOK [주목], ASK [발문], HOP [이동], SQ [예상질문], SA [예상답변], NEXT [전환], TIP [팁], WAIT [대기], SCREEN [화면], VERIFY [검증], MEMO [메모]."
+    },
+    "Cue": {
+      "type": "object",
+      "description": "One presenter cue. Budget: 600 chars of text.",
+      "properties": {
+        "k": {
+          "$ref": "#/$defs/CueKind"
+        },
+        "t": {
+          "type": "string",
+          "description": "Cue text."
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$",
+          "description": "Stable cue id, e.g. \"p04-c002\"; assigned at build when absent."
+        },
+        "focus": {
+          "type": "object",
+          "description": "Elements to highlight while the cue is active.",
+          "properties": {
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": "Element ids on the slide, e.g. \"s-06-b1\"."
+            }
+          },
+          "required": ["targets"],
+          "additionalProperties": false
+        },
+        "wait": {
+          "type": "string",
+          "description": "Wait hint, e.g. \"10초\"."
+        },
+        "marker": {
+          "type": "string",
+          "description": "Marker as authored when not canonical (alias or unknown marker)."
+        }
+      },
+      "required": ["k", "t"],
+      "additionalProperties": false
+    },
+    "NoteTime": {
+      "type": "object",
+      "description": "Slide time budget from [시간].",
+      "properties": {
+        "minutes": {
+          "type": "number",
+          "minimum": 0
+        },
+        "from": {
+          "type": "string",
+          "pattern": "^[0-9]{1,3}:[0-9]{2}$",
+          "description": "Start clock, e.g. \"10:00\"."
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^[0-9]{1,3}:[0-9]{2}$",
+          "description": "End clock, e.g. \"12:30\"."
+        },
+        "remark": {
+          "type": "string",
+          "description": "Text after the range, e.g. \"끝나면 휴식 10분\"."
+        }
+      },
+      "required": ["minutes"],
+      "additionalProperties": false
+    },
+    "SlideNote": {
+      "type": "object",
+      "description": "Presenter note. Budget: at most 30 cues.",
+      "properties": {
+        "time": {
+          "$ref": "#/$defs/NoteTime"
+        },
+        "cues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Cue"
+          }
+        },
+        "raw": {
+          "type": "string",
+          "description": "Note text as authored."
+        }
+      },
+      "required": ["cues"],
+      "additionalProperties": false
+    },
+    "Slide": {
+      "type": "object",
+      "description": "One slide.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_-]*$",
+          "description": "Stable id; default \"s-01\", \"s-02\", … by position."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["cover", "divider", "quote", "hero", "content", "references", "raw"]
+        },
+        "tag": {
+          "type": "string",
+          "description": "Eyebrow text. Budget: 16 chars."
+        },
+        "group": {
+          "type": "string",
+          "description": "TOC grouping label."
+        },
+        "title": {
+          "type": "string",
+          "description": "Budget: 34 chars."
+        },
+        "subtitle": {
+          "type": "string",
+          "description": "Budget: 60 chars."
+        },
+        "question": {
+          "type": "string",
+          "description": "Guiding question strip. Budget: 70 chars."
+        },
+        "alert": {
+          "type": "boolean",
+          "description": "Hero slide red variant."
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+          },
+          "description": "Ref ids cited on this slide."
+        },
+        "layout": {
+          "type": "string",
+          "enum": ["default", "wide"]
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Block"
+          }
+        },
+        "note": {
+          "$ref": "#/$defs/SlideNote"
+        },
+        "html": {
+          "type": "string",
+          "description": "type \"raw\" only: slide HTML."
+        },
+        "no": {
+          "type": "string",
+          "description": "type \"divider\" only: section number, e.g. \"01\"."
+        },
+        "cite": {
+          "type": "string",
+          "description": "type \"quote\" only: attribution."
+        },
+        "only": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+          },
+          "description": "type \"references\" only: ref ids to list."
+        }
+      },
+      "required": ["id", "type", "title", "blocks"],
+      "additionalProperties": false
+    },
+    "Block": {
+      "type": "object",
+      "description": "A content block, discriminated by \"type\".",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ChainBlock"
+        },
+        {
+          "$ref": "#/$defs/CardsBlock"
+        },
+        {
+          "$ref": "#/$defs/TakeawayBlock"
+        },
+        {
+          "$ref": "#/$defs/TableBlock"
+        },
+        {
+          "$ref": "#/$defs/CompareBlock"
+        },
+        {
+          "$ref": "#/$defs/CalloutBlock"
+        },
+        {
+          "$ref": "#/$defs/StepsBlock"
+        },
+        {
+          "$ref": "#/$defs/BulletsBlock"
+        },
+        {
+          "$ref": "#/$defs/ColumnsBlock"
+        },
+        {
+          "$ref": "#/$defs/ImageBlock"
+        },
+        {
+          "$ref": "#/$defs/VideoBlock"
+        },
+        {
+          "$ref": "#/$defs/QuoteBlock"
+        },
+        {
+          "$ref": "#/$defs/CodeBlock"
+        },
+        {
+          "$ref": "#/$defs/PillsBlock"
+        },
+        {
+          "$ref": "#/$defs/VerdictBlock"
+        },
+        {
+          "$ref": "#/$defs/TimelineBlock"
+        },
+        {
+          "$ref": "#/$defs/TilesBlock"
+        },
+        {
+          "$ref": "#/$defs/TermsBlock"
+        },
+        {
+          "$ref": "#/$defs/ParagraphBlock"
+        },
+        {
+          "$ref": "#/$defs/WidgetBlock"
+        },
+        {
+          "$ref": "#/$defs/HtmlBlock"
+        }
+      ]
+    },
+    "ChainBlock": {
+      "type": "object",
+      "description": "Numbered decision chain (:::chain, pipe rows \"01 | label | sub\"). Budget: at most 6 items.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "chain"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "no": {
+                "type": "string",
+                "description": "Step number shown, e.g. \"01\"; auto-numbered when absent."
+              },
+              "label": {
+                "type": "string",
+                "description": "Budget: 10 chars."
+              },
+              "sub": {
+                "type": "string",
+                "description": "Budget: 22 chars."
+              }
+            },
+            "required": ["label"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "items"],
+      "additionalProperties": false
+    },
+    "CardsBlock": {
+      "type": "object",
+      "description": "Card grid (:::cards cols=N). Budget: at most 4/6/8 items and body 90/60/40 chars for cols 2/3/4.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "cards"
+        },
+        "cols": {
+          "type": "integer",
+          "enum": [2, 3, 4]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kicker": {
+                "type": "string",
+                "description": "Budget: 16 chars."
+              },
+              "title": {
+                "type": "string",
+                "description": "Budget: 24 chars."
+              },
+              "body": {
+                "type": "string",
+                "description": "Inline markdown; budget depends on cols."
+              },
+              "icon": {
+                "type": "string",
+                "description": "Lucide icon name, e.g. \"shield\"."
+              },
+              "tone": {
+                "$ref": "#/$defs/Tone"
+              }
+            },
+            "required": ["title"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "cols", "items"],
+      "additionalProperties": false
+    },
+    "TakeawayBlock": {
+      "type": "object",
+      "description": "Key-point bar (:::takeaway label).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "takeaway"
+        },
+        "label": {
+          "type": "string",
+          "description": "Budget: 8 chars."
+        },
+        "text": {
+          "type": "string",
+          "description": "Inline markdown. Budget: 70 chars."
+        }
+      },
+      "required": ["type", "text"],
+      "additionalProperties": false
+    },
+    "TableBlock": {
+      "type": "object",
+      "description": "Table (GFM table). Budget: at most 6 columns, 8 rows, 40 chars per cell.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "table"
+        },
+        "head": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Header cells."
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": "Body rows, one array of cells per row."
+        },
+        "caption": {
+          "type": "string"
+        },
+        "align": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["l", "c", "r"]
+          },
+          "description": "Per-column alignment."
+        }
+      },
+      "required": ["type", "head", "rows"],
+      "additionalProperties": false
+    },
+    "CompareBlock": {
+      "type": "object",
+      "description": "Side-by-side comparison (:::compare left=… right=…). Budget: at most 6 rows.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "compare"
+        },
+        "left": {
+          "type": "string",
+          "description": "Left column heading."
+        },
+        "right": {
+          "type": "string",
+          "description": "Right column heading."
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "description": "Budget: 10 chars."
+              },
+              "left": {
+                "type": "string",
+                "description": "Budget: 60 chars."
+              },
+              "right": {
+                "type": "string",
+                "description": "Budget: 60 chars."
+              }
+            },
+            "required": ["label", "left", "right"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "left", "right", "rows"],
+      "additionalProperties": false
+    },
+    "CalloutBlock": {
+      "type": "object",
+      "description": "Callout box (:::callout kind title).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "callout"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["info", "warn", "ok", "danger"]
+        },
+        "title": {
+          "type": "string",
+          "description": "Budget: 20 chars."
+        },
+        "body": {
+          "type": "string",
+          "description": "Inline markdown. Budget: 160 chars."
+        }
+      },
+      "required": ["type", "kind", "body"],
+      "additionalProperties": false
+    },
+    "StepsBlock": {
+      "type": "object",
+      "description": "Ordered steps. Budget: at most 6 items.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "steps"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Budget: 24 chars."
+              },
+              "body": {
+                "type": "string",
+                "description": "Budget: 70 chars."
+              }
+            },
+            "required": ["title"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "items"],
+      "additionalProperties": false
+    },
+    "BulletsBlock": {
+      "type": "object",
+      "description": "Bullet list. Budget: at most 6 items.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "bullets"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "description": "Inline markdown. Budget: 60 chars."
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "items"],
+      "additionalProperties": false
+    },
+    "ColumnsBlock": {
+      "type": "object",
+      "description": "Columns (:::columns cols=N with :::col children). Columns may not contain columns.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "columns"
+        },
+        "cols": {
+          "type": "integer",
+          "enum": [2, 3]
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Block"
+            }
+          },
+          "minItems": 1,
+          "description": "One block list per column."
+        }
+      },
+      "required": ["type", "cols", "columns"],
+      "additionalProperties": false
+    },
+    "ImageBlock": {
+      "type": "object",
+      "description": "Image from Lecture.assets.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "image"
+        },
+        "asset": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Key into Lecture.assets."
+        },
+        "caption": {
+          "type": "string",
+          "description": "Budget: 60 chars."
+        },
+        "zoom": {
+          "type": "boolean"
+        },
+        "fit": {
+          "type": "string",
+          "enum": ["contain", "cover"]
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Height in px on the 1920x1080 canvas."
+        }
+      },
+      "required": ["type", "asset"],
+      "additionalProperties": false
+    },
+    "VideoBlock": {
+      "type": "object",
+      "description": "YouTube video reference from Lecture.videos.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "video"
+        },
+        "video": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Key into Lecture.videos (the YouTube id)."
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Start time in seconds."
+        },
+        "label": {
+          "type": "string",
+          "description": "Budget: 40 chars."
+        },
+        "caption": {
+          "type": "string",
+          "description": "Budget: 60 chars."
+        }
+      },
+      "required": ["type", "video"],
+      "additionalProperties": false
+    },
+    "QuoteBlock": {
+      "type": "object",
+      "description": "Block quote.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "quote"
+        },
+        "text": {
+          "type": "string",
+          "description": "Budget: 120 chars."
+        },
+        "cite": {
+          "type": "string",
+          "description": "Budget: 40 chars."
+        }
+      },
+      "required": ["type", "text"],
+      "additionalProperties": false
+    },
+    "CodeBlock": {
+      "type": "object",
+      "description": "Code listing. Budget: at most 12 lines of 80 columns.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "code"
+        },
+        "lang": {
+          "type": "string",
+          "description": "Language, e.g. \"bash\"."
+        },
+        "code": {
+          "type": "string",
+          "description": "Code text (verbatim)."
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "code"],
+      "additionalProperties": false
+    },
+    "PillsBlock": {
+      "type": "object",
+      "description": "Pills / badges. Budget: at most 8 items.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "pills"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tone": {
+                "$ref": "#/$defs/Tone"
+              },
+              "text": {
+                "type": "string",
+                "description": "Budget: 16 chars."
+              }
+            },
+            "required": ["text"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "items"],
+      "additionalProperties": false
+    },
+    "VerdictBlock": {
+      "type": "object",
+      "description": "Verdict chip (:::verdict allow|drop|ok|hot|info label).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "verdict"
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["allow", "drop", "ok", "hot", "info"]
+        },
+        "label": {
+          "type": "string",
+          "description": "Budget: 8 chars."
+        },
+        "text": {
+          "type": "string",
+          "description": "Budget: 80 chars."
+        }
+      },
+      "required": ["type", "verdict", "text"],
+      "additionalProperties": false
+    },
+    "TimelineBlock": {
+      "type": "object",
+      "description": "Timeline (pipe rows \"at | title | body\"). Budget: at most 6 items.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "timeline"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "string",
+                "description": "Budget: 12 chars."
+              },
+              "title": {
+                "type": "string",
+                "description": "Budget: 20 chars."
+              },
+              "body": {
+                "type": "string",
+                "description": "Budget: 50 chars."
+              }
+            },
+            "required": ["at", "title"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "items"],
+      "additionalProperties": false
+    },
+    "TilesBlock": {
+      "type": "object",
+      "description": "Tiles (:::tiles cols=N). Budget: at most cols items.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "tiles"
+        },
+        "cols": {
+          "type": "integer",
+          "enum": [2, 3, 4, 5]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "icon": {
+                "type": "string",
+                "description": "Lucide icon name."
+              },
+              "label": {
+                "type": "string",
+                "description": "Budget: 14 chars."
+              },
+              "value": {
+                "type": "string",
+                "description": "Budget: 12 chars."
+              },
+              "tone": {
+                "$ref": "#/$defs/Tone"
+              }
+            },
+            "required": ["label"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "cols", "items"],
+      "additionalProperties": false
+    },
+    "TermsBlock": {
+      "type": "object",
+      "description": "Abbreviation list (pipe rows \"abbr | en | ko\"). Budget: at most 6 items.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "terms"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "abbr": {
+                "type": "string",
+                "description": "Budget: 8 chars."
+              },
+              "en": {
+                "type": "string",
+                "description": "Budget: 40 chars."
+              },
+              "ko": {
+                "type": "string",
+                "description": "Budget: 24 chars."
+              }
+            },
+            "required": ["abbr", "ko"],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": ["type", "items"],
+      "additionalProperties": false
+    },
+    "ParagraphBlock": {
+      "type": "object",
+      "description": "Paragraph. Budget: 220 chars, 90 when lead.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "paragraph"
+        },
+        "text": {
+          "type": "string",
+          "description": "Inline markdown."
+        },
+        "lead": {
+          "type": "boolean",
+          "description": "Lead paragraph (larger type)."
+        }
+      },
+      "required": ["type", "text"],
+      "additionalProperties": false
+    },
+    "WidgetBlock": {
+      "type": "object",
+      "description": "Runtime plugin mount point (Phase 3).",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "widget"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Plugin name, e.g. \"abac\", \"quiz\", \"sim\"."
+        },
+        "params": {
+          "type": "object",
+          "description": "Plugin parameters (free-form)."
+        }
+      },
+      "required": ["type", "name"],
+      "additionalProperties": false
+    },
+    "HtmlBlock": {
+      "type": "object",
+      "description": "Hand-written HTML, inserted verbatim.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "html"
+        },
+        "html": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "html"],
+      "additionalProperties": false
+    },
+    "QuizItem": {
+      "type": "object",
+      "description": "One quiz question.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "e.g. \"Q01\"."
+        },
+        "area": {
+          "type": "number"
+        },
+        "areaName": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "q": {
+          "type": "string",
+          "description": "Question text."
+        },
+        "opts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "description": "Options."
+        },
+        "ans": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0-based index into opts."
+        },
+        "exp": {
+          "type": "string",
+          "description": "Explanation."
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$"
+          }
+        }
+      },
+      "required": ["id", "q", "opts", "ans"],
+      "additionalProperties": false
+    }
+  }
+}

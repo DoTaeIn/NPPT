@@ -1,4 +1,30 @@
 export * from './types.js';
-export { validateLecture } from './validate.js';
-export { lintLecture } from './lint.js';
 export { BUDGETS } from './budgets.js';
+export { lectureSchema, LECTURE_SCHEMA_ID, BLOCK_TYPES, blockDefName } from './schema.js';
+export type { JsonSchema } from './schema.js';
+export { validateLecture, formatValidationErrors } from './validate.js';
+export {
+  normalizeLecture,
+  slideIdFor,
+  cueIdFor,
+  DEFAULT_META,
+  DEFAULT_REFERENCES_TITLE,
+} from './normalize.js';
+export type { LectureInput, SlideInput, SlideNoteInput } from './normalize.js';
+export type { SerializeNoteOptions } from './notes.js';
+export {
+  parseNote,
+  serializeNote,
+  serializeCue,
+  parseNoteTime,
+  formatNoteTime,
+  markerKind,
+  isKnownMarker,
+  MARKERS,
+  CANONICAL_MARKERS,
+  CUE_LABELS,
+  CUE_KINDS,
+  TIME_MARKER,
+} from './notes.js';
+export { lintLecture, LINT_CODES } from './lint.js';
+export { charCount, visibleText } from './text.js';

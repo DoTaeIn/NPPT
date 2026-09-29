@@ -1,0 +1,41 @@
+{
+  "ir": "0.1",
+  "meta": {
+    "title": "잘못된 예제",
+    "lang": "ko",
+    "theme": "v20-violet",
+    "edition": "instructor"
+  },
+  "refs": [],
+  "videos": [],
+  "assets": {},
+  "terms": {},
+  "slides": [
+    {
+      "id": "s-01",
+      "type": "cover",
+      "title": "표지",
+      "blocks": []
+    },
+    {
+      "id": "s-02",
+      "type": "content",
+      "title": "카드 대신 card",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "첫 블록은 정상이다."
+        },
+        {
+          "type": "card",
+          "cols": 2,
+          "items": [
+            {
+              "title": "허용 신호 ≠ 실제 입실"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
