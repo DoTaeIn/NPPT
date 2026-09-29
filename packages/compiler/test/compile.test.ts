@@ -201,20 +201,22 @@ describe('compile(sample.marco.md)', () => {
 
   it('is deterministic', async () => {
     // Snapshot the sibling dists so a concurrent rebuild cannot change the inputs mid-test.
-    const pinned: { designSystemDir?: string; runtimePath?: string } = {};
+    const pinned: { designSystemDir?: string; runtimeDir?: string } = {};
     const cssDir = fileURLToPath(new URL('../../design-system/dist', import.meta.url));
-    const runtime = fileURLToPath(new URL('../../runtime/dist/marco-runtime.js', import.meta.url));
+    const runtimeDir = fileURLToPath(new URL('../../runtime/dist', import.meta.url));
     if (existsSync(cssDir)) {
       cpSync(cssDir, join(tmp, 'ds'), { recursive: true });
       pinned.designSystemDir = join(tmp, 'ds');
     }
-    if (existsSync(runtime)) {
-      cpSync(runtime, join(tmp, 'runtime.js'));
-      pinned.runtimePath = join(tmp, 'runtime.js');
+    if (existsSync(runtimeDir)) {
+      cpSync(runtimeDir, join(tmp, 'runtime'), { recursive: true });
+      pinned.runtimeDir = join(tmp, 'runtime');
     }
     const a = await compile(SAMPLE, pinned);
     const b = await compile(SAMPLE, pinned);
     expect(b.html).toBe(a.html);
+    // The sample has a :::widget block, so it carries the bundle with every plugin.
+    expect(a.stats.runtime).toBe('all');
   });
 
   it('student edition omits notes', async () => {

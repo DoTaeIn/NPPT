@@ -152,6 +152,9 @@ tagline: 없음
       alert: true,
     });
     expect(slide('# slide divider dark\ntitle: T\n').dark).toBe(true);
+    // alert: hero and divider (red-toned variant).
+    expect(codes('# slide divider alert\ntitle: T\n')).toEqual([]);
+    expect(codes('# slide cover alert\ntitle: T\n')).toEqual(['warn:format.slide.alert']);
     expect(codes('# slide dark\ntitle: T\n')).toEqual(['warn:format.slide.dark']);
     expect(codes('# slide cover darkk\ntitle: T\n')).toEqual(['error:format.slide.token']);
     expect(parse('# slide cover darkk\ntitle: T\n').diagnostics[0]?.message).toContain("'dark'");

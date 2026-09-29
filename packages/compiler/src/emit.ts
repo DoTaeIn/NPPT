@@ -7,7 +7,13 @@ import type { Diagnostic } from './diagnostics.js';
 import type { Lecture, QuizItem, Ref, SlideNote, Video } from './ir.js';
 import { escapeAttr, escapeHtml } from './render/html.js';
 import { plainText } from './render/inline.js';
-import { runtimeBundlePath } from './resolve.js';
+import {
+  RUNTIME_BUNDLE_FILES,
+  type RuntimeBundle,
+  runtimeBundleFile,
+  runtimeBundlePath,
+  runtimeDistDir,
+} from './resolve.js';
 import { ATTRIBUTION, ENGINE_NAME, ENGINE_REPO, ENGINE_VERSION } from './version.js';
 
 export interface LectureData {
@@ -74,21 +80,69 @@ export function scriptJson(value: unknown): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
-export const MISSING_RUNTIME_PLACEHOLDER =
-  '/* MARCO PLACEHOLDER: @marco/runtime dist/marco-runtime.js was not found. Build it with `pnpm --filter @marco/runtime build`. */';
+/** Script text inlined when a runtime bundle is missing (names the bundle that was wanted). */
+export function missingRuntimePlaceholder(file: string = RUNTIME_BUNDLE_FILES.core): string {
+  return `/* MARCO PLACEHOLDER: @marco/runtime dist/${file} was not found. Build it with \`pnpm --filter @marco/runtime build\`. */`;
+}
 
-export function readRuntime(path = runtimeBundlePath()): { js: string; warning?: Diagnostic } {
-  try {
-    if (path) return { js: readFileSync(path, 'utf8') };
-  } catch {
-    /* reported below */
+export const MISSING_RUNTIME_PLACEHOLDER = missingRuntimePlaceholder();
+
+/**
+ * True when the slide markup contains a `[data-widget]` element (`:::widget` blocks, or author
+ * HTML in `:::html` blocks and `raw` slides): the deck then needs the plugin bundle.
+ */
+export function usesWidgets(slidesHtml: string): boolean {
+  return /<[A-Za-z][^>]*?\sdata-widget(?:\s*=|[\s/>])/.test(slidesHtml);
+}
+
+export interface RuntimeScript {
+  js: string;
+  /** The bundle actually inlined (`core` also when `all` was wanted but is not built). */
+  bundle: RuntimeBundle;
+  warning?: Diagnostic;
+}
+
+/**
+ * The runtime bundle to inline (runtime.md §7): `all` (core + every plugin) for decks with
+ * widgets, else `core`. `path` overrides the file (tests); `dir` is the runtime dist directory.
+ * When `all` is not built but the core is, the core is used and a warning says widgets will show
+ * placeholders; when nothing is built a placeholder script naming the wanted bundle is inlined.
+ */
+export function readRuntime(
+  path?: string,
+  bundle: RuntimeBundle = 'core',
+  dir: string | undefined = runtimeDistDir(),
+): RuntimeScript {
+  const read = (file: string | undefined): string | undefined => {
+    try {
+      return file !== undefined ? readFileSync(file, 'utf8') : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const wantedFile = runtimeBundleFile(bundle, dir);
+  const js = read(path ?? runtimeBundlePath(bundle, dir));
+  if (js !== undefined) return { js, bundle };
+  if (path === undefined && bundle === 'all') {
+    const core = read(runtimeBundlePath('core', dir));
+    if (core !== undefined)
+      return {
+        js: core,
+        bundle: 'core',
+        warning: {
+          level: 'warn',
+          code: 'build.runtime.missing',
+          message: `위젯용 런타임 번들(@marco/runtime/dist/${wantedFile})이 없어 기본 런타임만 넣었습니다. 위젯 자리에는 안내 문구가 보입니다.`,
+        },
+      };
   }
   return {
-    js: MISSING_RUNTIME_PLACEHOLDER,
+    js: missingRuntimePlaceholder(wantedFile),
+    bundle,
     warning: {
       level: 'warn',
       code: 'build.runtime.missing',
-      message: '런타임 번들(@marco/runtime/dist/marco-runtime.js)이 없어 자리표시자를 넣었습니다.',
+      message: `런타임 번들(@marco/runtime/dist/${wantedFile})이 없어 자리표시자를 넣었습니다.`,
     },
   };
 }

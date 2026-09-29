@@ -6,12 +6,13 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { processAssets } from './assets.js';
 import { type Diagnostic, hasErrors } from './diagnostics.js';
-import { buildLectureData, emitDocument, readRuntime } from './emit.js';
+import { buildLectureData, emitDocument, readRuntime, usesWidgets } from './emit.js';
 import { buildStyles, type FontMode } from './fonts.js';
 import { inlineHtmlAssets } from './html-images.js';
 import type { Edition, Lecture, LintIssue, ThemeId } from './ir.js';
 import { parseMarco } from './parse/index.js';
 import { renderLecture } from './render/slides.js';
+import type { RuntimeBundle } from './resolve.js';
 import { loadSidecars } from './sidecars.js';
 import { lintLecture, normalizeLecture, validateLecture } from '@marco/schema';
 import { ENGINE_VERSION } from './version.js';
@@ -61,8 +62,20 @@ export {
   buildLectureData,
   scriptJson,
   noticeComment,
+  readRuntime,
+  usesWidgets,
+  missingRuntimePlaceholder,
   type LectureData,
+  type RuntimeScript,
 } from './emit.js';
+export {
+  runtimeBundlePath,
+  runtimeDistDir,
+  readRuntimeManifest,
+  RUNTIME_BUNDLE_FILES,
+  type RuntimeBundle,
+  type RuntimeManifest,
+} from './resolve.js';
 export { formatDiagnostic, hasErrors, type Diagnostic } from './diagnostics.js';
 export { ATTRIBUTION, ENGINE_NAME, ENGINE_VERSION } from './version.js';
 export type {
@@ -89,9 +102,12 @@ export interface CompileOptions {
   keepPng?: boolean;
   /** Write the HTML here when the build succeeds. */
   outFile?: string;
-  /** Advanced/testing: design-system dist directory and runtime bundle path. */
+  /** Advanced/testing: design-system dist directory. */
   designSystemDir?: string;
+  /** Advanced/testing: inline exactly this runtime file, whatever the deck uses. */
   runtimePath?: string;
+  /** Advanced/testing: runtime dist directory (manifest.json + bundles) to choose from. */
+  runtimeDir?: string;
   /** Advanced/testing: set false to embed images without sharp. */
   useSharp?: boolean;
 }
@@ -107,7 +123,8 @@ export interface CompileResult {
   lint: LintIssue[];
   /** Build warnings (`asset.*`, `font.*`, `icon.*`, `build.*`). */
   warnings: Diagnostic[];
-  stats: { slides: number; bytes: number; fonts?: FontMode };
+  /** `runtime`: the inlined bundle, `all` (with plugins) when the deck has widgets, else `core`. */
+  stats: { slides: number; bytes: number; fonts?: FontMode; runtime?: RuntimeBundle };
   /** 1-based source line of each slide header, keyed by slide id. */
   slideLines: Record<string, number>;
   /** Absolute paths of other files the source pulled in (sidecar JSON), for watchers. */
@@ -235,7 +252,9 @@ export async function compile(
     warn: (d) => warnings.push(d),
   });
   const data = buildLectureData(lecture);
-  const runtime = readRuntime(options.runtimePath);
+  // runtime.md §7: decks with any [data-widget] get the bundle with every plugin.
+  const bundle = usesWidgets(slidesHtml) ? 'all' : 'core';
+  const runtime = readRuntime(options.runtimePath, bundle, options.runtimeDir);
   if (runtime.warning) warnings.push(runtime.warning);
 
   // Everything the audience or presenter can see feeds the font subset.
@@ -256,6 +275,7 @@ export async function compile(
     slides: lecture.slides.length,
     bytes: Buffer.byteLength(html),
     fonts: styles.mode,
+    runtime: runtime.bundle,
   };
   if (options.outFile) {
     await writeFile(options.outFile, html);

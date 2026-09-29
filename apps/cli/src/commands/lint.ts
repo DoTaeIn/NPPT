@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { checkSource, lintIcons } from '@marco/compiler';
 import { type CliIo, displayPath, paint, printDiagnostics, printLint } from '../output.js';
 
@@ -16,7 +16,10 @@ export function runLint(file: string, opts: LintOptions, io: CliIo): number {
     return 1;
   }
   const display = displayPath(io, source);
-  const checked = checkSource(readFileSync(source, 'utf8'), { file: display });
+  const checked = checkSource(readFileSync(source, 'utf8'), {
+    file: display,
+    baseDir: dirname(source),
+  });
   const lint = [...checked.lint, ...lintIcons(checked.lecture)];
   const errors =
     checked.diagnostics.filter((d) => d.level === 'error').length +

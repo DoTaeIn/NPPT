@@ -404,12 +404,12 @@ function parseSlide(chunk: Chunk, position: number, parentCtx: ParseContext): Sl
   const slide: Slide = { id, type, title: '', blocks: [] };
   if (alert) {
     slide.alert = true;
-    if (type !== 'hero')
+    if (type !== 'hero' && type !== 'divider')
       report(
         ctx,
         'warn',
         'format.slide.alert',
-        'alert는 hero 슬라이드에서만 쓰입니다.',
+        'alert는 hero와 divider 슬라이드에서만 쓰입니다.',
         chunk.line,
       );
   }

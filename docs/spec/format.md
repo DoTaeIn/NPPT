@@ -39,6 +39,7 @@ Encoding UTF-8, LF line endings. A file with no `# slide` line is an error.
 | `videos` | map id → `{title, start?, credit?}` | id is the YouTube id |
 | `assets` | map id → `{path, title?, credit?, source?, alt?}` | `path` relative to the source file. Image blocks may also reference a path directly; the compiler then creates an asset id from the file name |
 | `terms` | map abbr → string | `LPR: "License Plate Recognition 차량번호 인식"` |
+| `quiz`, `sims`, `terminals` | inline value, or a path string to a JSON sidecar (`sims: sims.json`, relative to the source) | loaded by the compiler; missing/invalid files are errors |
 
 ## 3. Slide header
 
@@ -94,6 +95,8 @@ Markdown (CommonMark + GFM tables) plus `:::` containers. Mapping to IR blocks:
 | fenced code | `code` (info string = lang; `title="…"` after lang allowed) |
 | `![alt](assets/x.png "caption")` alone in a paragraph | `image` |
 | `:::name attrs` … `:::` | the named block (see `components.md`) |
+
+Inside `:::html` blocks and `raw` slides, `<img src="assets/…">` paths are registered as assets and `<img data-asset="id">` is resolved to the embedded image at build time.
 
 Inline Markdown allowed in text fields: `**bold**`, `*em*`, `` `code` ``, links. Abbreviations
 listed in `terms` are wrapped automatically for tooltips.

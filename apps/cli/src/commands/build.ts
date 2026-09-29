@@ -81,7 +81,7 @@ export async function runBuild(
   io.out(
     `${paint(io, 'green', '✓')} ${paint(io, 'bold', outDisplay)} · ${formatBytes(result.stats.bytes)} · 슬라이드 ${result.stats.slides}장 · ${
       EDITION_LABEL[result.lecture.meta.edition]
-    } · 글꼴 ${result.stats.fonts ?? '-'}`,
+    } · 글꼴 ${result.stats.fonts ?? '-'}${result.stats.runtime === 'all' ? ' · 위젯 런타임' : ''}`,
   );
   const lintErrors = result.lint.filter((l) => l.level === 'error').length;
   if (opts.strict && lintErrors) {

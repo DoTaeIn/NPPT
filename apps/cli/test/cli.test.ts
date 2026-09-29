@@ -156,6 +156,22 @@ describe('errors and lint output', () => {
     expect(await runCli(['frobnicate'], capture())).toBe(1);
   });
 
+  it('lint reads sidecar JSON relative to the source, not the working directory', async () => {
+    const dir = mkdtempSync(join(root, 'sidecar-'));
+    writeFileSync(join(dir, 'sims.json'), '{"a": 1}');
+    writeFileSync(
+      join(dir, 'd.marco.md'),
+      '---\ntitle: 사이드카\nsims: sims.json\nquiz: quiz.json\n---\n# slide\ntitle: A\n',
+    );
+    const io = capture();
+    expect(await runCli(['lint', join(dir, 'd.marco.md')], io)).toBe(1);
+    expect(io.stderr).toEqual([
+      expect.stringMatching(
+        /d\.marco\.md:4 {2}오류 \[format\.sidecar\.missing\] quiz: JSON 파일을 찾을 수 없습니다: quiz\.json/,
+      ),
+    ]);
+  });
+
   it('help and version exit 0', async () => {
     const help = capture();
     expect(await runCli(['--help'], help)).toBe(0);
