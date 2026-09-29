@@ -1,7 +1,7 @@
 {
   "name": "nppt",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "MARCO Engine for lecture decks: a runtime, design system and compiler that turn compact AI-written lecture sources into single-file HTML decks.",
   "license": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.33.0",
@@ -13,6 +13,7 @@
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
     "typecheck": "pnpm -r run typecheck",
+    "dist": "pnpm build && pnpm --filter marco-engine run dist",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
