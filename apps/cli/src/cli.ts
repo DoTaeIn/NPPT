@@ -1,5 +1,5 @@
 /**
- * `marco` command line: new | build | watch | lint | pdf | import | ai.
+ * `marco` command line: new | build | watch | lint | pdf | import | ai | mcp.
  * `runCli(argv, io)` is the testable entry point; it returns the exit code instead of exiting.
  */
 import { Command, CommanderError, Option } from 'commander';
@@ -14,6 +14,7 @@ import { addAiCommands } from './commands/ai.js';
 import { type BuildOptions, runBuild, runWatch } from './commands/build.js';
 import { IMPORT_FAMILIES, type ImportFamily, runImportCommand } from './commands/import.js';
 import { runLint } from './commands/lint.js';
+import { runMcpCommand } from './commands/mcp.js';
 import { runNew } from './commands/new.js';
 import { PDF_MODES, type PdfMode, type PdfOptions, runPdf } from './commands/pdf.js';
 import { type CliIo, defaultIo, paint } from './output.js';
@@ -203,6 +204,16 @@ export function createProgram(io: CliIo, setExit: (code: number) => void): Comma
     );
 
   addAiCommands(program, io, setExit);
+
+  program
+    .command('mcp')
+    .description('AI 앱(Claude Desktop·Claude Code·Cursor 등)용 MCP 서버를 stdio로 실행합니다')
+    .option('--root <dir>', '도구가 읽고 쓸 수 있는 폴더 (기본: 현재 폴더)')
+    .option('--allow-write', '루트 안에 파일 쓰기 허용 (기본값)')
+    .option('--read-only', '파일을 쓰지 않음 (새 강의·저장·가져오기 거부, 빌드는 검사만)')
+    .action(async (o: { root?: string; readOnly?: boolean }) => {
+      setExit(await runMcpCommand(o, io));
+    });
 
   return program;
 }

@@ -12,7 +12,7 @@ import { inlineHtmlAssets } from './html-images.js';
 import type { Edition, Lecture, LintIssue, ThemeId } from './ir.js';
 import { parseMarco } from './parse/index.js';
 import { renderLecture } from './render/slides.js';
-import type { RuntimeBundle } from './resolve.js';
+import { assetRootsIn, type RuntimeBundle } from './resolve.js';
 import { loadSidecars } from './sidecars.js';
 import { lintLecture, normalizeLecture, validateLecture } from '@marco/schema';
 import { ENGINE_VERSION } from './version.js';
@@ -71,8 +71,13 @@ export {
 export {
   runtimeBundlePath,
   runtimeDistDir,
+  designSystemDistDir,
   readRuntimeManifest,
+  setAssetRoots,
+  getAssetRoots,
+  assetRootsIn,
   RUNTIME_BUNDLE_FILES,
+  type AssetRoots,
   type RuntimeBundle,
   type RuntimeManifest,
 } from './resolve.js';
@@ -110,6 +115,12 @@ export interface CompileOptions {
   runtimeDir?: string;
   /** Advanced/testing: set false to embed images without sharp. */
   useSharp?: boolean;
+  /**
+   * Advanced: a packaged assets directory holding `runtime/` (runtime dist) and `css/`
+   * (design-system dist), as shipped by the `marco-engine` npm package. `runtimeDir` and
+   * `designSystemDir` still win. For a process-wide default use `setAssetRoots()`.
+   */
+  assetsDir?: string;
 }
 
 export interface CompileResult {
@@ -254,7 +265,13 @@ export async function compile(
   const data = buildLectureData(lecture);
   // runtime.md §7: decks with any [data-widget] get the bundle with every plugin.
   const bundle = usesWidgets(slidesHtml) ? 'all' : 'core';
-  const runtime = readRuntime(options.runtimePath, bundle, options.runtimeDir);
+  const packaged = options.assetsDir !== undefined ? assetRootsIn(options.assetsDir) : undefined;
+  const designSystemDir = options.designSystemDir ?? packaged?.designSystemDir;
+  const runtime = readRuntime(
+    options.runtimePath,
+    bundle,
+    options.runtimeDir ?? packaged?.runtimeDir,
+  );
   if (runtime.warning) warnings.push(runtime.warning);
 
   // Everything the audience or presenter can see feeds the font subset.
@@ -264,7 +281,7 @@ export async function compile(
   const styles = await buildStyles({
     mode: options.fonts ?? 'subset',
     text: `${slidesHtml}\n${JSON.stringify(data)}\n${runtimeText}\n${lecture.meta.title}`,
-    ...(options.designSystemDir !== undefined ? { designSystemDir: options.designSystemDir } : {}),
+    ...(designSystemDir !== undefined ? { designSystemDir } : {}),
   });
   warnings.push(...styles.warnings);
 
