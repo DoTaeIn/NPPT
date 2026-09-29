@@ -17,8 +17,8 @@ export interface FencedBlock {
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 /** A line that can only come from MARCO source or an outline. */
 const MARCO_LINE =
-  /^(---\s*$|# slide(\s|$)|## note\s*$|:::|\[[^\]\n]{1,12}\]|\d{1,3}\s*\|\s*\S|[a-z]+:\s)/m;
-const START_LINE = /^(---\s*$|# slide(\s|$)|## note\s*$|\[[^\]\n]{1,12}\]|\d{1,3}\s*\|\s*\S)/;
+  /^(---\s*$|# slide(\s|$)|## note\b|:::|\[[^\]\n]{1,12}\]|\d{1,3}\s*\|\s*\S|[a-z]+:\s)/m;
+const START_LINE = /^(---\s*$|# slide(\s|$)|## note\b|\[[^\]\n]{1,12}\]|\d{1,3}\s*\|\s*\S)/;
 /** Typical chat sign-offs that follow an unfenced answer. */
 const SIGN_OFF =
   /^(이상|필요하|원하시|추가로|참고로|혹시|도움이|다른 |더 필요|수정이 필요|let me know|i hope|hope this|feel free)/i;

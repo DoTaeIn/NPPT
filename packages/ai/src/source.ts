@@ -196,7 +196,10 @@ export function splitNote(slideText: string): { body: string; note?: string } {
 
 /** Make sure a note starts with the `## note` line. */
 export function normalizeNote(noteText: string): string {
-  const text = normalizeNewlines(noteText).trim();
+  // Tolerate "## note[시간] …" (heading glued to the first cue) from a sloppy reply.
+  const text = normalizeNewlines(noteText)
+    .trim()
+    .replace(/^## note[ \t]*(?=\[)/, '## note\n');
   return (NOTE_RE.test(text.split('\n')[0] ?? '') ? text : `## note\n${text}`) + '\n';
 }
 

@@ -64,6 +64,9 @@ describe('extractNote', () => {
   it('adds a missing `## note` line', () => {
     expect(extractNote('[시간] 2분\n[대사] 말한다.')).toBe(note);
   });
+  it('splits a heading glued to the first cue', () => {
+    expect(extractNote('## note[시간] 2분\n[대사] 말한다.')).toBe(note);
+  });
   it('keeps only the note of a whole slide', () => {
     expect(extractNote(`\`\`\`\`marco\n${SLIDE}\n\n${note}\`\`\`\``)).toBe(note);
   });
