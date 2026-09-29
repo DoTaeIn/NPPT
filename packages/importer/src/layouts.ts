@@ -6,7 +6,15 @@
  * Rules are function declarations (hoisted), because blocks.ts lists them in its rule table
  * while this module imports blocks.ts helpers.
  */
-import type { Block, CardsBlock, ChainBlock, ImageBlock, TableBlock, VideoBlock } from '@marco/schema';
+import type {
+  Block,
+  CardsBlock,
+  ChainBlock,
+  ImageBlock,
+  TableBlock,
+  TilesBlock,
+  VideoBlock,
+} from '@marco/schema';
 import {
   bumpFmt,
   cardCols,
@@ -113,7 +121,9 @@ export function flowCardsRule(el: Element, ctx: MapContext): Block[] | null {
   }
   const short = items.every(
     (i) =>
-      !i.label && Array.from(plainText(i.title)).length <= 10 && Array.from(plainText(i.body)).length <= 22,
+      !i.label &&
+      Array.from(plainText(i.title)).length <= 10 &&
+      Array.from(plainText(i.body)).length <= 22,
   );
   if (short && items.length <= 6) {
     ctx.report.addHeuristic('numbered flow → chain', selectorOf(el), ctx.slideId);
@@ -162,7 +172,14 @@ function rowCells(row: Element, ctx: MapContext): string[] | null {
         }
         return null;
       }
-      for (const k of kids) if (!isIconOnly(k) && !isEmpty(k)) cells.push(inline(ctx, k));
+      const parts: string[] = [];
+      for (const k of kids) {
+        if (isIconOnly(k) || isEmpty(k)) continue;
+        // A link appended to a text part (v9.4 source links) stays in that cell.
+        if (tagName(k) === 'a' && parts.length) parts[parts.length - 1] += ` ${inline(ctx, [k])}`;
+        else parts.push(inline(ctx, k));
+      }
+      cells.push(...parts);
       continue;
     }
     cells.push(inline(ctx, c));
@@ -195,7 +212,8 @@ export function labelRowsRule(el: Element, ctx: MapContext): Block[] | null {
     selectorOf(el),
     ctx.slideId,
   );
-  if (el.querySelector('.pill, .card, .tn')) bumpFmt(ctx, 'row chips and cards flattened into table cells');
+  if (el.querySelector('.pill, .card, .tn'))
+    bumpFmt(ctx, 'row chips and cards flattened into table cells');
   const block: TableBlock = { type: 'table', head: Array<string>(width).fill(''), rows };
   if (caption) block.caption = caption;
   return [block];
@@ -236,7 +254,11 @@ function generationColumn(col: Element, ctx: MapContext): { head: string; rows: 
         const meter = Array.from(m.querySelectorAll('em > i'))
           .map((i) => (hasClass(i, 'on') ? '●' : '○'))
           .join('');
-        rows.push({ key: `gmet|${label ? textOf(label) : ''}`, label: label ? inline(ctx, label) : '', value: meter });
+        rows.push({
+          key: `gmet|${label ? textOf(label) : ''}`,
+          label: label ? inline(ctx, label) : '',
+          value: meter,
+        });
       }
       continue;
     }
@@ -277,8 +299,7 @@ export function generationTableRule(el: Element, ctx: MapContext): Block[] | nul
     if (hasClass(c, 'gcol')) seen++;
     else if (hasClass(c, 'garr')) arrows[seen] = inline(ctx, c);
   }
-  if (arrows.some(Boolean))
-    rows.splice(1, 0, ['', ...parsed.map((_p, i) => arrows[i] ?? '')]);
+  if (arrows.some(Boolean)) rows.splice(1, 0, ['', ...parsed.map((_p, i) => arrows[i] ?? '')]);
   ctx.report.addHeuristic('generation comparison → table', selectorOf(el), ctx.slideId);
   bumpFmt(ctx, 'layer diagrams and meters as text (`●○`)');
   return [{ type: 'table', head: ['', ...parsed.map((p) => p.head)], rows }];
@@ -410,7 +431,10 @@ export function videoCardsRule(el: Element, ctx: MapContext): Block[] | null {
         ctx.slideId,
       );
     if (art.querySelector('button.action'))
-      ctx.report.addDropped('video card play buttons (the `video` block is the button)', ctx.slideId);
+      ctx.report.addDropped(
+        'video card play buttons (the `video` block is the button)',
+        ctx.slideId,
+      );
   }
   ctx.report.addHeuristic('video cards → video blocks', selectorOf(el), ctx.slideId);
   return gridOf(cells, ctx);
@@ -423,18 +447,21 @@ export function videoCardsRule(el: Element, ctx: MapContext): Block[] | null {
 export function stripRule(el: Element, ctx: MapContext): Block[] | null {
   if (!hasClass(el, 'strip')) return null;
   const nodes = childElements(el).filter((c) => hasClass(c, 'sn'));
-  if (nodes.length < 2 || nodes.length > 6) return null;
-  const items: ChainBlock['items'] = [];
+  if (nodes.length < 2 || nodes.length > 5) return null;
+  const items: TilesBlock['items'] = [];
   for (const n of nodes) {
     const label = n.querySelector('.l') ?? n;
     const text = inline(ctx, label);
     if (!text) return null;
-    items.push({ label: text });
+    const item: TilesBlock['items'][number] = { label: text };
+    const icon = n.querySelector('i[data-lucide]')?.getAttribute('data-lucide');
+    if (icon) item.icon = icon;
+    items.push(item);
   }
-  ctx.report.addHeuristic('step strip → chain', selectorOf(el), ctx.slideId);
+  ctx.report.addHeuristic('step strip → tiles (icon + label)', selectorOf(el), ctx.slideId);
   if (el.getAttribute('style') || el.querySelector('[style]'))
     bumpFmt(ctx, 'strip emphasis (current step, fading) dropped');
-  return [{ type: 'chain', items }];
+  return [{ type: 'tiles', cols: items.length as TilesBlock['cols'], items }];
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -484,15 +511,18 @@ export function quizCardsRule(el: Element, ctx: MapContext): Block[] | null {
   const params: Record<string, unknown> = { mode: 'cards' };
   const all = ctx.quiz?.ids ?? [];
   const areas = new Set(ids.map((id) => ctx.quiz?.area[id]));
-  const inArea = (a: number | undefined): string[] =>
-    all.filter((id) => ctx.quiz?.area[id] === a);
+  const inArea = (a: number | undefined): string[] => all.filter((id) => ctx.quiz?.area[id] === a);
   const [area] = [...areas];
   if (ids.join(',') === all.join(',')) {
     // every item: no filter
   } else if (areas.size === 1 && area !== undefined && ids.join(',') === inArea(area).join(','))
     params.area = area;
   else params.ids = ids.join(',');
-  ctx.report.addHeuristic('quiz review cards → `widget quiz mode=cards`', selectorOf(el), ctx.slideId);
+  ctx.report.addHeuristic(
+    'quiz review cards → `widget quiz mode=cards`',
+    selectorOf(el),
+    ctx.slideId,
+  );
   return [{ type: 'widget', name: 'quiz', params }];
 }
 

@@ -1,6 +1,7 @@
 {
   "$comment": "Per-deck import config, applied by `scripts/import.ts` (packages/importer/src/config.ts). Regenerate the example from the legacy deck instead of editing lecture.marco.md by hand.",
   "notes": "split",
+  "cover": { "group": "표지 · 도입" },
   "slides": [
     { "at": 1, "id": "cover" },
     { "at": 2, "id": "intro" },

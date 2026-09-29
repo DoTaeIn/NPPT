@@ -22,6 +22,8 @@ interface AssetDraft {
   credit?: string;
   source?: string;
   alt?: string;
+  width?: number;
+  height?: number;
 }
 
 function slugify(text: string): string {
@@ -79,7 +81,14 @@ export class AssetRegistry {
     base: string,
     mime: string,
     bytes: Uint8Array,
-    meta: { title?: string; credit?: string; source?: string; alt?: string } = {},
+    meta: {
+      title?: string;
+      credit?: string;
+      source?: string;
+      alt?: string;
+      width?: number;
+      height?: number;
+    } = {},
   ): string {
     const existing = this.byHash.get(sha256(bytes));
     if (existing) return existing;
@@ -89,6 +98,10 @@ export class AssetRegistry {
     for (const key of ['title', 'credit', 'source', 'alt'] as const) {
       const v = meta[key];
       if (v) draft[key] = v;
+    }
+    if (meta.width && meta.height) {
+      draft.width = meta.width;
+      draft.height = meta.height;
     }
     this.drafts.set(id, draft);
     this.byHash.set(sha256(bytes), id);
@@ -127,7 +140,10 @@ export class AssetRegistry {
   }
 
   /** Fill metadata the asset does not have yet (existing values win). */
-  annotate(id: string, meta: { title?: string; credit?: string; source?: string; alt?: string }): void {
+  annotate(
+    id: string,
+    meta: { title?: string; credit?: string; source?: string; alt?: string },
+  ): void {
     const draft = this.drafts.get(id);
     if (!draft) return;
     for (const key of ['title', 'credit', 'source', 'alt'] as const) {
@@ -137,7 +153,10 @@ export class AssetRegistry {
   }
 
   /** Replace metadata (per-deck config overrides). */
-  override(id: string, meta: { title?: string; credit?: string; source?: string; alt?: string }): boolean {
+  override(
+    id: string,
+    meta: { title?: string; credit?: string; source?: string; alt?: string },
+  ): boolean {
     const draft = this.drafts.get(id);
     if (!draft) return false;
     for (const key of ['title', 'credit', 'source', 'alt'] as const) {
@@ -166,6 +185,10 @@ export class AssetRegistry {
       if (d.credit) a.credit = d.credit;
       if (d.source) a.source = d.source;
       if (d.alt) a.alt = d.alt;
+      if (d.width && d.height) {
+        a.width = d.width;
+        a.height = d.height;
+      }
       out[d.id] = a;
     }
     return out;

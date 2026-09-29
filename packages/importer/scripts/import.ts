@@ -52,7 +52,8 @@ console.log(
   `${r.family}: ${r.slideCount} slides, ${r.mappedBlocks + r.fallbackBlocks} blocks, ${r.mappedPercent}% mapped, ` +
     `${r.fallbackBlocks} html fallback, ${result.assets.length} assets, ${r.validation.length} validation error(s)`,
 );
-if (r.config) console.log(`  config ${r.config.source}: ${r.config.applied.length} rule(s) applied`);
+if (r.config)
+  console.log(`  config ${r.config.source}: ${r.config.applied.length} rule(s) applied`);
 if (r.corrections)
   console.log(
     `  corrections ran: ${r.corrections.ran.join(', ') || 'none'}${r.corrections.errors.length ? ` (${r.corrections.errors.length} error(s))` : ''}`,

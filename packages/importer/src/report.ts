@@ -325,7 +325,7 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
     L.push('| Deck data | Imported as | Status |', '|---|---|---|');
     if (r.data.quiz !== undefined) {
       L.push(
-        `| \`window.QUIZ\` | \`lecture.quiz\` (${r.data.quiz} × QuizItem) → front matter \`quiz:\` list | complete; the quiz/exam plugin is Phase 3 |`,
+        `| \`window.QUIZ\` | \`lecture.quiz\` (${r.data.quiz} × QuizItem) → front matter \`quiz:\` list | complete${r.corrections?.changed.quiz ? ` (${r.corrections.changed.quiz} items corrected at load time)` : ''}; used by \`:::widget quiz\` (runtime quiz plugin) |`,
       );
     }
     if (r.data.sims !== undefined) {
@@ -376,15 +376,17 @@ export function renderReport(r: ImportReport, extraSections: string[] = []): str
     );
     L.push('| | |', '|---|---|');
     L.push(`| Ran (document order) | ${k.ran.map((x) => `\`${x}\``).join(', ') || 'none'} |`);
-    if (k.missing.length)
-      L.push(`| Not found | ${k.missing.map((x) => `\`${x}\``).join(', ')} |`);
+    if (k.missing.length) L.push(`| Not found | ${k.missing.map((x) => `\`${x}\``).join(', ')} |`);
     L.push(`| \`window.SIMS\` changed | ${k.changed.sims ? 'yes' : 'no'} |`);
     L.push(`| Quiz items changed | ${k.changed.quiz} |`);
     L.push(`| Slides whose notes changed | ${k.changed.notes} |`);
     L.push(`| Slides whose visible text changed | ${k.changed.slideText} |`);
     L.push(`| Slides whose TOC/question/simulator attributes changed | ${k.changed.attributes} |`);
     L.push(`| Script errors | ${k.errors.length ? k.errors.map(cell).join('; ') : 'none'} |`);
-    L.push(`| Script audit errors | ${k.audit.length ? k.audit.map(cell).join('; ') : 'none'} |`, '');
+    L.push(
+      `| Script audit errors | ${k.audit.length ? k.audit.map(cell).join('; ') : 'none'} |`,
+      '',
+    );
   }
 
   if (r.warnings.length) {

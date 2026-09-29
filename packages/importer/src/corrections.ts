@@ -14,7 +14,8 @@ import type { CorrectionsReport } from './types.js';
 // a small JavaScript scanner (strings, template literals, comments, regex literals)
 // ---------------------------------------------------------------------------------------------
 
-const REGEX_BEFORE = /[(,=:[!&|?{};+\-*%<>~^]$|(?:^|[^\w$])(?:return|typeof|case|do|else|in|of|void|yield|await)$/;
+const REGEX_BEFORE =
+  /[(,=:[!&|?{};+\-*%<>~^]$|(?:^|[^\w$])(?:return|typeof|case|do|else|in|of|void|yield|await)$/;
 
 /** Index just past the `}` that closes the `{` at `open`, or -1. */
 export function matchBrace(src: string, open: number): number {
@@ -151,7 +152,12 @@ function slideStates(document: Document): SlideState[] {
     note: s.getAttribute('data-note') ?? '',
     text: s.textContent ?? '',
     attrs: ['data-title', 'data-q', 'data-heading', 'data-terms', 'data-eyebrow']
-      .map((a) => `${a}=${s.getAttribute(a) ?? ''}|${Array.from(s.querySelectorAll(`[${a}]`)).map((e) => e.getAttribute(a)).join('|')}`)
+      .map(
+        (a) =>
+          `${a}=${s.getAttribute(a) ?? ''}|${Array.from(s.querySelectorAll(`[${a}]`))
+            .map((e) => e.getAttribute(a))
+            .join('|')}`,
+      )
       .join('\n'),
   }));
 }

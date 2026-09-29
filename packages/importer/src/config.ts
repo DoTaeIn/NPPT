@@ -201,7 +201,8 @@ export function parseImportConfig(input: unknown): ImportConfig {
       });
     }
   }
-  if (input.cover !== undefined) config.cover = checkOverrides(input.cover, 'config.cover', problems);
+  if (input.cover !== undefined)
+    config.cover = checkOverrides(input.cover, 'config.cover', problems);
   if (input.assets !== undefined) {
     if (!isRecord(input.assets)) problems.push('config.assets: must be an object');
     else {

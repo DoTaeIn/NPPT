@@ -231,14 +231,17 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
   // the DOM serialiser lower-cases SVG element names (linearGradient), which a .svg file needs.
   const heroSvgs = Array.from(document.querySelectorAll('svg.hero-art'));
   const heroSources = [
-    ...tokenized.matchAll(/<svg\b[^>]*\bclass=["'][^"']*\bhero-art\b[^"']*["'][^>]*>[\s\S]*?<\/svg>/g),
+    ...tokenized.matchAll(
+      /<svg\b[^>]*\bclass=["'][^"']*\bhero-art\b[^"']*["'][^>]*>[\s\S]*?<\/svg>/g,
+    ),
   ].map((m) => m[0]);
   const svgSource = (el: Element): string => {
     const at = heroSvgs.indexOf(el);
     let src = heroSources.length === heroSvgs.length && at >= 0 ? (heroSources[at] ?? '') : '';
     if (!src) src = el.outerHTML;
     const open = src.slice(0, src.indexOf('>'));
-    if (!/\sxmlns=/.test(open)) src = src.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    if (!/\sxmlns=/.test(open))
+      src = src.replace(/^<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"');
     return `${src}\n`;
   };
 
@@ -392,11 +395,22 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
     };
     if (quizInfo) ctx.quiz = quizInfo;
     ctx.inlineSvg = (svg, title) => {
+      const box = (svg.getAttribute('viewBox') ?? '')
+        .trim()
+        .split(/[\s,]+/)
+        .map(Number);
+      const [, , width, height] = box;
       const id = assets.addBytes(
         `hero-${String(index + 1).padStart(2, '0')}`,
         'image/svg+xml',
         new TextEncoder().encode(svgSource(svg)),
-        { title: title ? `${title} · 일러스트` : '일러스트', credit: '원본 덱의 인라인 SVG' },
+        {
+          title: title ? `${title} · 일러스트` : '일러스트',
+          credit: '원본 덱의 인라인 SVG',
+          ...(box.length === 4 && width && height && width > 0 && height > 0
+            ? { width, height }
+            : {}),
+        },
       );
       assets.markReferenced(id);
       return id;
@@ -468,7 +482,9 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
     if (s.type === 'references' && s.only) {
       const missing = s.only.filter((r) => !refs.some((x) => x.id === r));
       if (missing.length)
-        report.warn(`${s.id} lists refs that are not in the reference list: ${missing.join(', ')}.`);
+        report.warn(
+          `${s.id} lists refs that are not in the reference list: ${missing.join(', ')}.`,
+        );
       const unlisted = refs.filter((r) => !s.only?.includes(r.id)).map((r) => r.id);
       if (unlisted.length)
         report.warn(`${s.id}: refs not in the legacy reference list: ${unlisted.join(', ')}.`);
@@ -502,6 +518,16 @@ export function importLegacyDeck(html: string, opts: ImportOptions = {}): Import
       meta.course = m[1] ?? '';
       meta.week = Number(m[2]);
     } else meta.footer = footer;
+  }
+  // The renderer shows `${course} · ${week}주차` on a cover without `kicker`: leave defaults out.
+  const defaultKicker = [meta.course, meta.week !== undefined ? `${meta.week}주차` : undefined]
+    .filter(Boolean)
+    .join(' · ');
+  for (const s of slides) {
+    if (s.type === 'cover' && s.kicker !== undefined && plainText(s.kicker) === defaultKicker) {
+      delete s.kicker;
+      report.addDropped('cover kicker (equals the default `${course} · ${week}주차`)', s.id);
+    }
   }
 
   const draftLecture: Lecture = {

@@ -1,11 +1,30 @@
 [
   {
+    "id": "hero-01",
+    "fileName": "hero-01.svg",
+    "mime": "image/svg+xml",
+    "bytes": 7674,
+    "sha256": "0e26c7d871247b0ec925e56f6ae1062786a023f89616b440880223b164c8357a",
+    "title": "방화벽 운영 및 실무 · 일러스트",
+    "credit": "원본 덱의 인라인 SVG"
+  },
+  {
+    "id": "hero-05",
+    "fileName": "hero-05.svg",
+    "mime": "image/svg+xml",
+    "bytes": 3440,
+    "sha256": "08eb0f9bbe0f9521f0ce7c6e68730c41f8db329b6590ff50016ab32b50e47581",
+    "title": "사례 연구 · CISA AA20-283A · 일러스트",
+    "credit": "원본 덱의 인라인 SVG"
+  },
+  {
     "id": "fortigate-fortios",
     "fileName": "fortigate-fortios.jpg",
     "mime": "image/jpeg",
     "bytes": 19642,
     "sha256": "8a88155c32f5d6178ef01b3b3ee5e7d8c5c78f97c196598719317ba816c1092c",
-    "title": "FortiGate · FortiOS 제품 사진"
+    "title": "FortiGate · FortiOS 제품 사진",
+    "credit": "사진: fortinet.com"
   },
   {
     "id": "pa-pan-os",
@@ -13,7 +32,8 @@
     "mime": "image/jpeg",
     "bytes": 42743,
     "sha256": "2aa5ab0233143f877b9248320a3768df1b2757c34194f0990f72fd1fcaf845ee",
-    "title": "PA 시리즈 · PAN-OS 제품 사진"
+    "title": "PA 시리즈 · PAN-OS 제품 사진",
+    "credit": "사진: paloaltonetworks.com"
   },
   {
     "id": "quantum-force",
@@ -21,7 +41,8 @@
     "mime": "image/jpeg",
     "bytes": 18584,
     "sha256": "7fe138de80240986311d72504c2b4b13d7725d4feeebe58329496f527b27764e",
-    "title": "Quantum Force 제품 사진"
+    "title": "Quantum Force 제품 사진",
+    "credit": "사진: globenewswire.com(제조사 보도자료)"
   },
   {
     "id": "secure-firewall",
@@ -29,7 +50,8 @@
     "mime": "image/jpeg",
     "bytes": 18045,
     "sha256": "e89c665d8916e1278b77e773b6ad83df9b07697f737f3208d610ce6a4b883e26",
-    "title": "Secure Firewall 제품 사진"
+    "title": "Secure Firewall 제품 사진",
+    "credit": "사진: blogs.cisco.com"
   },
   {
     "id": "srx-junos",
@@ -37,7 +59,8 @@
     "mime": "image/jpeg",
     "bytes": 25591,
     "sha256": "86de19c779b3aa56ea993cae539cf8abca0dc83c5a8005fbdbe73b6f83e87c26",
-    "title": "SRX 시리즈 · Junos 제품 사진"
+    "title": "SRX 시리즈 · Junos 제품 사진",
+    "credit": "사진: juniper.net"
   },
   {
     "id": "bluemax-ngf",
@@ -45,7 +68,8 @@
     "mime": "image/jpeg",
     "bytes": 29058,
     "sha256": "ca37184bcd5b9b85a2e0c142fc3eab6eaeb56b559111ca0ea52a39e783f2c767",
-    "title": "BLUEMAX NGF 제품 사진"
+    "title": "BLUEMAX NGF 제품 사진",
+    "credit": "사진: dailysecu.com(제조사 보도자료)"
   },
   {
     "id": "trusguard-ahnlab-xtg",
@@ -53,7 +77,8 @@
     "mime": "image/jpeg",
     "bytes": 19850,
     "sha256": "24d3b03f3e475f3d8287b219143bad8e8374c188931f190566836cadfe9db6d3",
-    "title": "TrusGuard → AhnLab XTG 제품 사진"
+    "title": "TrusGuard → AhnLab XTG 제품 사진",
+    "credit": "사진: ahnlab.com"
   },
   {
     "id": "axgate-ngfw-vpn",
@@ -61,7 +86,8 @@
     "mime": "image/jpeg",
     "bytes": 9643,
     "sha256": "bc394bfd134fb88ccd07491e5600d0e1b0a0b00bd43785629ed376e9e4034598",
-    "title": "AXGATE NGFW · VPN 제품 사진"
+    "title": "AXGATE NGFW · VPN 제품 사진",
+    "credit": "사진: axgate.com"
   },
   {
     "id": "sniper-ngfw",
@@ -69,6 +95,16 @@
     "mime": "image/jpeg",
     "bytes": 20650,
     "sha256": "500f8cd4c4a8737a6f005f3f867535ce40c6ea58440d9aa6340c634013de05ce",
-    "title": "SNIPER NGFW 제품 사진"
+    "title": "SNIPER NGFW 제품 사진",
+    "credit": "사진: ddaily.co.kr(제조사 보도자료)"
+  },
+  {
+    "id": "hero-41",
+    "fileName": "hero-41.svg",
+    "mime": "image/svg+xml",
+    "bytes": 2481,
+    "sha256": "8387e38c652e5e5e2122e7f6f6a661b78cbcf1d3eeb4a61583c7e41e68be5f6f",
+    "title": "6주차 예고 · 일러스트",
+    "credit": "원본 덱의 인라인 SVG"
   }
 ]

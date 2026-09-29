@@ -83,8 +83,7 @@ export const inline = (
   ctx: MapContext,
   nodes: Node | Node[],
   skip?: (el: Element) => boolean,
-): string =>
-  inlineOf(nodes, skip ? { stats: fmt(ctx), skip } : { stats: fmt(ctx) });
+): string => inlineOf(nodes, skip ? { stats: fmt(ctx), skip } : { stats: fmt(ctx) });
 
 export type Rule = (el: Element, ctx: MapContext) => Block[] | null;
 
@@ -363,7 +362,10 @@ const cardsRule: Rule = (el, ctx) => {
         {
           type: 'bullets',
           items: items.map((i) =>
-            [`**${escapeInline(plainText([i.kicker, i.title].filter(Boolean).join(' · ')))}**`, i.body]
+            [
+              `**${escapeInline(plainText([i.kicker, i.title].filter(Boolean).join(' · ')))}**`,
+              i.body,
+            ]
               .filter(Boolean)
               .join(' '),
           ),

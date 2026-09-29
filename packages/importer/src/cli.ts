@@ -33,7 +33,7 @@ export async function loadImportConfig(path: string): Promise<ImportConfig> {
   try {
     json = JSON.parse(await readFile(path, 'utf8')) as unknown;
   } catch (e) {
-    throw new Error(`${path}: ${(e as Error).message}`);
+    throw new Error(`${path}: ${(e as Error).message}`, { cause: e });
   }
   return parseImportConfig(json);
 }

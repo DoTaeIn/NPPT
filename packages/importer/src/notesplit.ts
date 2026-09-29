@@ -38,7 +38,11 @@ export function blockText(b: Block): string {
     case 'table':
       return join([p(b.caption), ...b.head.map(p), ...b.rows.flat().map(p)]);
     case 'compare':
-      return join([p(b.left), p(b.right), ...b.rows.flatMap((r) => [p(r.label), p(r.left), p(r.right)])]);
+      return join([
+        p(b.left),
+        p(b.right),
+        ...b.rows.flatMap((r) => [p(r.label), p(r.left), p(r.right)]),
+      ]);
     case 'callout':
       return join([p(b.title), p(b.body)]);
     case 'image':
@@ -96,7 +100,7 @@ export function blockSegments(blocks: Block[], slideId: string): Segment[] {
 function keyOf(text: string): { key: string; pos: number[] } {
   let key = '';
   const pos: number[] = [];
-  for (let i = 0; i < text.length; ) {
+  for (let i = 0; i < text.length;) {
     const cp = text.codePointAt(i) ?? 0;
     const ch = String.fromCodePoint(cp);
     if (/[\p{L}\p{N}]/u.test(ch)) {
@@ -142,7 +146,11 @@ export function splitPoints(note: string, segments: Segment[]): { at: number; ta
  * Split a V20 prose note into per-block `[대사]` cues. Returns undefined when nothing matched
  * or the result would not survive a parse round trip (the caller then keeps one prose cue).
  */
-export function splitProseNote(prose: string, blocks: Block[], slideId: string): SlideNote | undefined {
+export function splitProseNote(
+  prose: string,
+  blocks: Block[],
+  slideId: string,
+): SlideNote | undefined {
   const note = prose.replace(/\s+/g, ' ').trim();
   if (!note) return undefined;
   const points = splitPoints(note, blockSegments(blocks, slideId));

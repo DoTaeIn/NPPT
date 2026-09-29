@@ -48,7 +48,8 @@ describe('runImport', () => {
       '## Notes',
     ])
       expect(report).toContain(heading);
-    expect(report).toContain('| `div.mystery-widget` | unmapped | 2 | s-03 |');
+    // Tables are aligned the way Prettier aligns them, so the file is stable under `prettier`.
+    expect(report).toMatch(/^\| `div\.mystery-widget` \| unmapped +\| +2 \| s-03 +\|$/m);
     expect(readFileSync(join(out, 'lecture.marco.md'), 'utf8')).toBe(result.source);
   });
 

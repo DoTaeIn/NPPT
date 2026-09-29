@@ -170,9 +170,13 @@ function formatTable(lines: string[]): string[] {
 export function alignMarkdownTables(md: string): string {
   const lines = md.split('\n');
   const out: string[] = [];
-  for (let i = 0; i < lines.length; ) {
+  for (let i = 0; i < lines.length;) {
     const isRow = (l: string | undefined): boolean => !!l && /^\s*\|/.test(l);
-    if (isRow(lines[i]) && lines[i + 1] !== undefined && splitRow(lines[i + 1] as string).every((c) => alignOf(c))) {
+    if (
+      isRow(lines[i]) &&
+      lines[i + 1] !== undefined &&
+      splitRow(lines[i + 1] as string).every((c) => alignOf(c))
+    ) {
       let j = i;
       while (j < lines.length && isRow(lines[j])) j++;
       out.push(...formatTable(lines.slice(i, j)));
@@ -232,17 +236,18 @@ function fmt(v: unknown, indent: number, col: number, tail: number): string {
     const one = flat(v);
     if (one !== null && col + stringWidth(one) + tail <= PRINT_WIDTH) return one;
     if (v.every((x) => typeof x === 'number')) {
-      // Prettier `fill`s number arrays: as many per line as fit.
-      const parts = v.map((x) => JSON.stringify(x));
+      // Prettier `fill`s number arrays: as many per line as fit. Each item carries its comma
+      // (the last has none), so a line is full when the next item and its comma pass the width.
+      const parts = v.map((x, i) => `${JSON.stringify(x)}${i < v.length - 1 ? ',' : ''}`);
       const lines: string[] = [];
       let line = parts[0] as string;
       let pos = indent + 2 + stringWidth(line);
       for (const p of parts.slice(1)) {
-        if (pos + 2 + stringWidth(p) <= PRINT_WIDTH) {
-          line += `, ${p}`;
-          pos += 2 + stringWidth(p);
+        if (pos + 1 + stringWidth(p) <= PRINT_WIDTH) {
+          line += ` ${p}`;
+          pos += 1 + stringWidth(p);
         } else {
-          lines.push(`${line},`);
+          lines.push(line);
           line = p;
           pos = indent + 2 + stringWidth(p);
         }

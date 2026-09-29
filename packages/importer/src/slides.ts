@@ -33,6 +33,7 @@ export interface SlideDraft {
   tagline?: string;
   meta?: string[];
   art?: string;
+  dark?: boolean;
   only?: string[];
   refs: string[];
   blocks: Block[];
@@ -55,6 +56,12 @@ function footerText(el: Element): string {
 /** Ref ids in a "참고 출처 S04 · S30 ↗" button. */
 export function refIdsFromButton(text: string): string[] {
   return [...text.matchAll(/\b([A-Z]{1,3}\d{1,3})\b/g)].map((m) => m[1] as string);
+}
+
+/** V20 dividers are dark when the deck's stylesheet sets their heading white. */
+function darkDividers(ctx: MapContext): boolean {
+  const color = (ctx.css?.value('.divider h2', 'color') ?? '').toLowerCase().replace(/\s+/g, '');
+  return ['#fff', '#ffffff', 'white', 'rgb(255,255,255)'].includes(color);
 }
 
 /** Lines of a meta strip: each text node and each child element is one line. */
@@ -122,15 +129,12 @@ export function v20Slide(
   if (slideRefs?.length) d.refs.push(...slideRefs);
 
   if (type === 'cover' || type === 'divider') {
-    // Cover and divider scaffolds do not show an eyebrow; V20 used data-tag only in the TOC.
-    // A divider's tag becomes the TOC `group` of the slides that follow it (see import.ts).
-    if (d.tag) {
-      if (type === 'cover')
-        ctx.report.addDropped(`cover TOC prefix (\`data-tag="${d.tag}"\`)`, ctx.slideId);
-      d.groupLabel = d.tag;
-      delete d.tag;
-    }
+    // Cover and divider scaffolds show no eyebrow; V20 used data-tag as the TOC prefix, which
+    // `tag` keeps (`data-tag`). A divider's tag also names the TOC `group` of the slides that
+    // follow it (see import.ts).
+    if (d.tag) d.groupLabel = d.tag;
   }
+  if (type === 'divider' && darkDividers(ctx)) d.dark = true;
 
   if (type === 'cover') {
     for (const child of childElements(section)) {
@@ -286,8 +290,9 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
       continue;
     }
     if (hasClass(c, 's-q')) {
+      // The visible strip wins over `data-q`; its label (`학습 동기`) is the scaffold's `질문`.
       const text = c.querySelector('.q-text');
-      if (text && !d.question) d.question = textOf(text);
+      if (text && textOf(text)) d.question = inline(ctx, text);
       continue;
     }
     if (tagName(c) === 'svg' && hasClass(c, 'hero-art')) {
@@ -295,7 +300,11 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
       const art = ctx.inlineSvg?.(c, section.getAttribute('data-title')?.trim() ?? '');
       if (art) {
         d.art = art;
-        ctx.report.addHeuristic('inline hero illustration → SVG asset (`art`)', 'svg.hero-art', ctx.slideId);
+        ctx.report.addHeuristic(
+          'inline hero illustration → SVG asset (`art`)',
+          'svg.hero-art',
+          ctx.slideId,
+        );
       } else d.blocks.push(...fallback(c, ctx));
       continue;
     }
@@ -304,7 +313,7 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
         if (hasClass(h, 's-eyebrow')) {
           d.tag ??= eyebrowOf(h);
           const hq = h.querySelector('.hq');
-          if (hq && !d.question) d.question = inline(ctx, hq, (x) => tagName(x) === 'b');
+          if (hq) d.question = inline(ctx, hq, (x) => tagName(x) === 'b');
         } else if (hasClass(h, 's-title') || /^h[12]$/.test(tagName(h))) d.heading = inline(ctx, h);
         else d.blocks.push(...mapElement(h, ctx));
       }
@@ -329,7 +338,13 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
         else if (hasClass(h, 'cover-sub')) d.subtitle = inline(ctx, h);
         else if (hasClass(h, 'cover-meta')) d.meta = metaLines(h, ctx);
         else if (hasClass(h, 'cover-q')) {
-          if (!d.question) d.question = inline(ctx, h, (x) => tagName(x) === 'span');
+          const label = h.querySelector(':scope > span');
+          if (label && textOf(label))
+            ctx.report.addDropped(
+              `question label \`${textOf(label)}\` (the strip's label is fixed)`,
+              ctx.slideId,
+            );
+          d.question = inline(ctx, h, (x) => tagName(x) === 'span');
         } else if (hasClass(h, 'cover-art') || tagName(h) === 'img') {
           const art = artAsset(h, ctx);
           if (art) d.art = art;
@@ -350,7 +365,8 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
           else if (hasClass(h, 'grow') || (tagName(h) === 'div' && classes(h).length === 0))
             walk(h);
           else if (hasClass(h, 'div-desc') && !d.subtitle) d.subtitle = inline(ctx, h);
-          else if (hasClass(h, 'quote-src')) (d.meta ??= []).push(inline(ctx, h));
+          else if (hasClass(h, 'quote-src'))
+            d.blocks.push({ type: 'paragraph', text: inline(ctx, h) });
           else d.blocks.push(...mapElement(h, ctx));
         }
       };
@@ -376,7 +392,12 @@ export function v97Slide(section: Element, ctx: MapContext): SlideDraft {
 export function finishSlide(d: SlideDraft, id: string, ctx: MapContext): ImportedSlide {
   const legacy = d.title;
   const heading = d.heading;
-  const slide: ImportedSlide = { id, type: d.type, title: heading || legacy || '', blocks: d.blocks };
+  const slide: ImportedSlide = {
+    id,
+    type: d.type,
+    title: heading || legacy || '',
+    blocks: d.blocks,
+  };
   if (d.toc) slide.toc = d.toc;
   else if (heading && legacy && plainText(heading) !== legacy) {
     slide.toc = legacy;
@@ -391,6 +412,7 @@ export function finishSlide(d: SlideDraft, id: string, ctx: MapContext): Importe
   if (d.tagline) slide.tagline = d.tagline;
   if (d.meta?.length) slide.meta = d.meta;
   if (d.art) slide.art = d.art;
+  if (d.dark) slide.dark = true;
   const refs = [...new Set(d.refs)];
   if (refs.length) slide.refs = refs;
   if (d.no) slide.no = d.no;

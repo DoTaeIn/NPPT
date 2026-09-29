@@ -30,3 +30,56 @@ export const V97_DECK = `<!DOCTYPE html>
 window.TERMS={};</script>
 </body></html>
 `;
+
+// ---------------------------------------------------------------------------------------------
+// Builders for one-rule fixtures
+// ---------------------------------------------------------------------------------------------
+
+const V97_FOOT =
+  '<div class="s-foot"><span class="no"></span><span class="brand"><span>보안시스템 운영 및 활용 · 5주차</span></span></div>';
+
+/** A v9.7 content slide: `.s-head` (eyebrow + title) and `body` inside `.s-body`. */
+export function v97Slide(
+  body: string,
+  opts: { title?: string; heading?: string; note?: string; group?: string } = {},
+): string {
+  const title = opts.title ?? '제목';
+  return `<section class="slide" data-group="${opts.group ?? '본론'}" data-title="${title}" data-note="${opts.note ?? ''}"><div class="s-progress"></div><div class="s-head"><div class="s-eyebrow"><span>MODULE · TEST</span></div><h1 class="s-title">${opts.heading ?? title}</h1></div><div class="s-body">${body}</div>${V97_FOOT}</section>`;
+}
+
+/** A v9.7 deck around the given sections, with optional stylesheet and inline script. */
+export function v97Deck(sections: string[], opts: { css?: string; script?: string } = {}): string {
+  return `<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><title>5주차</title><style>${opts.css ?? ''}</style></head>
+<body><main id="deck">
+${sections.join('\n')}
+</main>
+<script>${opts.script ?? ''}</script>
+</body></html>
+`;
+}
+
+/** A V20 content slide: eyebrow, section title and `body` inside `.s-body`. */
+export function v20Slide(
+  body: string,
+  opts: { title?: string; tag?: string; note?: string; cls?: string } = {},
+): string {
+  const title = opts.title ?? '제목';
+  const tag = opts.tag ?? '태그';
+  return `<section class="slide v20-slide ${opts.cls ?? ''}" data-title="${title}" data-tag="${tag}" data-note="${opts.note ?? ''}"><div class="slide-wrapper"><div class="eyebrow">${tag}</div><h2 class="section-title">${title}</h2><div class="s-body">${body}</div></div><div class="slide-tag-bottom">보안시스템 운영 및 활용 · 3주차</div></section>`;
+}
+
+/** A V20 deck around the given sections, with `#lecture-data` and an optional stylesheet. */
+export function v20Deck(sections: string[], data: object = {}, css = ''): string {
+  return `<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8"><title>3주차</title><style>${css}</style></head>
+<body><div id="stage"><div id="canvas">
+${sections.join('\n')}
+</div></div>
+<script id="lecture-data" type="application/json">${JSON.stringify(data)}</script>
+</body></html>
+`;
+}
+
+/** `data:image/png;base64,…` of the 1×1 PNG. */
+export const PNG_URI = `data:image/png;base64,${PNG_1X1}`;

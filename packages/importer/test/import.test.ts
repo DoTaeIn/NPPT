@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { detectFamily, importLegacyDeck } from '../src/index.js';
+import { detectFamily, importLegacyDeck, type ImportedSlide } from '../src/index.js';
 import { PNG_1X1, fixture } from './helpers.js';
 
 describe('importLegacyDeck · V20', () => {
@@ -54,26 +54,39 @@ describe('importLegacyDeck · V20', () => {
       },
       { type: 'takeaway', label: '핵심 구분', text: '인증은 자격 확인, 인가는 `allow` 판단이다.' },
     ]);
+    // The V20 prose note is the chain's text: one [대사] cue aimed at the chain block.
     expect(slide.note?.cues).toEqual([
-      expect.objectContaining({ k: 'SAY', t: '01 자격 제시 카드를 리더에 댄다' }),
+      expect.objectContaining({
+        k: 'SAY',
+        t: '01 자격 제시 카드를 리더에 댄다',
+        focus: { targets: ['s-02-b1'] },
+      }),
     ]);
-    expect(slide.note?.raw).toBe('[대사] 01 자격 제시 카드를 리더에 댄다');
+    expect(slide.note?.raw).toBe('[대사] @s-02-b1 01 자격 제시 카드를 리더에 댄다');
   });
 
-  it('maps a cover: subtitle from the tagline, art / headline / chips as blocks', () => {
-    const cover = lecture.slides[0]!;
-    expect(cover.type).toBe('cover');
-    expect(cover.title).toBe('물리보안 · 출입통제 IAM');
-    expect(cover.subtitle).toBe('장비가 문을 제어하는 방식을 이해한다.');
-    expect(cover.tag).toBeUndefined();
+  it('maps a cover: visible headline as title, data-title as toc, art, chips as pills', () => {
+    const cover = lecture.slides[0] as ImportedSlide;
+    expect(cover).toMatchObject({
+      type: 'cover',
+      title: '문을 여는 기술, *권한을 다루는 설계.*',
+      toc: '물리보안 · 출입통제 IAM',
+      subtitle: '장비가 문을 제어하는 방식을 이해한다.',
+      tag: '표지',
+      art: 'pix',
+    });
+    // The course · week line equals the renderer's default kicker, so it is left out.
+    expect(cover.kicker).toBeUndefined();
     expect(cover.blocks).toEqual([
-      { type: 'image', asset: 'pix' },
-      { type: 'paragraph', text: '문을 여는 기술, *권한을 다루는 설계.*', lead: true },
       { type: 'pills', items: [{ text: '인증 · 통신' }, { text: '피난 · 권한' }] },
     ]);
     expect(report.dropped.map((d) => d.what)).toEqual(
-      expect.arrayContaining(['course · week line (same as the footer)', 'cover TOC tag (`표지`)']),
+      expect.arrayContaining(['cover kicker (equals the default `${course} · ${week}주차`)']),
     );
+    expect(result.source).toContain(
+      '# slide cover\ntitle: 문을 여는 기술, *권한을 다루는 설계.*\ntoc: 물리보안 · 출입통제 IAM\n',
+    );
+    expect(result.source).toContain('art: pix\ntag: 표지\n');
   });
 
   it('maps a table, keeps pipes and quotes, and records unmapped markup', () => {
@@ -157,21 +170,34 @@ describe('importLegacyDeck · v9.7', () => {
   const result = importLegacyDeck(html);
   const { lecture, report } = result;
 
-  it('maps a hero with data-q, alert and a structured marker note', () => {
+  it('maps a `.div-wrap` hero to an alert divider with a structured marker note', () => {
     expect(report.family).toBe('v97');
-    const hero = lecture.slides[0]!;
+    const hero = lecture.slides[0] as ImportedSlide;
     expect(hero).toMatchObject({
-      type: 'hero',
+      type: 'divider',
       alert: true,
-      title: '사례 연구 · CISA AA20-283A',
-      subtitle: '경계 장비의 취약점 하나가 AD 전체로 이어지는 공격 체인',
-      tag: 'CASE STUDY · AA20-283A',
+      no: '!',
+      title: '경계 장비의 취약점 하나가 AD 전체로 이어지는 공격 체인',
+      toc: '사례 연구 · CISA AA20-283A',
+      subtitle: '방화벽의 **SSL VPN 취약점**으로 들어온다.',
+      kicker: 'CASE STUDY · AA20-283A',
       group: '표지 · 도입',
       question: '이 공격 체인을 끊을 수 있는 정책은 몇 개일까?',
+      art: 'hero-01',
     });
-    expect(hero.blocks).toEqual([
-      { type: 'paragraph', text: '방화벽의 **SSL VPN 취약점**으로 들어온다.' },
-    ]);
+    expect(hero.subtitle).not.toBe(hero.title);
+    expect(hero.blocks).toEqual([]);
+    // The inline illustration became an SVG file with its viewBox size.
+    expect(lecture.assets['hero-01']).toMatchObject({
+      path: 'assets/hero-01.svg',
+      width: 10,
+      height: 10,
+    });
+    const svg = result.assets.find((a) => a.id === 'hero-01')!;
+    expect(svg.mime).toBe('image/svg+xml');
+    expect(new TextDecoder().decode(svg.bytes)).toMatch(
+      /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" class="hero-art" viewBox="0 0 10 10">/,
+    );
     const note = hero.note!;
     // Verbatim, with HTML entities decoded.
     expect(note.raw).toContain("[화면] 빨간 경고 배경, '공격 체인' 제목.");
@@ -180,8 +206,8 @@ describe('importLegacyDeck · v9.7', () => {
     expect(note.time).toMatchObject({ minutes: 2.5, from: '10:00', to: '12:30' });
     expect(note.cues.map((c) => c.k)).toEqual(['SCREEN', 'SAY', 'HOP', 'SQ', 'SA', 'ASK']);
     expect(note.cues[5]).toMatchObject({ id: 'p05-c004', wait: '10초' });
-    expect(report.dropped.map((d) => d.what)).toEqual(
-      expect.arrayContaining(['hero illustration `svg.hero-art` (theme decoration)']),
+    expect(report.heuristics.map((h) => h.rule)).toContain(
+      'inline hero illustration → SVG asset (`art`)',
     );
   });
 
