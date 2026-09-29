@@ -223,6 +223,7 @@ function startText(x: number, y: number): void {
   box.style.fontSize = `${textSize(INK.size)}px`;
   box.dataset.x = String(x);
   box.dataset.y = String(y);
+  box.dataset.size = String(INK.size);
   host.append(box);
   textBox = box;
   box.addEventListener('keydown', (e) => {
@@ -244,7 +245,7 @@ function commitText(): void {
     push({
       tool: 'text',
       color: box.style.color || INK.color,
-      size: INK.size,
+      size: Number(box.dataset.size) || INK.size,
       pts: [Number(box.dataset.x), Number(box.dataset.y)],
       text,
     });

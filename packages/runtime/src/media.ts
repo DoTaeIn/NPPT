@@ -79,11 +79,14 @@ export function openImage(assetId: string, from?: Element | null): void {
   openDialog(title, frag, 'image');
 }
 
-/** YouTube id → embed in the dialog, or a new window when opened from file:// (embeds are blocked there). */
-export function openVideo(id: string, start: number): void {
+/**
+ * YouTube id → embed in the dialog, or a new window when opened from file:// (embeds are blocked
+ * there). `start` defaults to the video's `start` in `#lecture-data`.
+ */
+export function openVideo(id: string, start?: number): void {
   if (!/^[\w-]{6,20}$/.test(id)) return;
-  const s = Math.max(0, Math.floor(start) || 0);
   const v = S.data.videos.find((x) => x.id === id);
+  const s = Math.max(0, Math.floor(start ?? v?.start ?? 0) || 0);
   const title = v?.title || 'YouTube 영상';
   const watch = `https://www.youtube.com/watch?v=${id}&t=${s}s`;
   const credit = v?.credit ? `<p class="dlg-caption">${esc(v.credit)}</p>` : '';
@@ -126,7 +129,8 @@ export function initMedia(): void {
     const vid = t.closest<HTMLElement>('.video-open[data-video]');
     if (vid) {
       e.preventDefault();
-      openVideo(vid.dataset.video || '', Number(vid.dataset.start) || 0);
+      const st = vid.dataset.start;
+      openVideo(vid.dataset.video || '', st ? Number(st) : undefined);
     }
   });
 }

@@ -1,29 +1,31 @@
 // Handout (A4 portrait): per slide a scaled thumbnail and the full note, then the terms list.
+// DOM shared with the design system's print.css:
+//   <div id="handout">
+//     <article class="ho-page" data-slide="s-04">
+//       <header class="ho-head"><span class="ho-no">04</span><h2 class="ho-title">…</h2><span class="ho-tag">deck</span></header>
+//       <div class="ho-shot"><section class="slide active …">clone, ids removed</section></div>
+//       <div class="ho-note"><p class="ho-time">…</p><ol class="ho-cues">
+//         <li class="ho-cue" data-kind="SAY"><b class="ho-marker">대사</b><div class="ho-text">…</div></li></ol></div>
+//     </article>
+//     <section class="ho-terms"><h2>용어 · 약자</h2><dl><div><dt>LPR</dt><dd>…</dd></div></dl></section>
+//   </div>
+// The thumbnail scale comes from CSS (--ho-w / --ho-scale); an empty .ho-note prints ruled lines.
 import { noteFor, timeText } from './data';
 import { esc, h, inlineFmt, pad2, slideTitle } from './dom';
 import { CUE_LABEL } from './labels';
-import { CH, CW } from './layout';
 import { S } from './state';
+import type { Cue } from './types';
 
-/** Thumbnail width in CSS px: A4 (210 mm) minus 2 × 12 mm margins ≈ 703 px. */
-export const SHOT_W = 700;
+const cueItem = (c: Pick<Cue, 'k' | 't' | 'marker' | 'wait'>): string =>
+  `<li class="ho-cue" data-kind="${c.k}"><b class="ho-marker">${esc(c.marker || CUE_LABEL[c.k])}</b>` +
+  `<div class="ho-text">${inlineFmt(c.t)}${c.wait ? ` <span class="ho-wait">(${esc(c.wait)})</span>` : ''}</div></li>`;
 
+/** Note block; empty (ruled space) in the student edition and for slides without notes. */
 function noteHtml(s: HTMLElement): string {
-  if (S.edition === 'student') {
-    return '<div class="ho-note ho-blank"><span class="ho-blank-label">메모</span></div>';
-  }
-  const note = noteFor(S.data, s);
-  let html = '';
-  if (note?.time) html += `<p class="ho-time">⏱ ${esc(timeText(note.time))}</p>`;
-  if (note?.cues.length) {
-    html += note.cues
-      .map(
-        (c) =>
-          `<p class="ho-cue k-${c.k.toLowerCase()}"><b class="ho-k">[${esc(c.marker || CUE_LABEL[c.k])}]</b> ${inlineFmt(c.t)}${c.wait ? ` <i>(${esc(c.wait)})</i>` : ''}</p>`,
-      )
-      .join('');
-  } else if (note?.raw) html += `<p class="ho-cue">${inlineFmt(note.raw)}</p>`;
-  else html += '<p class="ho-empty">등록된 노트가 없습니다.</p>';
+  const note = S.edition === 'student' ? undefined : noteFor(S.data, s);
+  let html = note?.time ? `<p class="ho-time">${esc(timeText(note.time))}</p>` : '';
+  if (note?.cues.length) html += `<ol class="ho-cues">${note.cues.map(cueItem).join('')}</ol>`;
+  else if (note?.raw) html += `<ol class="ho-cues">${cueItem({ k: 'MEMO', t: note.raw })}</ol>`;
   return `<div class="ho-note">${html}</div>`;
 }
 
@@ -34,26 +36,21 @@ export function removeHandout(): void {
 export function buildHandout(): HTMLElement {
   removeHandout();
   const host = h('div', { id: 'handout', 'aria-hidden': 'true' });
-  const k = SHOT_W / CW;
-  const n = S.slides.length;
   const deck = S.data.meta.title || document.title;
   S.slides.forEach((s, i) => {
     const page = h(
-      'section',
-      { class: 'ho-page', 'data-index': i },
-      `<header class="ho-head"><span class="ho-no">${pad2(i + 1)} / ${pad2(n)}</span>` +
-        `<span class="ho-title">${esc(slideTitle(s, i))}</span><span class="ho-deck">${esc(deck)}</span></header>`,
+      'article',
+      { class: 'ho-page', 'data-slide': s.id || String(i + 1) },
+      `<header class="ho-head"><span class="ho-no">${pad2(i + 1)}</span>` +
+        `<h2 class="ho-title">${esc(slideTitle(s, i))}</h2><span class="ho-tag">${esc(deck)}</span></header>`,
     );
     const shot = h('div', { class: 'ho-shot' });
-    shot.style.width = `${SHOT_W}px`;
-    shot.style.height = `${Math.round(CH * k)}px`;
     const clone = s.cloneNode(true) as HTMLElement;
     clone.classList.add('active');
     clone.removeAttribute('id');
     clone.querySelectorAll('[id]').forEach((e) => e.removeAttribute('id'));
     clone.querySelectorAll('.slide-no,.slide-progress,.ink-text').forEach((e) => e.remove());
     clone.setAttribute('aria-hidden', 'true');
-    clone.style.transform = `scale(${+k.toFixed(5)})`;
     shot.append(clone);
     page.append(shot);
     page.insertAdjacentHTML('beforeend', noteHtml(s));
@@ -64,9 +61,12 @@ export function buildHandout(): HTMLElement {
     host.append(
       h(
         'section',
-        { class: 'ho-page ho-terms' },
-        `<header class="ho-head"><span class="ho-title">용어 · 약자</span><span class="ho-deck">${esc(deck)}</span></header>` +
-          `<dl>${terms.map((t) => `<dt>${esc(t)}</dt><dd>${esc(S.data.terms[t])}</dd>`).join('')}</dl>`,
+        { class: 'ho-terms' },
+        '<h2>용어 · 약자</h2><dl>' +
+          terms
+            .map((t) => `<div><dt>${esc(t)}</dt><dd>${esc(S.data.terms[t])}</dd></div>`)
+            .join('') +
+          '</dl>',
       ),
     );
   }

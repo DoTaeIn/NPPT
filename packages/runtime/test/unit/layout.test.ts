@@ -45,9 +45,10 @@ describe('layout', () => {
   it('wraps slides in #stage/#canvas when a page lacks them', () => {
     boot('minimal-deck.html', (h) =>
       h
-        .replace('<div id="stage"><div id="canvas">', '')
-        .replace('</div></div>\n  <script id', '\n  <script id'),
+        .replace(/<div id="stage">\s*<div id="canvas">/, '')
+        .replace(/<\/div>\s*<\/div>\s*(<script id="lecture-data")/, '$1'),
     );
     expect(document.querySelectorAll('#stage > #canvas > section.slide')).toHaveLength(5);
+    expect(document.querySelector('#stage')?.parentElement).toBe(document.body);
   });
 });

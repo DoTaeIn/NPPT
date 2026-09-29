@@ -59,11 +59,12 @@ function render(): void {
       ? `<span class="notes-total">누적 ${+upTo.toFixed(2)}분 / ${+plan.toFixed(2)}분</span>`
       : '');
 
-  let html = '';
-  if (note && note.cues.length) html = note.cues.map(cueHtml).join('');
-  else if (note?.raw)
-    html = `<div class="cue k-memo"><div class="cue-t">${inlineFmt(note.raw)}</div></div>`;
-  else html = '<p class="notes-empty">이 슬라이드에는 노트가 없습니다.</p>';
+  let html =
+    note && note.cues.length
+      ? note.cues.map(cueHtml).join('')
+      : note?.raw
+        ? `<div class="cue k-memo"><div class="cue-t">${inlineFmt(note.raw)}</div></div>`
+        : '<p class="notes-empty">이 슬라이드에는 노트가 없습니다.</p>';
   const terms = slideTerms(s);
   if (terms.length) {
     html +=

@@ -48,7 +48,6 @@ export const ICON = {
   help: svg('<circle cx="12" cy="12" r="10"/>' + p('M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01')),
   close: svg(p('M18 6L6 18M6 6l12 12')),
   clock: svg('<circle cx="12" cy="12" r="9"/>' + p('M12 7v5l3 2')),
-  play: svg(p('M7 4l13 8-13 8z')),
 } as const;
 
 export type IconName = keyof typeof ICON;

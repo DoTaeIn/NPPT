@@ -52,6 +52,15 @@ describe('dialogs and media', () => {
     expect($('#dialog iframe')).toBeNull();
   });
 
+  it('video-open without data-start uses the start time from #lecture-data', () => {
+    const m = boot();
+    m.go(2);
+    const btn = $('#s-03 .video-open')!;
+    btn.removeAttribute('data-start');
+    btn.click();
+    expect($('#dialog iframe')?.getAttribute('src')).toContain('/embed/tTAISQqmxWQ?start=441');
+  });
+
   it('closes on a backdrop click and restores focus', () => {
     const m = boot();
     m.next();

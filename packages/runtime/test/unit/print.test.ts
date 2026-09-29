@@ -40,20 +40,34 @@ describe('print modes', () => {
     await vi.waitFor(() => expect(print).toHaveBeenCalled());
     expect(during).toContain('handout-mode');
     expect(size).toContain('A4 portrait');
-    const pages = document.querySelectorAll('#handout .ho-page');
-    expect(pages).toHaveLength(6);
-    const first = pages[1]!;
-    expect(first.querySelector('.ho-title')?.textContent).toBe(
+    const pages = document.querySelectorAll('#handout article.ho-page');
+    expect(pages).toHaveLength(5);
+    const second = pages[1]!;
+    expect(second.getAttribute('data-slide')).toBe('s-02');
+    expect(second.querySelector('.ho-no')?.textContent).toBe('02');
+    expect(second.querySelector('h2.ho-title')?.textContent).toBe(
       '카드 인식, 허용, 문 열림, 사람 통과는 다른 단계다',
     );
-    const clone = first.querySelector<HTMLElement>('.ho-shot > section.slide')!;
+    expect(second.querySelector('.ho-tag')?.textContent).toBe('물리보안 · 출입통제 IAM');
+    const clone = second.querySelector<HTMLElement>('.ho-shot > section.slide')!;
     expect(clone.classList.contains('active')).toBe(true);
-    expect(clone.style.transform).toMatch(/^scale\(0\.36/);
+    expect(clone.style.transform).toBe('');
     expect(clone.querySelectorAll('[id]')).toHaveLength(0);
-    expect(first.querySelector('.ho-note')?.textContent).toContain('[대사]');
-    expect(first.querySelector('.ho-note')?.textContent).toContain('2.5분 · 01:00 – 03:30');
-    expect(pages[5]?.classList.contains('ho-terms')).toBe(true);
-    expect(pages[5]?.textContent).toContain('PACS');
+    expect(clone.querySelector('.slide-no')).toBeNull();
+    expect(second.querySelector('.ho-time')?.textContent).toBe('2.5분 · 01:00 – 03:30');
+    const kinds = Array.from(second.querySelectorAll<HTMLElement>('.ho-cue')).map(
+      (c) => c.dataset.kind,
+    );
+    expect(kinds).toEqual(['SCREEN', 'SAY', 'LOOK', 'ASK', 'SQ', 'SA', 'NEXT']);
+    expect(second.querySelector('.ho-cue[data-kind="SAY"] .ho-marker')?.textContent).toBe('대사');
+    expect(second.querySelector('.ho-cue[data-kind="ASK"] .ho-text')?.textContent).toContain(
+      '(10초)',
+    );
+    // A slide without notes leaves an empty (ruled) note area.
+    expect(pages[4]?.querySelector('.ho-note')?.childNodes).toHaveLength(0);
+    const terms = document.querySelectorAll('#handout > section.ho-terms dl > div');
+    expect(terms).toHaveLength(3);
+    expect(terms[0]?.querySelector('dt')?.textContent).toBe('ABAC');
     window.dispatchEvent(new Event('afterprint'));
     expect($('#handout')).toBeNull();
     expect(document.body.classList.contains('handout-mode')).toBe(false);

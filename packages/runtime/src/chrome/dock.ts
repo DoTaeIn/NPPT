@@ -94,15 +94,18 @@ function wake(): void {
   window.clearTimeout(timer);
   timer = window.setTimeout(() => {
     if (!dock) return;
-    let busy = false;
-    try {
-      busy = dock.matches(':hover') || dock.matches(':focus-within');
-    } catch {
-      busy = false;
-    }
-    if (busy) wake();
+    if (isBusy(dock)) wake();
     else dock.classList.add('idle');
   }, IDLE_MS);
+}
+
+/** True while the pointer rests on the dock or a dock button has focus. */
+function isBusy(el: HTMLElement): boolean {
+  try {
+    return el.matches(':hover') || el.matches(':focus-within');
+  } catch {
+    return false;
+  }
 }
 
 export function resetDock(): void {

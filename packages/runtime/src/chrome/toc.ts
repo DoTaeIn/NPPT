@@ -1,5 +1,5 @@
 // `#toc-sidebar`: slide list grouped by `data-group`, active tracking, click to jump.
-import { $, $$, esc, h, pad2, slideTitle } from '../dom';
+import { $$, esc, h, pad2, slideTitle } from '../dom';
 import { ICON } from '../icons';
 import { fitCanvas } from '../layout';
 import { go } from '../nav';

@@ -217,7 +217,8 @@ test('Ctrl+Shift+P builds #handout (window.print intercepted)', async ({ page })
   expect(
     await page.evaluate(() => (window as unknown as { __printed: string[] }).__printed[0]),
   ).toContain('handout-mode');
-  await expect(page.locator('#handout .ho-page')).toHaveCount(6);
+  await expect(page.locator('#handout article.ho-page')).toHaveCount(5);
+  await expect(page.locator('#handout section.ho-terms')).toHaveCount(1);
   await expect(page.locator('#handout .ho-shot')).toHaveCount(5);
   expect(await page.locator('#page-size').evaluate((e) => e.textContent)).toBe(
     '@media print{@page{size:A4 portrait;margin:0}}',

@@ -42,8 +42,8 @@ describe('editions', () => {
     m.print('handout');
     await vi.waitFor(() => expect(print).toHaveBeenCalled());
     expect(document.querySelectorAll('#handout .ho-shot')).toHaveLength(5);
-    expect(document.querySelectorAll('#handout .ho-note.ho-blank')).toHaveLength(5);
-    expect($('#handout')?.textContent).not.toContain('[화면]');
+    expect(document.querySelectorAll('#handout .ho-note:empty')).toHaveLength(5);
+    expect(document.querySelectorAll('#handout .ho-cue')).toHaveLength(0);
   });
 
   it('instructor edition shows the notes button', () => {
