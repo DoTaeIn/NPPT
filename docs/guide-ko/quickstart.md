@@ -146,11 +146,11 @@ marco lint week06/lecture.marco.md
 
 학생용 판(`--edition student`)의 유인물에는 해설 대신 빈 메모 칸이 들어갑니다.
 
-### `marco pdf` (준비 중)
+### `marco pdf`
 
-같은 두 모드를 명령 한 줄로 PDF 파일로 만드는 명령입니다. 계획된 형태는 `marco pdf`(강의용)와 `marco pdf --handout`(유인물)이며, 지금 연결 작업 중이라 정확한 인자와 옵션은 `marco pdf --help`로 확인하세요. 명령이 아직 없으면 위의 브라우저 인쇄로 같은 PDF를 얻습니다.
+같은 두 모드를 명령 한 줄로 PDF 파일로 만듭니다. `marco pdf lecture.marco.md`는 강의용(슬라이드 한 장당 1920×1080 한 쪽), `marco pdf lecture.marco.md --mode handout`은 A4 유인물입니다. `-o`로 파일 이름을 정하고, 원고를 주면 먼저 빌드합니다. Chromium이 필요하며 없으면 안내 메시지가 나옵니다. 그때는 위의 브라우저 인쇄로 같은 PDF를 얻습니다.
 
-## 8. 예전 HTML 덱 옮기기: `marco import` (준비 중)
+## 8. 예전 HTML 덱 옮기기: `marco import`
 
 지금까지 쓰신 단일 HTML 덱(V20, v9.7 형식)을 MARCO 원고로 바꿉니다.
 
@@ -174,7 +174,7 @@ pnpm --filter @marco/importer exec tsx scripts/import.ts 예전덱.html week05
 
 이미 손본 `lecture.marco.md`를 덮어쓰지 않고 이미지와 보고서만 다시 만들려면 끝에 `--keep-source`를 붙입니다.
 
-## 9. 자동화(선택): `marco ai` (준비 중)
+## 9. 자동화(선택): `marco ai`
 
 API 키가 있거나 채팅 답을 파일로 주고받고 싶으면 같은 요청문을 명령으로 보냅니다.
 
