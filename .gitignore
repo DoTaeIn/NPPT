@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+.playwright/
+*.log
+.DS_Store
+.env
+.env.*
+# Reference decks (the professor's originals) are not redistributed
+reference/*
+!reference/README.md
+# Deck media stays out of git until redistribution rights are settled (see PLAN.md §14)
+examples/**/assets/

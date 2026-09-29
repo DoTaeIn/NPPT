@@ -1,0 +1,21 @@
+{
+  "name": "@marco/runtime",
+  "version": "0.0.1",
+  "private": true,
+  "description": "MARCO in-browser deck runtime (navigation, notes, TOC, search, ink, print, dialogs)",
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "type": "module",
+  "exports": {
+    "./dist/*": "./dist/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@marco/importer",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Importer: legacy V20 / v9.7 single-file HTML decks → MARCO source",
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@marco/schema": "workspace:*",
+    "linkedom": "^0.18.13"
+  }
+}
