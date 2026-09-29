@@ -17,7 +17,7 @@ describe('keyboard map', () => {
     press('PageUp');
     expect(m.cur).toBe(1);
     press('End');
-    expect(m.cur).toBe(4);
+    expect(m.cur).toBe(5);
     press('Home');
     expect(m.cur).toBe(0);
   });

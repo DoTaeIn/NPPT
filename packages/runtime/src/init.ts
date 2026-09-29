@@ -17,7 +17,7 @@ import { initKeys } from './keys';
 import { ensureStage, initLayout, toggleFullscreen } from './layout';
 import { openMediaCredits, openSources, initMedia } from './media';
 import { go, indexFromHash, initNav } from './nav';
-import { mountWidgets, resetPlugins } from './plugins';
+import { mountWidgets, resetPlugins, unmountWidgets } from './plugins/registry';
 import { initPrint, print } from './print';
 import { S, resetState } from './state';
 import type { MarcoApi } from './types';
@@ -100,6 +100,7 @@ export function init(): MarcoApi {
 
 /** Tears everything down (used by tests; a deck never calls it). */
 export function dispose(): void {
+  unmountWidgets();
   closeDialog();
   resetState();
   for (const id of CHROME_IDS) document.getElementById(id)?.remove();

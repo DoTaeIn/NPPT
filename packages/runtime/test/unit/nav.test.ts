@@ -13,9 +13,9 @@ describe('navigation', () => {
     const m = boot();
     expect(m.cur).toBe(0);
     expect(active().map((s) => s.id)).toEqual(['s-01']);
-    expect($('#s-01 > .slide-no')?.textContent).toBe('01 / 05');
-    expect($<HTMLElement>('#s-01 > .slide-progress')?.style.width).toBe('20%');
-    expect($('#nav-count')?.textContent).toBe('01 / 05');
+    expect($('#s-01 > .slide-no')?.textContent).toBe('01 / 06');
+    expect($<HTMLElement>('#s-01 > .slide-progress')?.style.width).toBe('16.67%');
+    expect($('#nav-count')?.textContent).toBe('01 / 06');
     expect($<HTMLButtonElement>('#nav-prev')?.disabled).toBe(true);
   });
 
@@ -30,8 +30,8 @@ describe('navigation', () => {
     expect(seen).toEqual([{ index: 1, id: 's-02' }]);
     expect(active().map((s) => s.id)).toEqual(['s-02']);
     expect(document.querySelectorAll('.slide-no')).toHaveLength(1);
-    expect($('#s-02 > .slide-no')?.textContent).toBe('02 / 05');
-    expect($<HTMLElement>('#s-02 > .slide-progress')?.style.width).toBe('40%');
+    expect($('#s-02 > .slide-no')?.textContent).toBe('02 / 06');
+    expect($<HTMLElement>('#s-02 > .slide-progress')?.style.width).toBe('33.33%');
     m.goId('s-04');
     expect(m.cur).toBe(3);
     m.goId('#s-02');
@@ -52,11 +52,11 @@ describe('navigation', () => {
     expect(m.cur).toBe(0);
     expect(spy).not.toHaveBeenCalled();
     m.go(99);
-    expect(m.cur).toBe(4);
+    expect(m.cur).toBe(5);
     m.next();
-    expect(m.cur).toBe(4);
+    expect(m.cur).toBe(5);
     expect(spy).toHaveBeenCalledTimes(1);
-    expect($('#nav-count')?.textContent).toBe('05 / 05');
+    expect($('#nav-count')?.textContent).toBe('06 / 06');
     expect($<HTMLButtonElement>('#nav-next')?.disabled).toBe(true);
     m.go(Number.NaN);
     expect(m.cur).toBe(0);

@@ -1,5 +1,5 @@
 // Keyboard map (docs/spec/runtime.md §4) and touch swipe navigation.
-import { isDialogOpen } from './chrome/dialog';
+import { dialogKey, isDialogOpen } from './chrome/dialog';
 import { isHelpOpen, toggleHelp } from './chrome/help';
 import { toggleNotes } from './chrome/notes';
 import { openSearch } from './chrome/search';
@@ -61,8 +61,11 @@ export function onKey(e: KeyboardEvent): void {
   // Let a focused button handle its own activation keys.
   const t = e.target as HTMLElement | null;
   if ((k === ' ' || k === 'Enter') && t?.closest?.('button,a,[role="button"],summary')) return;
-  // Modal overlays swallow everything but their own toggle key.
-  if (isDialogOpen()) return;
+  // Modal overlays swallow everything but their own keys (a plugin dialog may take e.g. digits).
+  if (isDialogOpen()) {
+    if (dialogKey(e)) e.preventDefault();
+    return;
+  }
   if (isHelpOpen() && k !== '?' && k !== 'h') return;
 
   let handled = true;

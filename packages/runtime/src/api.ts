@@ -4,7 +4,7 @@ import { toggleNotes } from './chrome/notes';
 import { toggleToc } from './chrome/toc';
 import { toggleFullscreen } from './layout';
 import { go, goId, next, prev } from './nav';
-import { registerPlugin } from './plugins';
+import { registerPlugin } from './plugins/registry';
 import { print } from './print';
 import { S } from './state';
 import type { LectureData, MarcoApi, PrintMode } from './types';

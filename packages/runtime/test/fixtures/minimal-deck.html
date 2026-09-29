@@ -213,6 +213,21 @@
         font-size: 20px;
         color: var(--muted);
       }
+      .widget {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 240px;
+      }
+      .quiz-body {
+        flex: 1 1 auto;
+        flex-direction: row;
+        min-height: 0;
+      }
+      .quiz-body > .widget {
+        flex: 1 1 0;
+        min-height: 0;
+      }
     </style>
   </head>
   <body>
@@ -402,6 +417,38 @@
           </div>
           <footer class="slide-tag-bottom">보안시스템 운영 및 활용 · 3주차</footer>
         </section>
+        <section
+          class="slide"
+          id="s-06"
+          data-type="content"
+          data-title="사전 진단 퀴즈"
+          data-tag="사전 진단"
+          data-group="2부 · 운영"
+        >
+          <div class="slide-wrapper">
+            <header class="s-head">
+              <div class="eyebrow">사전 진단</div>
+              <h2 class="section-title">사전 진단 퀴즈</h2>
+            </header>
+            <div class="s-body quiz-body">
+              <div
+                class="widget"
+                id="s-06-b1"
+                data-block="widget"
+                data-widget="quiz"
+                data-params='{"mode":"cards"}'
+              ></div>
+              <div
+                class="widget"
+                id="s-06-b2"
+                data-block="widget"
+                data-widget="quiz"
+                data-params='{"mode":"exam","minutes":10}'
+              ></div>
+            </div>
+          </div>
+          <footer class="slide-tag-bottom">보안시스템 운영 및 활용 · 3주차</footer>
+        </section>
       </div>
     </div>
     <script id="lecture-data" type="application/json">
@@ -457,6 +504,56 @@
           }
         },
         "slideRefs": { "s-02": ["S04", "S13"], "s-03": ["S30"] },
+        "quiz": [
+          {
+            "id": "Q01",
+            "area": 1,
+            "areaName": "인증",
+            "key": "PACS",
+            "q": "물리 출입통제 시스템(PACS)이 카드와 연결하는 대상은?",
+            "opts": ["출입문의 전원", "사람(소지자)의 신원", "건물의 층수", "네트워크 대역"],
+            "ans": 1,
+            "exp": "PACS는 카드 식별자를 **사람**의 신원과 연결해 누가 들어오는지 판단한다.",
+            "refs": ["S04"]
+          },
+          {
+            "id": "Q02",
+            "area": 1,
+            "areaName": "인증",
+            "key": "인식 ≠ 허용",
+            "q": "카드 인식과 허용 판단의 관계로 옳은 것은?",
+            "opts": [
+              "인식은 식별자 읽기, 허용은 정책 판단이다",
+              "인식되면 항상 허용된다",
+              "허용은 리더가 혼자 결정한다",
+              "둘은 같은 단계다"
+            ],
+            "ans": 0,
+            "exp": "리더는 식별자를 읽을 뿐이고, 허용 여부는 정책이 시간과 구역을 보고 판단한다.",
+            "refs": ["S13", "X99"]
+          },
+          {
+            "id": "Q03",
+            "area": 2,
+            "areaName": "인가 정책",
+            "key": "ABAC",
+            "q": "시간·구역·역할 같은 속성을 조합해 허용을 판단하는 모델은?",
+            "opts": ["DAC", "MAC", "ABAC", "ACL"],
+            "ans": 2,
+            "exp": "ABAC(속성 기반 접근통제)는 주체·객체·환경 속성을 함께 평가한다.",
+            "refs": ["S30"]
+          },
+          {
+            "id": "Q04",
+            "area": 2,
+            "areaName": "인가 정책",
+            "key": "Fail-secure",
+            "q": "정전 시에도 잠긴 상태를 유지해야 하는 문(전산실)의 잠금 방식은?",
+            "opts": ["Fail-safe", "Fail-open", "Fail-soft", "Fail-secure"],
+            "ans": 3,
+            "exp": "Fail-secure는 전원이 끊겨도 잠김을 유지한다. 피난 경로는 Fail-safe를 쓴다."
+          }
+        ],
         "terms": {
           "PACS": "Physical Access Control System 물리 출입통제 시스템",
           "RBAC": "Role-Based Access Control 역할 기반 접근통제",
@@ -529,6 +626,6 @@
         }
       }
     </script>
-    <script src="../../dist/marco-runtime.js"></script>
+    <script src="../../dist/marco-runtime.all.js"></script>
   </body>
 </html>

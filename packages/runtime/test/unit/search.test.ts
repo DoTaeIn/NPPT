@@ -25,7 +25,7 @@ describe('search', () => {
     boot();
     const text = slideText($('#s-04')!);
     expect(text).toBe('02 인증과 하드웨어 문 앞과 문 뒤를 함께 본다.');
-    expect(text).not.toContain('02 / 05');
+    expect(text).not.toContain('02 / 06');
   });
 
   it('opens with /, lists results and jumps on Enter', () => {

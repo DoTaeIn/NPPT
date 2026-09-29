@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -28,12 +29,12 @@ test('first slide is active and the canvas is scaled to the viewport', async ({ 
   await expect(page.locator('#s-01')).toHaveClass(/\bactive\b/);
   await expect(page.locator('#s-01')).toBeVisible();
   await expect(page.locator('#s-02')).toBeHidden();
-  await expect(page.locator('#s-01 > .slide-no')).toHaveText('01 / 05');
+  await expect(page.locator('#s-01 > .slide-no')).toHaveText('01 / 06');
   expect(await scale(page)).toBe('scale(0.83333)');
   const box = await page.locator('#s-01').boundingBox();
   expect(box?.width).toBeCloseTo(1600, 0);
   expect(box?.height).toBeCloseTo(900, 0);
-  expect(await page.evaluate(() => window.MARCO?.slides.length)).toBe(5);
+  expect(await page.evaluate(() => window.MARCO?.slides.length)).toBe(6);
   expect(errors).toEqual([]);
 });
 
@@ -46,11 +47,11 @@ test('ArrowRight / ArrowLeft / Home / End navigate', async ({ page }) => {
   await page.keyboard.press('ArrowLeft');
   expect(await cur(page)).toBe(0);
   await page.keyboard.press('End');
-  expect(await cur(page)).toBe(4);
-  await expect(page.locator('#s-05 > .slide-no')).toHaveText('05 / 05');
+  expect(await cur(page)).toBe(5);
+  await expect(page.locator('#s-06 > .slide-no')).toHaveText('06 / 06');
   await page.keyboard.press('Home');
   expect(await cur(page)).toBe(0);
-  await expect(page.locator('#nav-count')).toHaveText('01 / 05');
+  await expect(page.locator('#nav-count')).toHaveText('01 / 06');
 });
 
 test('M opens the TOC listing all titles grouped by data-group', async ({ page }) => {
@@ -69,6 +70,7 @@ test('M opens the TOC listing all titles grouped by data-group', async ({ page }
     '사옥의 3선 방어 개념도',
     '인증과 하드웨어',
     '참고 자료 · 공식 문서와 미디어',
+    '사전 진단 퀴즈',
   ]);
   await expect(page.locator('#toc-sidebar .toc-group').nth(1).locator('.toc-item')).toHaveCount(2);
   await expect(page.locator('#toc-sidebar .toc-item.active .toc-num')).toHaveText('01');
@@ -217,9 +219,9 @@ test('Ctrl+Shift+P builds #handout (window.print intercepted)', async ({ page })
   expect(
     await page.evaluate(() => (window as unknown as { __printed: string[] }).__printed[0]),
   ).toContain('handout-mode');
-  await expect(page.locator('#handout article.ho-page')).toHaveCount(5);
+  await expect(page.locator('#handout article.ho-page')).toHaveCount(6);
   await expect(page.locator('#handout section.ho-terms')).toHaveCount(1);
-  await expect(page.locator('#handout .ho-shot')).toHaveCount(5);
+  await expect(page.locator('#handout .ho-shot')).toHaveCount(6);
   expect(await page.locator('#page-size').evaluate((e) => e.textContent)).toBe(
     '@media print{@page{size:A4 portrait;margin:0}}',
   );
@@ -236,7 +238,7 @@ test('lecture print produces one 1920×1080 page per slide', async ({ page }) =>
   await expect(page.locator('body')).toHaveClass(/\bprint-lecture\b/);
   const pdf = await page.pdf({ preferCSSPageSize: true, printBackground: true });
   const text = pdf.toString('latin1');
-  expect(text.match(/\/Type\s*\/Page[^s]/g)?.length).toBe(5);
+  expect(text.match(/\/Type\s*\/Page[^s]/g)?.length).toBe(6);
   expect(text).toMatch(/\/MediaBox\s*\[0 0 1440 810\]/);
 });
 
@@ -257,5 +259,100 @@ test('student edition hides the notes button and disables N', async ({ page }) =
   await page.keyboard.press('n');
   await expect(page.locator('body')).not.toHaveClass(/\bnotes-open\b/);
   expect(await page.evaluate(() => window.MARCO?.data.notes)).toBeUndefined();
+  expect(errors).toEqual([]);
+});
+
+test('quiz cards: card click opens the question, a pick shows the verdict', async ({ page }) => {
+  const errors = await open(page);
+  await page.evaluate(() => window.MARCO?.goId('s-06'));
+  const cards = page.locator('#s-06-b1 .mq-card');
+  await expect(cards).toHaveCount(4);
+  await expect(cards.first()).toContainText('01');
+  await expect(cards.first()).toContainText('영역 1 · 인증');
+  await expect(cards.first()).toContainText('PACS');
+  await cards.first().click();
+  const dlg = page.locator('#dialog');
+  await expect(dlg).toBeVisible();
+  await expect(page.locator('#dialog-title')).toHaveText('01번 · 영역 1 · 인증');
+  await expect(dlg.locator('.mq-opt')).toHaveCount(4);
+  await dlg.locator('.mq-opt[data-i="1"]').click();
+  await expect(dlg.locator('.mq-verdict')).toHaveText('✓ 정답입니다 · ②');
+  await expect(dlg.locator('.mq-exp')).toContainText('사람');
+  await expect(dlg.locator('.mq-ref')).toHaveText(['참고 S04']);
+  // Next question, answered with a number key.
+  await dlg.locator('.mq-next').click();
+  await expect(page.locator('#dialog-title')).toHaveText('02번 · 영역 1 · 인증');
+  await page.keyboard.press('3');
+  await expect(dlg.locator('.mq-verdict')).toHaveText('✗ 오답입니다 · 내 답 ③ · 정답 ①');
+  await page.keyboard.press('Escape');
+  await expect(dlg).toBeHidden();
+  await expect(cards.nth(0)).toHaveAttribute('data-state', 'ok');
+  await expect(cards.nth(1)).toHaveAttribute('data-state', 'wrong');
+  await expect(page.locator('#s-06-b1 .mq-status')).toHaveText('푼 문항 2 / 4 · 정답 1');
+  // The runtime's own keys still work after the dialog closes.
+  await page.keyboard.press('ArrowLeft');
+  expect(await cur(page)).toBe(4);
+  expect(errors).toEqual([]);
+});
+
+test('quiz exam: start, answer, submit, summary with the score', async ({ page }) => {
+  const errors = await open(page);
+  await page.evaluate(() => window.MARCO?.goId('s-06'));
+  const exam = page.locator('#s-06-b2');
+  await expect(exam.locator('.mq-min-val')).toHaveText('10분');
+  await exam.locator('.mq-begin').click();
+  await expect(exam.locator('.mq-timer')).toHaveText(/^(10:00|09:5\d)$/);
+  await expect(exam.locator('.mq-item')).toHaveCount(4);
+  const pick = (q: string, i: number): Promise<void> =>
+    exam.locator(`.mq-item[data-q="${q}"] .mq-opt[data-i="${i}"]`).click();
+  await pick('Q01', 1);
+  await pick('Q02', 0);
+  await pick('Q03', 2);
+  await pick('Q04', 0);
+  await expect(exam.locator('.mq-count')).toHaveText('4');
+  // The form stays inside the slide and scrolls there.
+  const slide = (await page.locator('#s-06').boundingBox())!;
+  const box = (await exam.boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(slide.y + slide.height + 1);
+  await exam.locator('.mq-submit').click();
+  const dlg = page.locator('#dialog');
+  await expect(dlg).toBeVisible();
+  await expect(page.locator('#dialog-title')).toHaveText('채점 결과');
+  await expect(dlg.locator('.mq-score b')).toHaveText('75');
+  await expect(dlg.locator('.mq-grade')).toContainText('양호 (B) · 정답 3 / 4');
+  await expect(dlg.locator('.mq-areas tbody tr')).toHaveCount(2);
+  await dlg.locator('.mq-review').click();
+  await expect(dlg).toBeHidden();
+  await expect(exam.locator('.mq-total')).toHaveText('75점');
+  await expect(exam.locator('.mq-item[data-state="wrong"] .mq-opt.is-answer')).toHaveText(
+    /Fail-secure/,
+  );
+  await exam.locator('.mq-retry').click();
+  await expect(exam.locator('.mq-begin')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('core + dist/plugins/quiz.js inlined like the compiler does mounts the quiz', async ({
+  page,
+}) => {
+  const dist = join(import.meta.dirname, '..', '..', 'dist');
+  const inline = (f: string): string => `<script>${readFileSync(join(dist, f), 'utf8')}</script>`;
+  const html = readFileSync(
+    join(import.meta.dirname, '..', 'fixtures', 'minimal-deck.html'),
+    'utf8',
+  ).replace(
+    '<script src="../../dist/marco-runtime.all.js"></script>',
+    () => inline('marco-runtime.js') + inline('plugins/quiz.js'),
+  );
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.setContent(html);
+  await page.waitForFunction(() => document.documentElement.dataset.marco === 'ready');
+  await expect(page.locator('#s-06-b1 .mq-card')).toHaveCount(4);
+  await expect(page.locator('#s-06-b2 .mq-begin')).toHaveCount(1);
+  await expect(page.locator('style#marco-plugin-quiz')).toHaveCount(1);
+  await expect(page.locator('[data-widget="abac"] .widget-placeholder')).toContainText(
+    'marco-runtime.all.js에도 포함되지 않은 위젯',
+  );
   expect(errors).toEqual([]);
 });

@@ -29,7 +29,7 @@ describe('window.MARCO', () => {
       ].sort(),
     );
     expect(m.version).toBe(RUNTIME_VERSION);
-    expect(m.slides.map((s) => s.id)).toEqual(['s-01', 's-02', 's-03', 's-04', 's-05']);
+    expect(m.slides.map((s) => s.id)).toEqual(['s-01', 's-02', 's-03', 's-04', 's-05', 's-06']);
     expect(m.data.meta.title).toBe('물리보안 · 출입통제 IAM');
   });
 

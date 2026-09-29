@@ -121,16 +121,37 @@ window.MARCO = {
   go(i: number): void, next(): void, prev(): void, goId(id: string): void,
   toggleNotes(), toggleToc(), toggleHelp(), toggleFullscreen(),
   print(mode: 'lecture' | 'handout'): void,
-  registerPlugin(name: string, plugin: { mount(el: HTMLElement, params: unknown, ctx: PluginCtx): void }): void,
+  registerPlugin(plugin: Plugin): void,   // legacy form registerPlugin(name, { mount }) still accepted
   data: LectureData,   // parsed #lecture-data
   about(): string,     // engine version + Attribution
 };
 document.dispatchEvent(new CustomEvent('marco:ready'));
 document.dispatchEvent(new CustomEvent('marco:slidechange', { detail: { index, id } }));
 ```
-On init the runtime mounts every `[data-widget]` element with the registered plugin of that
-name (plugins are separate bundles concatenated after the core; Phase 3). Unknown widget names
-render a small placeholder so the slide still lays out.
+
+### Plugins
+
+```ts
+interface Plugin { name: string; mount(el: HTMLElement, params: WidgetParams, ctx: PluginCtx): void; unmount?(el: HTMLElement): void }
+interface PluginCtx {
+  name; data; edition; runtimeVersion; slide; slideId; slideIndex;
+  go(i); goId(id); onSlideChange(fn);
+  openDialog(title, htmlOrNode, kind | { kind, onKey, onClose }); closeDialog(); openSources(refIds);
+  registerStyles(css);                       // injected once per plugin as <style id="marco-plugin-<name>">
+  events: { on(type, fn), emit(type, detail) };  // marco:<type> in, marco:<plugin>:<type> out
+  signal: AbortSignal;                       // fires on teardown
+}
+```
+- Every `[data-widget]` is mounted once in document order, at start-up or as soon as its plugin
+  registers; `data-params` is parsed as JSON (else `{}`). A missing plugin renders a placeholder
+  naming it and saying which bundle provides it.
+- Bundles (`dist/manifest.json` lists them): `marco-runtime.js` (core), `marco-runtime.all.js`
+  (core + every plugin), `plugins/<name>.js` (standalone; registers on `window.MARCO`, or queues in
+  `window.MARCO_PLUGINS` when loaded before the core). The compiler inlines the `all` bundle when a
+  deck contains any `[data-widget]`, else the core.
+- First plugin: **quiz** (`:::widget quiz mode=cards|exam area= ids= minutes= shuffle=`) reading
+  `data.quiz`: card grid → answer dialog with explanation and refs; exam mode with timer, per-area
+  scoring, review and retry.
 
 ## 8. Editions
 

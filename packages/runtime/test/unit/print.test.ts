@@ -21,7 +21,7 @@ describe('print modes', () => {
     });
     m.print('lecture');
     expect(during).toContain('print-lecture');
-    expect(numbered).toBe(5);
+    expect(numbered).toBe(6);
     expect(pageSize()).toContain('1920px 1080px');
     window.dispatchEvent(new Event('afterprint'));
     expect(document.body.classList.contains('print-lecture')).toBe(false);
@@ -41,7 +41,7 @@ describe('print modes', () => {
     expect(during).toContain('handout-mode');
     expect(size).toContain('A4 portrait');
     const pages = document.querySelectorAll('#handout article.ho-page');
-    expect(pages).toHaveLength(5);
+    expect(pages).toHaveLength(6);
     const second = pages[1]!;
     expect(second.getAttribute('data-slide')).toBe('s-02');
     expect(second.querySelector('.ho-no')?.textContent).toBe('02');

@@ -86,7 +86,7 @@ describe('renderCheatsheet', () => {
       Object.entries(SCHEMA_DENSITY).filter(([key]) => key !== 'slideTypes'),
     );
     expect(DENSITY_MIRROR).toEqual(JSON.parse(JSON.stringify(shared)));
-    expect(DENSITY).toEqual(DENSITY_MIRROR);
+    expect(DENSITY).toEqual(JSON.parse(JSON.stringify(SCHEMA_DENSITY)));
     const text = densityDoc();
     expect(sheet).toContain(text);
     expect(text).toContain('제목 아래 760');

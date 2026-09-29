@@ -20,8 +20,15 @@ export function sourcesHtml(ids: string[]): string {
 /** `slideId` = a slide id from `slideRefs`, or `'all'` for every ref. */
 export function openSources(slideId: string): void {
   const all = slideId === 'all';
-  const ids = all ? S.data.refs.map((r) => r.id) : S.data.slideRefs[slideId] || [];
-  openDialog(all ? '모든 출처' : '참고 출처', sourcesHtml(ids), 'sources');
+  openRefs(
+    all ? S.data.refs.map((r) => r.id) : S.data.slideRefs[slideId] || [],
+    all ? '모든 출처' : '참고 출처',
+  );
+}
+
+/** Sources dialog for explicit ref ids (plugins, e.g. quiz explanations). */
+export function openRefs(ids: string[], title = '참고 출처'): void {
+  openDialog(title, sourcesHtml(ids), 'sources');
 }
 
 export function openMediaCredits(): void {

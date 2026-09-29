@@ -12,7 +12,7 @@ describe('notes panel', () => {
     m.next();
     m.toggleNotes();
     expect(panel().classList.contains('open')).toBe(true);
-    expect($('#notes-panel .panel-tag')?.textContent).toBe('발표 노트 · 02 / 05');
+    expect($('#notes-panel .panel-tag')?.textContent).toBe('발표 노트 · 02 / 06');
     expect($('#notes-panel .notes-title')?.textContent).toBe(
       '카드 인식, 허용, 문 열림, 사람 통과는 다른 단계다',
     );
@@ -42,6 +42,8 @@ describe('notes panel', () => {
     expect(labels).toEqual(['조작', '이동', '팁', '대기', '검증 보충', '메모']);
     m.go(4);
     expect($('#notes-panel .notes-empty')?.textContent).toContain('노트가 없습니다');
+    expect($('#notes-panel .notes-next')?.textContent).toBe('다음06 · 사전 진단 퀴즈');
+    m.go(5);
     expect($('#notes-panel .notes-next')?.textContent).toBe('마지막 슬라이드');
   });
 

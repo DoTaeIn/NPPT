@@ -10,7 +10,7 @@ describe('main entry', () => {
     expect(document.readyState).not.toBe('loading');
     vi.resetModules();
     await import('../../src/main');
-    expect(window.MARCO?.slides).toHaveLength(5);
+    expect(window.MARCO?.slides).toHaveLength(6);
     expect(document.querySelectorAll('#nav-dock')).toHaveLength(1);
     expect(document.documentElement.dataset.marco).toBe('ready');
     const first = window.MARCO;

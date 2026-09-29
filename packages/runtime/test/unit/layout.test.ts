@@ -48,7 +48,7 @@ describe('layout', () => {
         .replace(/<div id="stage">\s*<div id="canvas">/, '')
         .replace(/<\/div>\s*<\/div>\s*(<script id="lecture-data")/, '$1'),
     );
-    expect(document.querySelectorAll('#stage > #canvas > section.slide')).toHaveLength(5);
+    expect(document.querySelectorAll('#stage > #canvas > section.slide')).toHaveLength(6);
     expect(document.querySelector('#stage')?.parentElement).toBe(document.body);
   });
 });
