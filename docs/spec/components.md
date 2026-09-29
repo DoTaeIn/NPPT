@@ -39,14 +39,39 @@ The runtime appends `.slide-no` and `.slide-progress` to the active slide. The `
 button is emitted only when the slide has `refs`; its text lists the ref ids.
 `.s-body` is a vertical flex column with `gap: 28px`; blocks stack in source order.
 
-### cover
+### cover, hero and divider: fields and body (v0.2 additions)
+
+All three "title" slide types share these fields (all optional, additive to the IR):
+
+| Field | Meaning | Rendered as |
+|---|---|---|
+| `kicker` | small line above the title; cover default `${course} · ${week}주차` | `.cover-kicker` / `.hero-kicker` / `.divider-no` (divider uses `no`) |
+| `title` | the visible headline (may be a sentence, e.g. "문을 여는 기술, 권한을 다루는 설계.") | `h1.cover-title` / `h1.hero-title` / `h2.divider-title` |
+| `tagline` | small-caps secondary line, e.g. "PHYSICAL ACCESS × IDENTITY" | `.cover-tagline` |
+| `subtitle` | lead sentence | `.cover-sub` / `.s-sub` / `.divider-lead` |
+| `question` | guiding question strip | `.s-q` |
+| `meta` | list of short lines, e.g. `[2026학년도 2학기 · 5주차, 중앙대학교 산업보안학과]`; cover default `[date, presenter]` | `.cover-meta > span` (one per line) |
+| `art` | asset id shown as artwork on the right half | `figure.cover-art > img` |
+| `toc` | TOC / search label when it differs from the visible title (any slide type) | `data-title` attribute (`toc ?? title`) |
+| body blocks | allowed; rendered under the meta line (typically `pills`, `paragraph`, `tiles`) | `.s-body` inside `.cover-main` |
+
+Layout: `.slide-wrapper` contains `.cover-main` (text column) and, when `art` is set, `figure.cover-art`
+(right column, ~46% width, image `object-fit: contain`, bottom-aligned). Without `art` the text column
+spans the full width. Both themes use a **light** background for cover/hero/divider (the reference
+decks are light); a dark variant is opt-in via `# slide cover dark`.
+
 ```html
-<section class="slide cover" id="s-01" data-type="cover" data-title="…">
-  <div class="slide-wrapper">
-    <div class="cover-kicker">보안시스템 운영 및 활용 · 3주차</div>
-    <h1 class="cover-title">물리보안 · 출입통제 IAM</h1>
-    <p class="cover-sub">출입통제의 기술과 운영을 함께 다룬다</p>
-    <div class="cover-meta"><span>2026-09-29</span><span>홍길동</span></div>
+<section class="slide cover" id="s-01" data-type="cover" data-title="물리보안 · 출입통제 IAM" data-group="표지 · 도입">
+  <div class="slide-wrapper has-art">
+    <div class="cover-main">
+      <div class="cover-kicker">보안시스템 운영 및 활용 · 3주차</div>
+      <h1 class="cover-title">문을 여는 기술, 권한을 다루는 설계.</h1>
+      <div class="cover-tagline">PHYSICAL ACCESS × IDENTITY</div>
+      <p class="cover-sub">장비가 어떻게 문을 제어하는지 이해하고, 누가 언제 들어갈 수 있는지 설계한다.</p>
+      <div class="s-body"><div class="pills" id="s-01-b1" data-block="pills">…</div></div>
+      <div class="cover-meta"><span>중앙대학교 산업보안학과</span><span>Curriculum v3 · V20</span></div>
+    </div>
+    <figure class="cover-art" data-asset="cover-art"><img src="…" alt="…"></figure>
     <div class="cover-brand"></div>                            <!-- logos come from the theme CSS -->
   </div>
 </section>
@@ -55,9 +80,13 @@ button is emitted only when the slide has `refs`; its text lists the ref ids.
 ```html
 <section class="slide divider" id data-type="divider" data-title>
   <div class="slide-wrapper">
-    <div class="divider-no">01</div>
-    <h2 class="divider-title">인증과 하드웨어</h2>
-    <p class="divider-lead">문 앞과 문 뒤를 함께 본다.</p>
+    <div class="cover-main">
+      <div class="divider-no">01</div>
+      <h2 class="divider-title">인증과 하드웨어</h2>
+      <p class="divider-lead">문 앞과 문 뒤를 함께 본다.</p>
+      <div class="s-body">…optional blocks…</div>
+    </div>
+    <figure class="cover-art">…optional…</figure>
   </div>
 </section>
 ```
@@ -72,7 +101,8 @@ button is emitted only when the slide has `refs`; its text lists the ref ids.
 ```
 ### hero  (v9.7 opening/section slides; `alert` variant is red-toned)
 Same as content but `class="slide hero [alert]"`, `<h1 class="hero-title">` instead of `h2`,
-and the `.s-q` strip is expected.
+the `.s-q` strip is expected, and the cover fields above (`kicker`, `tagline`, `meta`, `art`)
+are honoured: with `art`, the wrapper gets `has-art` and the text sits in `.cover-main`.
 
 ### references
 ```html

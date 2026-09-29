@@ -62,7 +62,9 @@ an error. `# slide` must start at column 1. Markdown headings inside a body ther
 | Field | Slide types | Notes |
 |---|---|---|
 | `title` | all | required (a `references` slide defaults to "참고 자료") |
-| `subtitle` | cover, divider, hero, quote | |
+| `subtitle` | cover, divider, hero, quote, content | lead sentence |
+| `kicker`, `tagline`, `meta` (list), `art` (asset id) | cover, hero, divider | see components.md §1; `dark` flag on the header line selects the dark variant |
+| `toc` | all | TOC/search label when it differs from the visible title |
 | `tag` | content, hero, quote | eyebrow text |
 | `group` | all | TOC grouping label |
 | `question` | all | guiding-question strip under the title |
@@ -71,8 +73,9 @@ an error. `# slide` must start at column 1. Markdown headings inside a body ther
 | `time` | all | `2.5분` or `2.5분 · 10:00 – 12:30` (same as `[시간]` in the note) |
 | `note` | all | short inline note: `note: |` + indented lines. Long notes use `## note` |
 
-Type-specific: `cover` uses `title`, `subtitle`, front-matter `course`/`week`/`date`/`presenter`;
-`divider` uses `title`, `subtitle`, and `no: 01`; `quote` uses `title` (the quote), `cite`;
+Type-specific: `cover` uses `title` (the visible headline), `subtitle`, `kicker` (default from
+front-matter `course`/`week`), `meta` (default `date`/`presenter`), `tagline`, `art`, and may have body
+blocks (e.g. `:::pills`); `divider` uses `title`, `subtitle`, `no: 01`, optional `art` and body; `quote` uses `title` (the quote), `cite`;
 `references` renders `refs` from the front matter (all of them, or `only: [S1, S2]`);
 `raw` takes its body verbatim as HTML.
 
