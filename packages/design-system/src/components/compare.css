@@ -48,12 +48,17 @@
   align-items: center;
   min-width: 0;
   padding: 12px 22px;
-  border: 1px solid var(--compare-a-line);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--compare-a-soft);
+  background: var(--bg-soft);
   color: var(--text);
   font-size: var(--fs-body);
   line-height: 1.45;
+}
+
+.compare-cell.left {
+  border-color: var(--compare-a-line);
+  background: var(--compare-a-soft);
 }
 
 .compare-cell.right {

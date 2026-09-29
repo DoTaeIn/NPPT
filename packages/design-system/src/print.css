@@ -7,7 +7,17 @@
 
 /* ============ Both modes: no chrome, no ink, exact colours ============ */
 :is(body.print-lecture, body.handout-mode)
-  :is(#nav-dock, #toc-sidebar, #notes-panel, #search, #pen-toolbar, #pen-canvas, #laser-canvas, #dialog, #help) {
+  :is(
+    #nav-dock,
+    #toc-sidebar,
+    #notes-panel,
+    #search,
+    #pen-toolbar,
+    #pen-canvas,
+    #laser-canvas,
+    #dialog,
+    #help
+  ) {
   display: none !important;
 }
 
@@ -222,7 +232,17 @@ body.handout-mode #handout {
   color: var(--ok-text);
 }
 
-#handout .ho-cue:is([data-kind='DO'], [data-kind='LOOK'], [data-kind='HOP'], [data-kind='SCREEN'], [data-kind='NEXT'], [data-kind='WAIT'], [data-kind='MEMO']) .ho-marker {
+#handout
+  .ho-cue:is(
+    [data-kind='DO'],
+    [data-kind='LOOK'],
+    [data-kind='HOP'],
+    [data-kind='SCREEN'],
+    [data-kind='NEXT'],
+    [data-kind='WAIT'],
+    [data-kind='MEMO']
+  )
+  .ho-marker {
   background: var(--neutral-soft);
   color: var(--neutral-text);
 }

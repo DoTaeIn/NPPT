@@ -14,7 +14,8 @@
   ],
   "scripts": {
     "build": "node build.mjs",
-    "test": "vitest run --passWithNoTests",
-    "clean": "rm -rf dist"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run && playwright test",
+    "clean": "rm -rf dist test-results"
   }
 }

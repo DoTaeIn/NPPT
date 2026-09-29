@@ -55,11 +55,14 @@ html[data-theme='cau-navy'] {
   --u-line-01: #ededed;
   --u-line-02: #e9ebf8;
   --u-line-03: #93b0f8;
-  --u-sh-02: 0 0 1px 0 rgba(0, 0, 0, 0.02), 0 2px 2px 0 rgba(0, 0, 0, 0.012),
+  --u-sh-02:
+    0 0 1px 0 rgba(0, 0, 0, 0.02), 0 2px 2px 0 rgba(0, 0, 0, 0.012),
     0 4px 3px 0 rgba(0, 0, 0, 0.012);
-  --u-sh-03: 0 1px 2px 0 rgba(0, 0, 0, 0.02), 0 4px 4px 0 rgba(0, 0, 0, 0.02),
+  --u-sh-03:
+    0 1px 2px 0 rgba(0, 0, 0, 0.02), 0 4px 4px 0 rgba(0, 0, 0, 0.02),
     0 10px 6px 0 rgba(0, 0, 0, 0.012);
-  --u-sh-04: 0 2px 2px 0 rgba(15, 15, 15, 0.012), 0 3px 5px 0 rgba(15, 15, 15, 0.012),
+  --u-sh-04:
+    0 2px 2px 0 rgba(15, 15, 15, 0.012), 0 3px 5px 0 rgba(15, 15, 15, 0.012),
     0 7px 10px 0 rgba(15, 15, 15, 0.02), 0 24px 32px 0 rgba(15, 15, 15, 0.031);
 
   /* ---- Contract roles (components.md §3) ---- */
@@ -179,7 +182,13 @@ html[data-theme='cau-navy'] {
   --divider-glow: none;
   --divider-no-fill: linear-gradient(var(--u-primary), var(--u-primary));
   --divider-accent: var(--u-sec-01);
-  --quote-slide-bg: linear-gradient(115deg, #fff 0%, #fff 38%, var(--u-bg-03) 62%, var(--u-bg-04) 100%);
+  --quote-slide-bg: linear-gradient(
+    115deg,
+    #fff 0%,
+    #fff 38%,
+    var(--u-bg-03) 62%,
+    var(--u-bg-04) 100%
+  );
   --quote-mark: var(--u-primary);
 
   /* ---- Logo hooks (v9.7 --logo-navy/--logo-white and --logo-cau/--logo-cau-white) ----

@@ -23,8 +23,10 @@
 }
 
 .v-card {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  column-gap: 14px;
   min-width: 0;
   padding: 26px 28px;
   border: 1px solid var(--card-line);
@@ -33,19 +35,24 @@
   box-shadow: var(--card-shadow);
 }
 
+.v-card > * {
+  grid-column: 1 / -1;
+}
+
 .v-card:is(.tone-neutral, .tone-primary, .tone-ok, .tone-warn, .tone-danger, .tone-info) {
   border-color: var(--tone-line);
   background: var(--tone-soft);
   box-shadow: none;
 }
 
-/* v9.7 `.card .icon-tile` */
+/* v9.7 `.card .icon-tile`, set beside the kicker so dense grids keep their height. */
 .v-card > .icon {
-  width: 56px;
-  height: 56px;
-  margin-bottom: 16px;
-  padding: 13px;
-  border-radius: 16px;
+  grid-column: 1;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  padding: 11px;
+  border-radius: 14px;
   background: var(--tone-soft, var(--primary-soft));
   color: var(--tone-text, var(--primary-text));
 }
@@ -63,6 +70,12 @@
   font-weight: var(--fw-bold);
   line-height: var(--lh-snug);
   letter-spacing: 0.02em;
+}
+
+.v-card > .icon + .v-kicker {
+  grid-column: 2;
+  align-self: center;
+  margin-bottom: 12px;
 }
 
 .v-card h3 {
@@ -83,11 +96,4 @@
 /* Denser grids trade padding for text room. */
 .v-cards.cols-4 > .v-card {
   padding: 22px 22px 24px;
-}
-
-.v-cards.cols-4 > .v-card > .icon {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 12px;
-  padding: 11px;
 }

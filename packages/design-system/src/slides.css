@@ -113,7 +113,7 @@
 /* Logos come from the theme (cau-navy: --logo-left/--logo-right); empty otherwise. */
 .cover-brand {
   position: absolute;
-  top: 80px;
+  top: var(--slide-pad-y);
   left: 150px;
   display: flex;
   align-items: center;
@@ -278,7 +278,12 @@
 }
 
 /* ============ References ============ */
-/* Flat, two-column list of refs (V20 `.final-references` list items). */
+/* Flat, two-column list of refs (V20 `.final-references` list items). About 20 refs with
+   snippets fit one slide; the compiler should split longer lists across slides. */
+.slide.references .s-head {
+  margin-bottom: 24px;
+}
+
 .reference-list {
   columns: 2;
   column-gap: 56px;

@@ -25,13 +25,35 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* A deck is a fixed stage; pages without #stage (gallery, handout) scroll normally. */
-body:has(> #stage) {
+/* A deck is a fixed stage; pages without #stage scroll normally. :where() keeps the
+   specificity at (0,0,1) so print modes and host pages can override it. */
+body:where(:has(> #stage)) {
   overflow: hidden;
 }
 
 /* Zero-specificity reset for slide content so every component rule wins over it. */
-.slide :where(h1, h2, h3, h4, h5, h6, p, ol, ul, li, dl, dt, dd, figure, figcaption, blockquote, pre, table, caption) {
+.slide
+  :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    ol,
+    ul,
+    li,
+    dl,
+    dt,
+    dd,
+    figure,
+    figcaption,
+    blockquote,
+    pre,
+    table,
+    caption
+  ) {
   margin: 0;
   padding: 0;
 }
@@ -138,7 +160,7 @@ section.slide.active {
   flex: none;
   display: flex;
   flex-direction: column;
-  margin-bottom: 36px;
+  margin-bottom: 32px;
 }
 
 /* V20 `.eyebrow` (rule + uppercase) / v9.7 `.s-eyebrow` (plain), switched by theme tokens. */
@@ -186,8 +208,8 @@ section.slide.active {
   display: flex;
   align-items: baseline;
   gap: 16px;
-  margin-top: 20px;
-  padding: 12px 24px;
+  margin-top: 18px;
+  padding: 10px 22px;
   border: 1px solid var(--q-line);
   border-radius: 12px;
   background: var(--q-bg);
@@ -216,7 +238,6 @@ section.slide.active {
   color: var(--bg);
   font-size: 17px;
   line-height: 1;
-  align-self: center;
 }
 
 .q-text {

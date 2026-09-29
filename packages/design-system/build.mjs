@@ -3,7 +3,15 @@
 //   dist/marco.nofonts.css  the same without src/fonts.css (the compiler subsets fonts itself)
 //   dist/fonts/*.woff2      the font files, plus fonts.json describing each @font-face
 import { build } from 'esbuild';
-import { copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,7 +39,10 @@ await build({ ...common, outfile: join(dist, 'marco.css') });
 const withoutFonts = {
   name: 'without-fonts',
   setup(b) {
-    b.onResolve({ filter: /(^|\/)fonts\.css$/ }, (args) => ({ path: args.path, namespace: 'no-fonts' }));
+    b.onResolve({ filter: /(^|\/)fonts\.css$/ }, (args) => ({
+      path: args.path,
+      namespace: 'no-fonts',
+    }));
     b.onLoad({ filter: /.*/, namespace: 'no-fonts' }, () => ({ contents: '', loader: 'css' }));
   },
 };
@@ -65,5 +76,7 @@ for (const file of ['marco.css', 'marco.nofonts.css']) {
 const fontBytes = faces.reduce((sum, f) => sum + statSync(join(dist, f.file)).size, 0);
 console.log(`dist/fonts/ (${faces.length} faces) ${kb(fontBytes).padStart(10)}`);
 if (Buffer.byteLength(nofonts) > NOFONTS_BUDGET) {
-  throw new Error(`marco.nofonts.css is ${kb(Buffer.byteLength(nofonts))}, over the ${kb(NOFONTS_BUDGET)} budget`);
+  throw new Error(
+    `marco.nofonts.css is ${kb(Buffer.byteLength(nofonts))}, over the ${kb(NOFONTS_BUDGET)} budget`,
+  );
 }
