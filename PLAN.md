@@ -2,7 +2,7 @@
 
 **Project:** NPPT / MARCO Engine — an engine for building AI-assisted university lecture decks
 **Status:** Draft v0.1 · 2026-09-29
-**License:** MARCO Engine License (see §15)
+**License:** MARCO Engine License, Version 1.0 (Apache 2.0 + Visible Attribution; see §15)
 
 ---
 
@@ -118,7 +118,7 @@ Regenerating slide 12 touches ~2 KB of source, and `marco build` produces the fu
 - PowerPoint-style drag-and-drop WYSIWYG editing (see §5 for the recommended alternative).
 - `.pptx` export with full fidelity (PDF via the existing print modes is the export path).
 - Cloud hosting, accounts, or real-time collaboration.
-- Replacing the professor's AI of choice. MARCO works with the Claude API directly and also with any chat UI through a prompt kit.
+- Replacing the professor's AI of choice. The engine is AI-agnostic: the professor keeps using whatever chat assistant he uses today, and the prompt kit is plain text he pastes into it. Direct API automation is an optional add-on that works with any provider.
 
 ---
 
@@ -162,13 +162,13 @@ Design rules:
 - **Icons are tree-shaken.** Only Lucide icons actually used are emitted as an SVG sprite (~5–20 KB instead of 600 KB).
 - **Fonts are subsetted** to the glyphs the deck uses (typically 1 MB → 200–300 KB), with a `--no-embed-fonts` option for the student edition.
 - **Two editions from one source:** `--edition student` (no notes/script) and `--edition instructor` (notes, cues, narration).
-- **Output stays a single HTML file** with a header comment: `Built with MARCO Engine vX.Y · content © author`.
+- **Output stays a single HTML file.** Its head carries a NOTICE comment (engine version, the MARCO Attribution, third-party notices) and the help overlay shows the Attribution, which is what the licence requires (§15). Content stays the author's.
 
 ---
 
 ## 7. Authoring format: MARCO source
 
-Markdown-based, YAML front matter, one `# slide` block per slide, `:::` containers for components. Chosen because it is what humans read and what LLMs write most cheaply and reliably. JSON (§8) is the canonical intermediate representation and is also accepted as input, which is what the Claude API tool-use pipeline emits.
+Markdown-based, YAML front matter, one `# slide` block per slide, `:::` containers for components. Chosen because it is what humans read and what LLMs write most cheaply and reliably. JSON (§8) is the canonical intermediate representation and is also accepted as input, which is what the optional API pipeline emits as structured output.
 
 ```markdown
 ---
@@ -279,12 +279,14 @@ The schema is published as JSON Schema so the AI can be given it verbatim (tool 
 | 6. Fix | `marco ai revise 12 "표를 3열로 줄이고 예시를 하나 추가"` | slide 12 only | ~2–5 K tokens |
 | 7. Ship | `marco build --edition instructor && marco pdf --handout` | nothing | 0 |
 
+In chat mode, steps 2–4 and 6 are the same prompts pasted into whatever chat assistant the professor already uses; he saves the reply as the source file and runs `marco build`. The `marco ai …` commands are the automated form of the same prompts for anyone with API access to any provider.
+
 Estimated totals for a Week-5-class deck (43 slides, full narration): 150–250 K output tokens spread across small calls that never hit a response limit, versus an unbounded, repeatedly-restarted attempt today. A student edition without narration lands around 50–80 K. A single-slide fix costs a few thousand tokens instead of a whole-deck regeneration. These are estimates from the measured decks and will be re-measured in Phase 0.
 
 Mechanics that make this hold:
 
-- **Fixed system prompt** (style guide + component list + budgets + schema) is identical across calls, so Claude prompt caching applies; only the slide payload is new each time.
-- **Structured output via tool use** when using the API; the same prompt kit ships as a Markdown "skill" file the professor can paste into any chat UI.
+- **Fixed system prompt** (style guide + component list + budgets + schema) is identical across calls, so provider prompt caching applies where available; only the slide payload is new each time.
+- **Chat first.** The prompt kit is a Markdown file the professor pastes into the chat assistant he already uses (ChatGPT, Claude, Gemini or another); the assistant answers in MARCO source, never HTML. **API optional.** The same prompts run unattended through a provider adapter with structured output for anyone who wants automation.
 - **Validate-repair loop:** the compiler returns machine-readable errors (`slide 12 · cards[1].body exceeds 90 chars by 14`), and the pipeline sends only that slide back for repair.
 - **Nothing generated twice:** engine, fonts, icons, images and unchanged slides are never in the prompt or the response.
 
@@ -303,7 +305,7 @@ Mechanics that make this hold:
 | Fonts | Pretendard, SpoqaHanSans, Inter (all SIL OFL) subsetted at build with `subset-font` | Same look, 3–5× smaller |
 | Images | `sharp`: resize to ≤1920 px, WebP/AVIF with PNG fallback for diagrams | Week 3's 6.3 MB of PNG becomes < 1 MB |
 | Testing | Vitest (unit), Playwright (per-slide screenshots, overflow detection, print PDF) | Chromium is preinstalled in this environment |
-| AI | Anthropic SDK with tool use + prompt caching; provider adapter interface so other APIs can be plugged in | The professor's current workflow is chat-based; both paths are supported |
+| AI | Prompt kit as plain Markdown that works in any chat assistant; optional provider adapter for API automation (OpenAI, Anthropic, Google, local models) | The professor's workflow is chat-based today; nothing in the engine depends on a specific AI vendor |
 | Studio (Phase 4) | Vite + Svelte (or React), Monaco/CodeMirror editor, iframe preview of the built HTML | Small, fast, local-first |
 
 ---
@@ -313,7 +315,7 @@ Mechanics that make this hold:
 ```
 NPPT/
   PLAN.md                  this document
-  LICENSE                  MARCO Engine License (§15)
+  LICENSE                  MARCO Engine License 1.0: Apache 2.0 + Visible Attribution, from DoTaeIn/Marco (§15)
   NOTICE                   third-party licences (Lucide, Pretendard, SpoqaHanSans, Inter, markdown-it, …)
   package.json / pnpm-workspace.yaml / tsconfig.base.json
   packages/{schema,design-system,runtime,compiler,importer,ai}/
@@ -388,32 +390,39 @@ Assumes one to two developers. Weeks are calendar estimates, not commitments; th
 | Notes grammar evolves (new markers) | Grammar is a table in `schema`; unknown markers pass through as `MEMO` with a lint warning |
 | AI still tries to emit HTML or engine code | System prompt forbids it; the tool schema only accepts MARCO blocks; validator rejects `<script>`/`<style>` outside `raw` |
 | Font and icon licensing when embedding | All chosen fonts are SIL OFL, Lucide is ISC; `NOTICE` carries attributions; `--no-embed-fonts` for distribution-sensitive builds |
-| Third-party product photos in decks (e.g., Boon Edam, Suprema) | Engine keeps `credit`/`source` metadata and renders the media-credit dialog; content responsibility stays with the author and is stated in the licence |
+| Third-party product photos in decks (e.g., Boon Edam, Suprema) | Engine keeps `credit`/`source` metadata and renders the media-credit dialog; content responsibility stays with the author, and the licence covers the engine only (§15) |
 | Scope creep toward a full WYSIWYG editor | Phase 4 is explicitly source-plus-preview; direct manipulation is a post-v1 item |
 | Single-file output grows again as plugins are added | Plugins embed only when used; size budgets are CI checks |
 
 ---
 
-## 15. MARCO Engine License — plan
+## 15. MARCO Engine License
 
-The engine will ship under a custom licence named **MARCO Engine License**. Plan for it:
+The engine ships under the **MARCO Engine License, Version 1.0**, the licence already used by [DoTaeIn/Marco](https://github.com/DoTaeIn/Marco): the Apache License 2.0 reproduced in full, plus one *Additional Condition* (Visible Attribution). No new licence is drafted. The text is copied from the Marco repository with the two adaptations listed below.
 
-**Structure to draft**
+**What the licence means for this project**
 
-1. **Preamble** — purpose: an engine for building educational lecture decks.
-2. **Definitions** — *Engine* (runtime, design system, compiler, studio, prompt kit) vs *Content* (any lecture source, notes, media and the HTML files the engine builds from them).
-3. **Content is the author's.** Output files, and any content authored with the engine, are not covered by this licence and carry no obligation to the engine's owner. (This mirrors the "output exemption" in compiler and font licences and is essential so the professor can distribute decks freely.)
-4. **Grant** — permission to use, copy, modify and run the engine; redistribution of the engine or derivatives permitted with attribution and this licence intact. Decide whether commercial redistribution of the *engine* is allowed, restricted, or requires a separate agreement.
-5. **Attribution** — the `Built with MARCO Engine` header in generated files may be kept or removed by the content author (recommended: removable, to keep §3 clean).
-6. **Third-party components** — list with their licences and a requirement to preserve their notices: Lucide (ISC), Pretendard (SIL OFL 1.1), Spoqa Han Sans (SIL OFL 1.1), Inter (SIL OFL 1.1), markdown-it (MIT), Ajv (MIT), sharp (Apache-2.0), and others as added. `NOTICE` is generated from `package.json` at release.
-7. **Disclaimer of warranty and limitation of liability.**
-8. **Termination** on breach; **versioning** of the licence text.
+| Situation | Under the licence |
+|---|---|
+| The professor builds decks and shows them to students | A built deck runs the engine (navigation, notes, quiz, simulators) in front of people who did not build it, so it is a *User-Facing Product* and must show the Attribution. The runtime's help overlay (`?`) carries it by default, which satisfies §2 of the Additional Condition ("an about, credits, settings or help screen"). The professor never has to do anything. |
+| Lecture content: slides, notes, images, the professor's source files | Not the Engine. Content belongs to its author and the licence places no condition on it. The built file's NOTICE comment says so. |
+| Someone forks the engine or ships a modified build | Apache 2.0 terms apply, and the Attribution stays required for any user-facing product that contains the engine (Additional Condition §6). |
+| Personal use, research, development, testing, plain redistribution of source or builds | No Attribution requirement (§3); Apache §4(d) NOTICE rules apply to redistribution. |
+| Someone wants no attribution | White-label licence from the copyright holder (§5). |
 
-**Decisions and cautions**
+**Two adaptations the copyright holder has to decide, because the Marco text cannot be copied verbatim**
 
-- If the intent is open-source distribution, the safest route is to base the text on MIT or Apache-2.0 and name the file *MARCO Engine License*; a bespoke text that restricts use will be incompatible with many packages and with GitHub's licence detection. If the intent is "free for education, ask for commercial use", say so explicitly in §4.
-- A custom licence should be reviewed by someone with legal training before the first public release.
-- The licence covers the engine only. The professor's lecture content keeps whatever licence the professor chooses, and third-party images in decks keep their own terms.
+1. **Definition of "Engine" (Additional Condition §1).** Marco defines it as "the MARCO reasoning, dialogue, language, learning, storage and benchmarking code". That does not cover a deck engine. Proposed wording for this repository: *"Engine" means this software: the MARCO deck runtime, design system, compiler, importer, authoring pipeline and studio code, and builds made from it, whether or not modified.*
+2. **Attribution text (Additional Condition §1).** Marco's line is `Powered by MARCO — Created by DoTaeIn, Original project: https://github.com/DoTaeIn/Marco`. Decide whether NPPT decks show that line unchanged, or one that points at this repository (for example `Powered by MARCO Engine — Created by DoTaeIn, Original project: https://github.com/DoTaeIn/NPPT`). The plan assumes a line that keeps the three parts the licence requires: the name MARCO, the name DoTaeIn and a project URL.
+
+Everything else is copied unchanged: Additional Condition §2–6, the sentence that the licence must not be described as the Apache License alone, and the full Apache 2.0 text. Whether to publish this as "Version 1.0, as applied to NPPT" or to bump the shared licence to 1.1 with a generalised Engine definition is your call as the holder of both copyrights. Marco's own notes say licence-text changes warrant legal review; the same applies here.
+
+**Files and mechanics**
+
+- `LICENSE`: the adapted text. `NOTICE`: modelled on Marco's (product name, copyright, the Attribution, pointer to `LICENSE`) plus third-party notices: Lucide (ISC), Pretendard (SIL OFL 1.1), Spoqa Han Sans (SIL OFL 1.1), Inter (SIL OFL 1.1), markdown-it (MIT), Ajv (MIT), sharp (Apache 2.0), and others as added, generated from `package.json` at release.
+- The runtime's help overlay shows the Attribution and the compiler has no flag to remove it, so every built deck is compliant by construction. Each built HTML also starts with a NOTICE comment naming the engine version and repeating the Attribution.
+- `README.md` gets a `## License` section in the same shape as Marco's.
+- The project is under this licence from its first release; there is no earlier Apache-only period to grandfather.
 
 ---
 
@@ -424,12 +433,11 @@ Defaults are chosen so work can start; change any of them and the plan adjusts.
 | Question | Default in this plan |
 |---|---|
 | Who uses it: only this professor, or other faculty too? | Design for one course now, but themes and course metadata are data, not code |
-| AI access: Claude API key, or copy-paste into a chat UI? | Both: CLI uses the API; the prompt kit ships as a pasteable skill file |
+| Which AI does the professor use today, and through a chat window or an API? | Unknown. The plan assumes a chat assistant with copy-paste; the prompt kit is vendor-neutral. API automation is optional and provider-agnostic |
 | Are narration player and avatar (v9.7 features) required in v1? | Phase 3 plugins; core deck ships in Phase 1 without them |
 | Must legacy decks be imported? | Yes, in Phase 2; it is also how we validate parity |
 | Local files only, or a small server? | Local files only; Studio runs on localhost |
-| Engine distribution: open-source or restricted? | Decide before M2; affects §15 wording |
-| Name expansion for MARCO? | Optional backronym: **M**odular **A**uthoring and **R**endering for **C**ourse **O**utputs |
+| Attribution line and "Engine" definition for the licence (§15) | Line names MARCO, DoTaeIn and the NPPT repository; the Engine definition covers the deck engine |
 
 ---
 
@@ -444,4 +452,4 @@ Defaults are chosen so work can start; change any of them and the plan adjusts.
 7. Hand-write the first five slides of `examples/week03-iam/lecture.marco.md` and get pixel parity with the original.
 8. Importer spike: parse all 40 Week 3 sections into MARCO source automatically; list unmapped markup.
 9. Prompt kit v0.1: system prompt, component cheat-sheet, `outline` and `slides` tool definitions; run one outline → slides trial and record token usage.
-10. Draft `LICENSE` (MARCO Engine License) and `NOTICE` per §15 for review.
+10. Add `LICENSE` (MARCO Engine License 1.0 with the two adaptations in §15) and `NOTICE`; put the Attribution in the runtime help overlay.
